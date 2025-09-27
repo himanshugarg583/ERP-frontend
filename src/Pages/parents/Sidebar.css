@@ -1,0 +1,49 @@
+/* Sidebar.css */
+nav {
+    position: relative;
+}
+
+/* Hide scrollbar by default */
+nav::-webkit-scrollbar {
+    width: 0;
+    /* Hide scrollbar */
+}
+
+/* Show scrollbar on hover */
+nav:hover::-webkit-scrollbar {
+    width: 8px;
+    /* Width of the scrollbar */
+}
+
+/* Track */
+nav::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    /* Background of the scrollbar track */
+}
+
+/* Handle */
+nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.5);
+    /* Color of the scrollbar thumb */
+    border-radius: 10px;
+    /* Rounded corners for the scrollbar thumb */
+}
+
+/* Handle on hover */
+nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.7);
+    /* Color of the scrollbar thumb on hover */
+}
+
+/* For Firefox */
+nav {
+    scrollbar-width: thin;
+    /* Make scrollbar thin */
+    scrollbar-color: rgba(255, 255, 255, 0.5) rgba(255, 255, 255, 0.1);
+    /* Thumb color and track color */
+}
+
+nav:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.5) rgba(255, 255, 255, 0.1);
+    /* Show scrollbar colors on hover */
+}

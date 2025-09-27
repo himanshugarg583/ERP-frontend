@@ -1,0 +1,11 @@
+.AddStudent{
+    width: 100vw;
+    height: 100vh;
+    /* background-color: black; */
+}
+
+.subitems{
+    /* border: 1px solid black; */
+    margin-left: -15px;
+    /* margin-right: 40px; */
+}

@@ -1,0 +1,19 @@
+/* SuperAdmin.css */
+.sidebar {
+    position: fixed; /* Ensure the sidebar is fixed */
+    z-index: 30; /* Higher than main content */
+    width: 256px; /* Set a fixed width for the sidebar */
+    height: 100vh; /* Full height */
+    background-color: #2d3748; /* Dark background */
+    color: white; /* Text color */
+  }
+  
+  .main-content {
+    margin-left: 256px; /* Adjust based on sidebar width */
+    z-index: 10; /* Lower than sidebar */
+    transition: margin-left 0.3s; /* Smooth transition */
+  }
+  
+  /* Add any additional styles as needed */
+
+  

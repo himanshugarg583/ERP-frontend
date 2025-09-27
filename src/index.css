@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+/* #root {
+  height: 100%;
+  display: flex;
+
+} */
+
+main {
+  flex: 1;
+  /* Allow main to take the remaining space */
+  overflow-y: auto;
+  /* Enable scrolling if content overflows */
+}
+
+/* Optional: If you want to remove any default margin/padding */
+* {
+  box-sizing: border-box;
+}
+
+
+@media print {
+  button, .material-symbols-outlined {
+    display: none;
+  }
+
+
+}
+

@@ -1,0 +1,30 @@
+.sidebar-inner {
+  position: relative;
+}
+
+/* Hide scrollbar by default */
+.sidebar-inner::-webkit-scrollbar {
+  width: 0;
+  background: transparent; /* Optional: to hide the scrollbar background */
+}
+
+/* Show scrollbar on hover */
+.sidebar-inner:hover::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+}
+
+/* Style the scrollbar track */
+.sidebar-inner::-webkit-scrollbar-track {
+  background: transparent; /* Optional: to style the track */
+}
+
+/* Style the scrollbar thumb */
+.sidebar-inner::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.5); /* Color of the scrollbar thumb */
+  border-radius: 10px; /* Rounded corners */
+}
+
+/* Style the scrollbar thumb on hover */
+.sidebar-inner::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.8); /* Color of the scrollbar thumb on hover */
+}
