@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState, memo } from 'react';
 import { FaUsers, FaCheckCircle, FaChartLine, FaClipboardList, FaArrowRight, FaChevronLeft, FaChevronRight, FaBell, FaFileAlt, FaSync, FaCalendarAlt, FaExclamationCircle } from 'react-icons/fa';
 import { PieChart } from '@mui/x-charts/PieChart';
 import Sidebar from './TeacherSidebar';
@@ -45,7 +45,7 @@ const TeacherPortal = () => {
     return days;
   };
 
-  const last7Days = getLast7Days();
+  const last7Days = useMemo(() => getLast7Days(), []);
 
   const getDayColor = (isoDate) => {
     if ((attendanceData?.[0]?.value ?? 0) > 0 && isoDate <= '2025-03-21') return 'bg-green-500';
@@ -489,4 +489,4 @@ const TeacherPortal = () => {
   );
 };
 
-export default TeacherPortal;
+export default memo(TeacherPortal);

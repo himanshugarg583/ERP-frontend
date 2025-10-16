@@ -6,6 +6,7 @@ import ParentLogin from './Pages/Authentication/ParentLogin';
 import StudentLogin from './Pages/Authentication/StudentLogin';
 import TeacherLogin from './Pages/Authentication/TeacherLogin';
 import UnifiedLogin from './Pages/Authentication/UnifiedLogin';
+import UnifiedSignup from './Pages/Authentication/UnifiedSignup';
 
 // home page 
 import Home from './Pages/Home';
@@ -147,6 +148,7 @@ const routes = {
   login: [
     { path: "/login", element: <UnifiedLogin /> },
     { path: "/parentLogin", element: <ParentLogin /> },
+    { path: "/signup", element: <UnifiedSignup /> },
   ],
   teacher: [
     { path: "/TeacherPortal", element: <TeacherPortal /> },

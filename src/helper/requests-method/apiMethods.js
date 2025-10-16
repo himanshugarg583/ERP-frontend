@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000'; // Adjust the base URL as needed
+const API_BASE_URL = 'https://d4hjzv36-5000.inc1.devtunnels.ms'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
   LOGIN: '/api/auth/login',
+  SIGNUP: '/api/auth/signup',
+  REQUEST_PASSWORD_RESET: '/api/auth/request-password-reset',
   GET_ALL_ENQUIRIES: '/api/admissionenquiry/getAllEnquiries',
   CREATE_ENQUIRY: '/api/admissionenquiry/createEnquiry',
   UPDATE_ENQUIRY: (id) => `/api/admissionenquiry/updateEnquiry/${id}`,
@@ -96,6 +98,36 @@ export const loginUser = async (credentials) => {
     return response.data;
   } catch (error) {
     console.error('Login failed:', error);
+    throw error;
+  }
+};
+
+// Signup function
+export const signupUser = async (payload) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.SIGNUP}`,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Signup failed:', error);
+    throw error;
+  }
+};
+
+// Request password reset
+export const requestPasswordReset = async (email) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.REQUEST_PASSWORD_RESET}`,
+      { email },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Password reset request failed:', error);
     throw error;
   }
 };

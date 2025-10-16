@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { authLogin, authLogout } from '../store/slices/authSlice';
 import { loginUser } from '../helper/requests-method/apiMethods';
 import { getDashboardPath } from '../utils/routeUtils';
 
@@ -15,6 +17,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     // Check for existing user session on app load
@@ -23,7 +26,9 @@ export const AuthProvider = ({ children }) => {
     
     if (token && userData) {
       try {
-        setUser(JSON.parse(userData));
+        const parsed = JSON.parse(userData);
+        setUser(parsed);
+        dispatch(authLogin({ user: parsed, token }));
       } catch (error) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
@@ -48,6 +53,7 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         localStorage.setItem('authToken', response.token);
         localStorage.setItem('userData', JSON.stringify(userData));
+        dispatch(authLogin({ user: userData, token: response.token }));
         
         return { success: true, user: userData };
       } else {
@@ -65,6 +71,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
+    dispatch(authLogout());
   };
 
   const isAuthenticated = () => {

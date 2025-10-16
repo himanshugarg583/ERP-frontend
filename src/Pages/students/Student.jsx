@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState, memo } from 'react';
 import StudentNavbar from './StudentNavbar';
 import StudentSidebar from './StudentSidebar';
 import { BarChart } from '@mui/x-charts/BarChart';
@@ -164,8 +164,8 @@ const AcademicPerformance = () => {
     ],
   };
 
-  const subjects = performanceData[selectedExam].map(item => item.subject);
-  const scores = performanceData[selectedExam].map(item => item.score);
+  const subjects = useMemo(() => performanceData[selectedExam].map(item => item.subject), [selectedExam]);
+  const scores = useMemo(() => performanceData[selectedExam].map(item => item.score), [selectedExam]);
 
   return (
     <Box sx={{ bgcolor: 'white', p: 3, borderRadius: 2, boxShadow: 1, flexGrow: 2 }} className="col-span-2">
@@ -218,4 +218,4 @@ const UpcomingEvents = () => {
   );
 };
 
-export default Student;
+export default memo(Student);
