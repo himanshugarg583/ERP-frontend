@@ -34,30 +34,31 @@ const Header = ({ title }) => {
 
   return (
     <header
-      className="bg-white backdrop-blur-lg shadow-lg  flex justify-between"
+      className="bg-gradient-to-br from-green-800 via-green-700 to-green-900 shadow-lg flex flex-wrap items-center justify-between px-4 py-1"
       style={{ flexDirection: "row" }}
     >
       {/* w-screen */}
-      <div className="max-w-7xl  px-4 py-4 sm:px-6 lg:px-8" style={{}}>
-        <h1 className="text-xl font-semibold text-black">
-          GurukulSarthi School Managment Software
+  <div className="max-w-7xl px-4 py-2 sm:px-6 lg:px-8" style={{}}>
+        <h1 className="text-xl font-semibold text-white">
+          GurukulSarthi School Management Software
         </h1>
       </div>
 
       <ul
-        className="navbar-nav navbar-nav-right flex px-4 py-4 sm:px-6 lg:px-8"
-        style={{ width: "32%", gap: "30px" }}
+        className="navbar-nav navbar-nav-right flex flex-wrap items-center gap-4 px-2 py-2 sm:px-4 lg:px-6"
+        style={{ width: "auto" }}
       >
         <li className="" style={{}}>
-          <div className="text-dark">
+          <div className="text-white hover:text-green-200 transition-colors">
             Session Year : <span id="sessionYearNameHeader">2025-26</span>
             <span id="semesterNameHeader"></span>
           </div>
         </li>
 
-        <li className="d-none d-md-block d-sm-block nav-item" style={{}}>
+  {/* Removed duplicate and unclosed <li> tag */}
+        <li className="nav-item">
           <a
-            className="nav-link count-indicator dropdown-toggle"
+            className="nav-link count-indicator dropdown-toggle text-white hover:text-green-200 transition-colors"
             id="messageDropdown"
             href="#"
             data-toggle="dropdown"
@@ -68,7 +69,7 @@ const Header = ({ title }) => {
           </a>
         </li>
       </ul>
-      <button onClick={toggleFullScreen} className="text-black">
+      <button onClick={toggleFullScreen} className="text-white">
         {isFullScreen ? <FaExpand size={20} /> : <FaCompress size={18} />}
       </button>
       {/* Profile Dropdown */}

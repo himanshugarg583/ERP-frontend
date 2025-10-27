@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { BarChart2, Coins, Menu, TicketPlus, Users, WalletCards, Ticket, ChevronRight, Circle,ChevronsRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { href, Link } from "react-router-dom";
+import { href, Link, useLocation } from "react-router-dom";
 import './Admin.css'
 const SIDEBAR_ITEMS = [
   { name: "Dashboard", icon: BarChart2, 
@@ -140,6 +140,7 @@ const SIDEBAR_ITEMS = [
 ];
 
 const Sidebar = () => {
+  const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -161,32 +162,47 @@ const Sidebar = () => {
       }`}
       animate={{ width: isSidebarOpen ? 220 : 80 }}
     >
-      <div className="h-screen bg-gray-800 text-white p-4 flex flex-col border-r border-gray-700 overflow-hidden">
+  <div className="h-screen bg-gradient-to-br from-green-800 via-green-700 to-green-900 text-white p-4 flex flex-col border-r border-green-900 overflow-hidden shadow-xl">
         {/* Sidebar Toggle Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 rounded-full hover:bg-gray-700 transition-colors"
-        >
-          <Menu size={26} />
-        </motion.button>
+        {/* Logo above menu button */}
+        <div className="flex items-center justify-between gap-1 pb-2">
+          <img src="/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full shadow border border-white ml-1" />
+          {/* Responsive toggle button */}
+          {isMobile ? (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="w-8 h-8 rounded-full bg-white shadow border border-green-700 flex items-center justify-center mr-1"
+            >
+              <Menu size={16} className="text-green-700" />
+            </motion.button>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="w-8 h-8 rounded-full bg-white shadow border border-green-700 flex items-center justify-center mr-1"
+            >
+              {isSidebarOpen ? <ChevronRight size={18} className="text-green-700" /> : <ChevronRight size={18} className="text-green-700 rotate-180" />}
+            </motion.button>
+          )}
+        </div>
 
-        {/* Sidebar Navigation with Scrollbar */}
-        <nav className="mt-4 flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+  {/* Sidebar Navigation without Scrollbar */}
+  <nav className="mt-2 flex-grow overflow-y-auto border-t border-white/20" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {SIDEBAR_ITEMS.map((item) => (
             <div key={item.name}>
               <motion.div
-                className="flex items-center justify-between p-3 text-sm rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                className={`flex items-center justify-between p-2 text-sm rounded-lg transition-colors cursor-pointer ${isSidebarOpen ? 'hover:bg-green-800' : 'hover:bg-green-900'} ${item.subItems && item.subItems.some(sub => sub.href === location.pathname) ? 'bg-green-900 shadow-lg' : ''}`}
                 onClick={() => item.subItems && setOpenDropdown(openDropdown === item.name ? null : item.name)}
               >
-             
                 <div className="flex items-center">
-                  <item.icon size={20} className="text-white min-w-[20px]" />
+                  <item.icon size={24} className="text-white min-w-[24px]" />
                   <AnimatePresence>
                     {isSidebarOpen && (
                       <motion.span
-                        className="ml-4 whitespace-nowrap"
+                        className="ml-4 whitespace-nowrap font-semibold text-base text-white"
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
@@ -197,12 +213,12 @@ const Sidebar = () => {
                     )}
                   </AnimatePresence>
                 </div>
-                {item.subItems && (
+                {item.subItems && isSidebarOpen && (
                   <motion.div
                     animate={{ rotate: openDropdown === item.name ? 90 : 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ChevronRight size={16} />
+                    <ChevronRight size={16} className="text-cyan-400" />
                   </motion.div>
                 )}
               </motion.div>
@@ -215,19 +231,19 @@ const Sidebar = () => {
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="pl-8 overflow-hidden"
+                    className={`pl-8 overflow-hidden ${isSidebarOpen ? '' : 'hidden'}`}
                   >
                     {item.subItems.map((subItem) => (
                       <Link key={subItem.href} to={subItem.href}>
                         <motion.div
-                          className="flex items-center p-2 text-sm rounded-lg hover:bg-gray-600 transition-colors cursor-pointer  subitems"  
+                          className={`flex items-center p-2 text-sm rounded-lg transition-colors cursor-pointer subitems ${location.pathname === subItem.href ? 'bg-green-900 shadow-lg' : 'hover:bg-green-900'}`}
                         >
                           {/* <subItem.icon size={16} className="text-gray-400 min-w-[16px]" /> */}
-                          <ChevronsRight size={16} className="text-gray-400 min-w-[16px]" />
+                          <ChevronsRight size={16} className="text-white min-w-[16px]" />
                           <AnimatePresence>
                             {isSidebarOpen && (
                               <motion.span
-                                className="ml-4 whitespace-nowrap"
+                                className="ml-4 whitespace-nowrap text-white font-semibold"
                                 initial={{ opacity: 0, width: 0 }}
                                 animate={{ opacity: 1, width: "auto" }}
                                 exit={{ opacity: 0, width: 0 }}
@@ -246,6 +262,24 @@ const Sidebar = () => {
             </div>
           ))}
         </nav>
+        <style>{`
+          nav::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        {/* Logout Button at Bottom */}
+        <div className={`mt-auto pt-4 flex ${isSidebarOpen ? '' : 'justify-center'}`}>
+          <button
+            onClick={() => { window.location.href = '/login'; }}
+            className={`flex items-center gap-2 py-2 px-4 rounded-lg bg-green-900 text-white font-semibold shadow hover:bg-green-800 transition-colors w-full ${isSidebarOpen ? '' : 'justify-center px-2'}`}
+            style={{ minWidth: isSidebarOpen ? '100%' : '48px' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 min-w-[24px] text-white" style={{marginRight: isSidebarOpen ? '8px' : '0'}}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+            </svg>
+            {isSidebarOpen && <span className="whitespace-nowrap text-white font-semibold">Logout</span>}
+          </button>
+        </div>
       </div>
     </motion.div>
   );

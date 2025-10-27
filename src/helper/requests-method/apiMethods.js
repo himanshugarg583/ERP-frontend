@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://d4hjzv36-5000.inc1.devtunnels.ms'; // Backend base URL
+const API_BASE_URL = 'https://d5758dxq-5000.inc1.devtunnels.ms'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
