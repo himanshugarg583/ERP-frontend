@@ -183,7 +183,7 @@ const TeacherCredentials = () => {
   ];
 
   return (
-    <div className='bg-gray-100 flex AddStudent'>
+    <div className='bg-slate-200 flex AddStudent'>
       <Sidebar />
 
       <div className='overflow-auto relative z-1 flex-col' style={{
@@ -195,7 +195,8 @@ const TeacherCredentials = () => {
       }}>
         <Header />
 
-        <div className="bg-white shadow-md rounded-lg w-full max-w-7xl p-6 flex-1 overflow-auto relative z-1 m-auto text-black">
+        <main className="w-full py-6 px-4 md:px-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 w-full p-6 text-black">
           <ToastContainer />
           
           {/* Page Header */}
@@ -240,7 +241,8 @@ const TeacherCredentials = () => {
               enable: false // No status column needed for credentials
             }}
           />
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

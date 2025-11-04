@@ -11,7 +11,7 @@ import IncomeForm from '../../../components/Income/IncomeForm'
 const AddIncomePage = () => {
   return (
 
-    <div className='bg-gray-100 flex AddStudent'>
+    <div className='bg-slate-200 flex AddStudent'>
         <Sidebar/>
     
     <div className=' overflow-auto relative z-1 flex-col' style={{
@@ -26,7 +26,7 @@ const AddIncomePage = () => {
       
 
 
-      <main className="">
+      <main className="w-full px-4 md:px-6">
      
         
 

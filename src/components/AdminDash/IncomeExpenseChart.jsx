@@ -4,7 +4,7 @@ import { Box, Typography, Card, CardContent } from '@mui/material';
 
 // Define enhanced colors and gradients
 const colors = {
-  primary: { 500: '#3F51B5', 300: '#7986CB' }, // Indigo shades
+  primary: { 500: '#7C3AED', 300: '#A78BFA' }, // Violet shades
   grey: { 100: '#F5F5F5', 700: '#616161', 900: '#212121' },
   greenAccent: { 500: '#4CAF50', 300: '#81C784' }, // Green shades
 };

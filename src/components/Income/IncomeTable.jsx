@@ -212,7 +212,7 @@ const IncomeTable = () => {
 
     return (
         <motion.div
-            className='bg-white  shadow-lg backdrop-blur-md rounded-xl p-5   mb-6 relative z-1'
+            className='bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-6 relative z-1'
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: 0.2 }}
@@ -268,7 +268,7 @@ const IncomeTable = () => {
                     <input
                         type="text"
                         placeholder='Search Product...'
-                        className=' text-black placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-500'
+                        className=' text-black placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-violet-600'
                         onChange={SearchHandler}
                         value={searchTerm}
                     />
@@ -308,7 +308,7 @@ const IncomeTable = () => {
                                         <button onClick={() => handleViewClick(product)} className='text-green-500 hover:text-green-600'>
                                                 <FontAwesomeIcon icon={faEye} />
                                                 </button>
-                                        <button onClick={() => handleEdit(product)} className='text-blue-500 hover:text-blue-700'>
+                                        <button onClick={() => handleEdit(product)} className='text-violet-600 hover:text-violet-700'>
                                             <Edit size={18} />
                                         </button>
                                         <button onClick={() => handleDelete(product.id)} className='text-red-500 hover:text-red-700'>
@@ -434,7 +434,7 @@ const IncomeTable = () => {
                             </button>
                             <button
                                 onClick={handleSave}
-                                className='bg-blue-600 hover:bg-blue-800 text-white text-md px-4 py-2 rounded-md w-24'
+                                className='bg-violet-600 hover:bg-violet-700 text-white text-md px-4 py-2 rounded-md w-24'
                             >
                                 Save
                             </button>
@@ -517,7 +517,7 @@ const IncomeTable = () => {
                             <button onClick={() => setAddModalOpen(false)} className='bg-gray-600 hover:bg-red-500 text-gray-100 px-4 py-2 rounded-md'>
                                 <X size={22} />
                             </button>
-                            <button onClick={handleAdd} className='bg-blue-600 hover:bg-blue-800 text-white text-md px-4 py-3 rounded-md w-32'>
+                            <button onClick={handleAdd} className='bg-violet-600 hover:bg-violet-700 text-white text-md px-4 py-3 rounded-md w-32'>
                                 Add Product
                             </button>
                         </div>
