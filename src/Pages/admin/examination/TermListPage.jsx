@@ -8,7 +8,7 @@ import { Product_Data } from "../../../data";
 const TermListPage=()=>
 {
     return(
-        <div className='bg-gray-100 flex AddStudent'>
+        <div className='bg-slate-200 flex AddStudent'>
         <Sidebar/>
     
     <div className=' overflow-auto relative z-1 flex-col' style={{

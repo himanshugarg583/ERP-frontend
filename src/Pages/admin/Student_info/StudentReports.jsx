@@ -429,7 +429,7 @@ const StudentReports = () => {
   };
 
   return (
-    <div className='bg-gray-100 flex AddStudent'>
+    <div className='bg-slate-200 flex AddStudent'>
       <Sidebar />
 
       <div className='overflow-auto relative z-1 flex-col' style={{
@@ -441,7 +441,7 @@ const StudentReports = () => {
       }}>
         <Header />
 
-        <div className="bg-white shadow-md rounded-lg w-full max-w-7xl p-6 flex-1 overflow-auto relative z-1 m-auto text-black">
+        <div className="bg-whte shadow-sm border border-slate-200 rounded-xl w-full p-6 md:p-8 flex-1 overflow-auto relative z-1 text-black">
           <ToastContainer />
 
           {/* Page Header */}

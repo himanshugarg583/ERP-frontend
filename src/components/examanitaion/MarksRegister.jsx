@@ -57,16 +57,16 @@ const MarkRegister = () => {
 
   return (
 
-    <main className="flex-1 mt-16 p-4 md:p-6 overflow-y-auto">
+    <main className="flex-1 p-4 md:p-6 overflow-y-auto">
           <div className="container mx-auto max-w-full">
             <div className="bg-white shadow-xl rounded-xl p-4 md:p-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-indigo-600 mb-6 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-violet-700 mb-6 text-center">
                 Student Results Management
               </h2>
 
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm md:text-base">
-                  <thead className="bg-indigo-600 text-white">
+                  <thead className="bg-violet-600 text-white">
                     <tr>
                       <th className="py-2 px-2 md:py-3 md:px-4 text-left">Roll No</th>
                       <th className="py-2 px-2 md:py-3 md:px-4 text-left">Name</th>
@@ -83,7 +83,7 @@ const MarkRegister = () => {
                     {students.map((student) => (
                       <tr
                         key={student.rollNo}
-                        className="border-b hover:bg-indigo-50 transition-colors">
+                        className="border-b hover:bg-violet-50 transition-colors">
                         <td className="py-2 px-2 md:py-3 md:px-4">{student.rollNo}</td>
                         <td className="py-2 px-2 md:py-3 md:px-4">{student.name}</td>
                         <td className="py-2 px-2 md:py-3 md:px-4 hidden md:table-cell">
@@ -95,7 +95,7 @@ const MarkRegister = () => {
                         <td className="py-2 px-2 md:py-3 md:px-4 text-center">
                           <button
                             onClick={() => handleSelectStudent(student)}
-                            className="bg-indigo-600 text-white px-3 py-1 md:px-4 md:py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm md:text-base">
+                            className="bg-violet-600 text-white px-3 py-1 md:px-4 md:py-2 rounded-lg hover:bg-violet-700 transition-colors text-sm md:text-base">
                             Enter Result
                           </button>
                         </td>
@@ -106,8 +106,8 @@ const MarkRegister = () => {
               </div>
 
               {selectedStudent && (
-                <div className="mt-8 bg-indigo-50 p-4 md:p-6 rounded-lg">
-                  <h3 className="text-lg md:text-xl font-semibold text-indigo-700 mb-6">
+                <div className="mt-8 bg-violet-50 p-4 md:p-6 rounded-lg">
+                  <h3 className="text-lg md:text-xl font-semibold text-violet-700 mb-6">
                     Enter Marks for {selectedStudent.name} (Roll No: {selectedStudent.rollNo})
                   </h3>
 
@@ -133,7 +133,7 @@ const MarkRegister = () => {
                                   },
                                 }))
                               }
-                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"/>
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"/>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700">
@@ -153,7 +153,7 @@ const MarkRegister = () => {
                                   },
                                 }))
                               }
-                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"/>
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"/>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700">
@@ -173,7 +173,7 @@ const MarkRegister = () => {
                                   },
                                 }))
                               }
-                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"/>
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"/>
                           </div>
                         </div>
                       </div>
@@ -184,19 +184,19 @@ const MarkRegister = () => {
                     <div className="bg-white p-4 rounded-md shadow-sm">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-semibold text-gray-700">Total Marks:</span>
-                        <span className="text-indigo-600 font-bold text-lg">
+                        <span className="text-violet-700 font-bold text-lg">
                           {calculateResults().totalMarks}/600
                         </span>
                       </div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-semibold text-gray-700">Percentage:</span>
-                        <span className="text-indigo-600 font-bold text-lg">
+                        <span className="text-violet-700 font-bold text-lg">
                           {calculateResults().percentage}%
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="font-semibold text-gray-700">CGPA:</span>
-                        <span className="text-indigo-600 font-bold text-lg">
+                        <span className="text-violet-700 font-bold text-lg">
                           {calculateResults().cgpa}
                         </span>
                       </div>
