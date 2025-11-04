@@ -50,7 +50,7 @@ const TeacherTimeTablePage=()=>{
         },
       ];
     return(
-       <div className='bg-gray-100 flex AddStudent'>
+       <div className='bg-slate-200 flex AddStudent'>
                           <Sidebar/>
                      
                 <div className=' overflow-auto relative z-1 flex-col' style={{
@@ -61,11 +61,11 @@ const TeacherTimeTablePage=()=>{
                     transition: 'margin-left 0.3s ease'
                   }}>
                           <Header/>
-                         
-                              
-                  {/* <TeacherTimetable/> */}
-
-                  <TeacherTimeTable timetableData={sampleTimetableData} />
+                          <main className="w-full py-6 px-4 md:px-6">
+                            <div className='bg-white rounded-xl shadow-sm border border-slate-200 p-4'>
+                              <TeacherTimeTable timetableData={sampleTimetableData} />
+                            </div>
+                          </main>
                    
                           </div>   
              

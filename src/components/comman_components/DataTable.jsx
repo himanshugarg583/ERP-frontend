@@ -221,7 +221,7 @@ const DataTable = ({
       body: tableRows,
       startY: 40,
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [66, 139, 202] },
+      headStyles: { fillColor: [124, 58, 237] },
       alternateRowStyles: { fillColor: [245, 245, 245] },
     });
 
@@ -376,7 +376,7 @@ const DataTable = ({
 
             <div className="relative">
               <button 
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors duration-200 cursor-pointer"
                 onClick={() => setExportDropdownOpen(!isExportDropdownOpen)}
                 title="Export Data"
               >
@@ -407,7 +407,7 @@ const DataTable = ({
                     onClick={() => handleExport('csv')}
                     className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer rounded-b-lg"
                   >
-                    <FontAwesomeIcon icon={faFileText} className="text-blue-500" />
+                    <FontAwesomeIcon icon={faFileText} className="text-violet-600" />
                     <span className="text-gray-700">CSV</span>
                   </button>
                 </div>
@@ -418,17 +418,17 @@ const DataTable = ({
           <div className='relative flex justify-between items-center' style={{width:'30%'}}>
             <button 
               onClick={() => setAddModalOpen(true)} 
-              className='group relative text-green-500 hover:text-green-600 cursor-pointer p-3 rounded-full bg-green-50 hover:bg-green-100 transition-all duration-300 shadow-sm hover:shadow-md'
+              className='group relative text-violet-600 hover:text-violet-700 cursor-pointer p-3 rounded-full bg-violet-50 hover:bg-violet-100 transition-all duration-300 shadow-sm hover:shadow-md'
               title="Add New Entry"
             >
               <UserPlus size={20} className="transition-transform duration-200 group-hover:scale-110" />
-              <div className="absolute inset-0 rounded-full bg-green-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 rounded-full bg-violet-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </button> 
             
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl opacity-0 group-focus-within:opacity-20 transition-opacity duration-300 blur-sm"></div>
-              <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 group-focus-within:border-blue-400 transition-all duration-300 group-focus-within:shadow-xl">
-                <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-300' size={20} />
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-400 to-violet-600 rounded-xl opacity-0 group-focus-within:opacity-20 transition-opacity duration-300 blur-sm"></div>
+              <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 group-focus-within:border-violet-400 transition-all duration-300 group-focus-within:shadow-xl">
+                <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-violet-600 transition-colors duration-300' size={20} />
                 <input
                   type="text"
                   placeholder={searchPlaceholder}
@@ -452,7 +452,7 @@ const DataTable = ({
               {searchTerm && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-10">
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium text-blue-600">{filteredData.length}</span> results found for 
+                    <span className="font-medium text-violet-600">{filteredData.length}</span> results found for 
                     <span className="font-medium text-gray-800 ml-1">"{searchTerm}"</span>
                   </div>
                 </div>
@@ -491,12 +491,12 @@ const DataTable = ({
                   ))}
                   <td className='px-6 py-4 whitespace-nowrap'>
                     {onView && (
-                      <button onClick={() => handleViewClick(item)} className='text-green-500 hover:text-green-600 mr-3 cursor-pointer'>
+                      <button onClick={() => handleViewClick(item)} className='text-violet-600 hover:text-violet-700 mr-3 cursor-pointer'>
                         <FontAwesomeIcon icon={faEye} />
                       </button>
                     )}
                     {onEdit && (
-                      <button className='text-indigo-400 hover:text-indigo-300 mr-3 cursor-pointer' onClick={() => handleEditClick(item)}>
+                      <button className='text-violet-600 hover:text-violet-700 mr-3 cursor-pointer' onClick={() => handleEditClick(item)}>
                         <Edit size={18} />
                       </button>
                     )}
@@ -540,32 +540,26 @@ const DataTable = ({
         {/* Add Modal */}
         {isAddModalOpen && onAdd && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-2"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
             onClick={() => setAddModalOpen(false)}
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 w-full max-w-4xl shadow-2xl border border-gray-200 max-h-[85vh] overflow-hidden mx-auto"
-              style={{
-                position: 'relative',
-                top: '-40%',
-                left: '-0%',
-                transform: 'translate(-50%, -50%)'
-              }}
+              className="bg-white rounded-2xl p-6 w-full max-w-3xl shadow-2xl border border-slate-200 max-h-[85vh] overflow-hidden mx-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <UserPlus className="w-5 h-5 text-green-600" />
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-violet-600" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-800">Add New {title}</h3>
                 </div>
                 <button 
                   onClick={() => setAddModalOpen(false)} 
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors duration-200 cursor-pointer"
                 >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
@@ -580,32 +574,26 @@ const DataTable = ({
         {/* Edit Modal */}
         {isEditModalOpen && editItem && onEdit && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
             onClick={() => setEditModalOpen(false)}
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="bg-gradient-to-br from-white to-blue-50 rounded-2xl p-6 w-full max-w-4xl shadow-2xl border border-blue-200 max-h-[85vh] overflow-hidden mx-auto"
-              style={{
-                position: 'relative',
-                top: '-40%',
-                left: '0%',
-                transform: 'translate(-50%, -50%)'
-              }}
+              className="bg-white rounded-2xl p-6 w-full max-w-3xl shadow-2xl border border-violet-200 max-h-[85vh] overflow-hidden mx-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Edit className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <Edit className="w-5 h-5 text-violet-600" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-800">Edit {title}</h3>
                 </div>
                 <button 
                   onClick={() => setEditModalOpen(false)} 
-                  className="p-2 hover:bg-blue-100 rounded-full transition-colors duration-200 cursor-pointer"
+                  className="p-2 hover:bg-violet-100 rounded-full transition-colors duration-200 cursor-pointer"
                 >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
@@ -620,7 +608,7 @@ const DataTable = ({
         {/* View Modal */}
         {isViewModalOpen && selectedItem && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
             onClick={() => setViewModalOpen(false)}
           >
             <motion.div 
@@ -628,16 +616,10 @@ const DataTable = ({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
               className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl border border-gray-200 max-h-[90vh] overflow-hidden mx-auto"
-              style={{
-                position: 'relative',
-                top: '-30%',
-                left: '0%',
-                transform: 'translate(-50%, -50%)'
-              }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="bg-gradient-to-r from-violet-600 to-violet-500 p-6">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
@@ -645,7 +627,7 @@ const DataTable = ({
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold text-white">{title} Details</h3>
-                      <p className="text-indigo-100">ID: {selectedItem.id}</p>
+                      <p className="text-violet-100">ID: {selectedItem.id}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -689,7 +671,7 @@ const DataTable = ({
                     {/* Header Section */}
                     <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-6 border-b border-gray-200">
                       <h4 className="text-xl font-bold text-gray-800 mb-2">{title} Information</h4>
-                      <div className="w-20 h-1 bg-indigo-500 rounded"></div>
+                      <div className="w-20 h-1 bg-violet-500 rounded"></div>
                     </div>
 
                     {/* Details Grid */}
@@ -758,7 +740,7 @@ const DataTable = ({
                 <div className="flex justify-center space-x-3">
                   <button
                     onClick={() => setDeleteModalOpen(false)}
-                    className="px-6 py-2 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium cursor-pointer"
+                    className="px-6 py-2 border-2 border-violet-300 rounded-lg text-violet-700 hover:bg-violet-50 transition-colors duration-200 font-medium cursor-pointer"
                   >
                     Cancel
                   </button>

@@ -322,7 +322,7 @@ const CombinedForm = () => {
     <>
       <ToastContainer />
       <div className="">
-        <div className="max-w-7xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <div className="w-full bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
       <form onSubmit={handleSubmit}>
 
   <h2 className="text-xl font-bold mb-4">Student Details</h2>
@@ -685,7 +685,7 @@ const CombinedForm = () => {
           />
           <label
             htmlFor="tcFile"
-            className="bg-indigo-900 text-white px-4 py-2 rounded cursor-pointer"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded cursor-pointer"
           >
             Choose File
           </label>
@@ -715,7 +715,7 @@ const CombinedForm = () => {
           />
           <label
             htmlFor="marksheetFile"
-            className="bg-indigo-900 text-white px-4 py-2 rounded cursor-pointer"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded cursor-pointer"
           >
             Choose File
           </label>
@@ -745,7 +745,7 @@ const CombinedForm = () => {
           />
           <label
             htmlFor="imageFile"
-            className="bg-indigo-900 text-white px-4 py-2 rounded cursor-pointer"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded cursor-pointer"
           >
             Choose File
           </label>
@@ -775,7 +775,7 @@ const CombinedForm = () => {
           />
           <label
             htmlFor="aadharFile"
-            className="bg-indigo-900 text-white px-4 py-2 rounded cursor-pointer"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded cursor-pointer"
           >
             Choose File
           </label>
@@ -805,7 +805,7 @@ const CombinedForm = () => {
           />
           <label
             htmlFor="signFile"
-            className="bg-indigo-900 text-white px-4 py-2 rounded cursor-pointer"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded cursor-pointer"
           >
             Choose File
           </label>
@@ -823,7 +823,7 @@ const CombinedForm = () => {
       type="submit"
       disabled={loading}
       className={`px-4 py-2 text-white rounded-md cursor-pointer ${
-        loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-900 hover:bg-indigo-800'
+        loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700'
       }`}
     >
       {loading ? 'Adding Student...' : 'Submit'}

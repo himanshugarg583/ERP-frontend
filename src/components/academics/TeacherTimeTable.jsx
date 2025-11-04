@@ -80,8 +80,8 @@ const TeacherTimeTable = ({ timetableData }) => {
           document.body.innerHTML = originalBody;
         };
   return (
-<div className="w-full max-w-6xl mx-auto bg-white shadow-xl rounded-xl p-8 mt-6">
-      <h2 className="text-3xl font-bold text-blue-800 mb-6 text-center">Teacher Timetable</h2>
+<div className="w-full mx-auto p-8">
+      <h2 className="text-3xl font-bold text-violet-700 mb-6 text-center">Teacher Timetable</h2>
 
       {/* Teacher Selection */}
       <div className="mb-8">
@@ -89,7 +89,7 @@ const TeacherTimeTable = ({ timetableData }) => {
         <select
           value={selectedTeacher}
           onChange={handleTeacherChange}
-          className="w-full max-w-md mx-auto p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          className="w-full max-w-md mx-auto p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-600 transition"
         >
           <option value="">-- Select Teacher --</option>
           {teachers.map((teacher) => (
@@ -103,13 +103,13 @@ const TeacherTimeTable = ({ timetableData }) => {
       {/* Teacher's Timetable */}
       {selectedTeacher && teacherSchedule && (
         <div className="teacher-timetable-container">
-          <h3 className="text-xl font-semibold text-blue-700 mb-4 text-center">
+          <h3 className="text-xl font-semibold text-violet-700 mb-4 text-center">
             Timetable for {selectedTeacher}
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-blue-100 text-blue-800">
+                <tr className="bg-violet-100 text-violet-800">
                   <th className="border border-gray-300 p-3 text-center font-semibold">Day</th>
                   {timeSlots.map((time, index) => (
                     <th key={index} className="border border-gray-300 p-3 text-center font-semibold">
@@ -122,7 +122,7 @@ const TeacherTimeTable = ({ timetableData }) => {
               </thead>
               <tbody>
                 {days.map((day) => (
-                  <tr key={day} className="hover:bg-blue-50 transition-colors">
+                  <tr key={day} className="hover:bg-violet-50 transition-colors">
                     <td className="border border-gray-300 p-3 font-semibold text-center bg-gray-100 text-gray-800">{day}</td>
                     {teacherSchedule[day].map((slot, index) => (
                       index === 4 ? (

@@ -40,11 +40,11 @@ const CreateExamForm = () => {
   };
 
   return (
-    <div>
-            <div className="w-[1120px] bg-white shadow-lg rounded-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl m-2">
+    <div className='w-full p-4'>
+            <div className="w-full  bg-white shadow-lg rounded-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl m-2">
                 
                 <div className="p-8">
-                    <h1 className="text-2xl font-bold mb-6 text-blue-500">Create New Examination</h1>
+                    <h1 className="text-2xl font-bold mb-6 text-violet-700">Create New Examination</h1>
         
 
                     <form>
@@ -74,7 +74,7 @@ const CreateExamForm = () => {
                                         <input
                                             type="text"
                                             id="examName"
-                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200"
                                             placeholder="Mid-Term Examination 2025"
                                             required
                                         />
@@ -107,7 +107,7 @@ const CreateExamForm = () => {
                                             <input
                                                 type="date"
                                                 id="startDate"
-                                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200"
                                                 required
                                             />
                                         </div>
@@ -138,7 +138,7 @@ const CreateExamForm = () => {
                                             <input
                                                 type="date"
                                                 id="endDate"
-                                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200"
                                                 required
                                             />
                                         </div>
@@ -183,7 +183,7 @@ const CreateExamForm = () => {
                                     <textarea
                                         id="examDescription"
                                         rows="4"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200"
                                         placeholder="Enter any additional information about the examination..."
                                     ></textarea>
         
@@ -238,7 +238,7 @@ const CreateExamForm = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-6 py-2.5 bg-blue-600 text-white rounded-md font-medium hover:bg-primary-700 transition-all duration-200 transform hover:scale-105 hover:shadow-md"
+                                    className="px-6 py-2.5 bg-violet-600 text-white rounded-md font-medium hover:bg-violet-700 transition-all duration-200 transform hover:scale-105 hover:shadow-md"
                                 >
                                     Create Examination
                                 </button>

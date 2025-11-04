@@ -61,28 +61,27 @@ const AnnouncementList = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+    <Box sx={{ display: 'flex', justifyContent: 'stretch', width: '100%' }}>
       <Card
         sx={{
           width: '100%',
-          maxWidth: 400,
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+          maxWidth: 'none',
+          height: '100%',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
           borderRadius: '12px',
           background: 'linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)',
-          transition: 'transform 0.3s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-5px)',
-          },
+          transition: 'transform 0.2s ease-in-out',
+          '&:hover': { transform: 'translateY(-2px)' },
         }}
       >
         <CardHeader
-          avatar={<AnnouncementIcon sx={{ color: '#1976d2' }} />}
+          avatar={<AnnouncementIcon sx={{ color: '#7c3aed' }} />}
           title={
             <Typography
               variant="h6"
               sx={{
                 fontWeight: 600,
-                color: '#1976d2',
+                color: '#7c3aed',
                 letterSpacing: '0.5px',
               }}
             >
