@@ -88,9 +88,11 @@ import FeeDiscountPage from "./Pages/admin/fees_collection/FeeDiscountPage";
 import FeeReports from "./Pages/admin/fees_collection/FeeReports";
 import PaymentRecipt from "./Pages/admin/fees_collection/PaymentRecipt";
 import AddIncomePage from "./Pages/admin/Income/AddIncomePage";
+import IncomeHead from "./Pages/admin/Income/IncomeHead";
 import Student_Crediential from "./Pages/admin/Student_info/Student_Crediential";
 import AddTeacherPage from "./Pages/admin/teacher info/AddTeacher";
 import AddExpensePage from "./Pages/admin/Expense/AddExpensePage";
+import ExpenseHead from "./Pages/admin/Expense/ExpenseHead";
 import ClassWiseAttendance from "./Pages/admin/Attendance/ClassWiseAttendance";
 import Leave from "./Pages/admin/Attendance/LeavePage";
 import AttendanceReport from "./Pages/admin/Attendance/AttendanceReport";
@@ -115,6 +117,13 @@ import AddLibrarian from "./Pages/admin/HR/AddLibrarian.jsx";
 import TeacherManagement from "./Pages/admin/HR/TeacherManagement.jsx";
 import TeacherCredentials from "./Pages/admin/HR/TeacherCredentials.jsx";
 import HRReports from "./Pages/admin/HR/HRReports.jsx";
+import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
+import StudyMaterial from "./Pages/admin/DownloadCenter/StudyMaterial.jsx";
+// Certificates
+import TcPage from "./Pages/admin/Certificates/TcPage.jsx";
+import StudentIdPage from "./Pages/admin/Certificates/StudentIdPage.jsx";
+import StaffCertificate from "./Pages/admin/Certificates/StaffCertificate.jsx";
+import StaffIdCard from "./Pages/admin/Certificates/StaffIdCard.jsx";
 
 // online learning
 import OnlineLearningDash from "./Pages/OnlineLearning/OnlineLearningDash";
@@ -226,6 +235,7 @@ const routes = {
     { path: "/FeeReports", element: <FeeReports /> },
     { path: "/ChequePage", element: <ChequePage /> },
     { path: "/AddIncome", element: <AddIncomePage /> },
+    { path: "/IncomeHead", element: <IncomeHead /> },
     { path: "/Admissionenquiry", element: <EnquiryPage/> },
     { path: "/AddStudents", element: <AddStudent/> },
     { path: "/Student_Crediential", element: <Student_Crediential/> },
@@ -238,6 +248,7 @@ const routes = {
     { path: "/AddIncome", element: <AddIncomePage/> },
     { path: "/AddTeacher", element: <AddTeacherPage/> },
     { path: "/AddExpense", element: <AddExpensePage/> },
+    { path: "/ExpenseHead", element: <ExpenseHead/> },
     { path: "/ClassAttendance", element: <ClassWiseAttendance/> },
     { path: "/leave", element: <Leave/> },
     { path: "/AttendanceReport", element: <AttendanceReport/> },
@@ -263,6 +274,13 @@ const routes = {
     { path: "/AddAccontantPage", element: <AddAccontantPage/> },
     { path: "/AddStaff", element: <AddStaff/> },
     { path: "/AddLibrarian", element: <AddLibrarian/> },
+    { path: "/UploadContent", element: <UploadContent /> },
+    { path: "/StudyMaterial", element: <StudyMaterial /> },
+    // Certificates
+    { path: "/TcPage", element: <TcPage /> },
+    { path: "/StudentIdPage", element: <StudentIdPage /> },
+    { path: "/StaffCertificate", element: <StaffCertificate /> },
+    { path: "/StaffIdCard", element: <StaffIdCard /> },
 
       
 

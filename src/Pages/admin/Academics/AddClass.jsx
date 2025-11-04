@@ -97,7 +97,7 @@ const AddClass = () => {
   };
 
   return (
-    <div className='bg-gray-100 flex AddStudent'>
+    <div className='bg-slate-200 flex AddStudent'>
       <Sidebar />
       
       <div className='overflow-auto relative z-1 flex-col' style={{
@@ -109,7 +109,7 @@ const AddClass = () => {
       }}>
         <Header />
         
-        <div className="flex-1 p-2">
+        <div className="flex-1 p-4 md:p-6">
           <CreateClass />
           
           {/* Filter Component */}

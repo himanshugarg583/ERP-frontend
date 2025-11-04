@@ -111,8 +111,8 @@ const ClassTimeTable = ({ classes, onSave }) => {
 
   return (
 
-<div className="w-full max-w-6xl mx-auto bg-white shadow-xl rounded-xl p-8 mt-6">
-      <h2 className="text-3xl font-bold text-blue-800 mb-6 text-center">Create Timetable</h2>
+<div className="w-full mx-auto p-8">
+      <h2 className="text-3xl font-bold text-violet-700 mb-6 text-center">Create Timetable</h2>
 
       {/* Class and Section Selection */}
       <div className="flex gap-6 mb-8">
@@ -121,7 +121,7 @@ const ClassTimeTable = ({ classes, onSave }) => {
           <select
             value={selectedClass}
             onChange={handleClassChange}
-            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-600 transition"
           >
             <option value="">-- Select Class --</option>
             {classOptions.map((cls) => (
@@ -137,7 +137,7 @@ const ClassTimeTable = ({ classes, onSave }) => {
             value={selectedSection}
             onChange={handleSectionChange}
             disabled={!selectedClass}
-            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-600 transition"
           >
             <option value="">-- Select Section --</option>
             {selectedClass &&
@@ -155,13 +155,13 @@ const ClassTimeTable = ({ classes, onSave }) => {
       {/* Timetable Table */}
       {selectedClass && selectedSection && timetable && (
         <div className="timetable-container">
-          <h3 className="text-xl font-semibold text-blue-700 mb-4 text-center">
+          <h3 className="text-xl font-semibold text-violet-700 mb-4 text-center">
             Timetable for {selectedClass} - Section {selectedSection}
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-blue-100 text-blue-800">
+                <tr className="bg-violet-100 text-violet-800">
                   <th className="border border-gray-300 p-3 text-center font-semibold">Day</th>
                   {timeSlots.map((time, index) => (
                     <th key={index} className="border border-gray-300 p-3 text-center font-semibold">
@@ -174,7 +174,7 @@ const ClassTimeTable = ({ classes, onSave }) => {
               </thead>
               <tbody>
                 {days.map((day) => (
-                  <tr key={day} className="hover:bg-blue-50 transition-colors">
+                  <tr key={day} className="hover:bg-violet-50 transition-colors">
                     <td className="border border-gray-300 p-3 font-semibold text-center bg-gray-100 text-gray-800">{day}</td>
                     {timetable[day].map((slot, index) => (
                       index === 4 ? (
@@ -186,7 +186,7 @@ const ClassTimeTable = ({ classes, onSave }) => {
                           <select
                             value={slot.subject}
                             onChange={(e) => handleChange(day, index, 'subject', e.target.value)}
-                            className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-violet-600 bg-white"
                           >
                             <option value="">-- Select Subject --</option>
                             {subjects.map((subject) => (
@@ -198,7 +198,7 @@ const ClassTimeTable = ({ classes, onSave }) => {
                           <select
                             value={slot.teacher}
                             onChange={(e) => handleChange(day, index, 'teacher', e.target.value)}
-                            className="w-full p-2 mt-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className="w-full p-2 mt-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-violet-600 bg-white"
                           >
                             <option value="">-- Select Teacher --</option>
                             {teachers.map((teacher) => (
@@ -224,7 +224,7 @@ const ClassTimeTable = ({ classes, onSave }) => {
           <div className="mt-8 flex justify-center gap-4">
             <button
               onClick={handleSave}
-              className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition shadow-md"
+              className="bg-violet-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-violet-700 transition shadow-md"
             >
               Save Timetable
             </button>

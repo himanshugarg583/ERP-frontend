@@ -7,38 +7,29 @@ import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import LeaveComponent from "../../../components/attendance/LeaveComponent";
 
-const Leave=()=>{
-    return(
-        <div className='bg-gray-100 flex AddStudent'>
-        <Sidebar/>
-    
-    <div className=' overflow-auto relative z-1 flex-col' style={{
-    height: '95vh',
-    width: '100vw',
-    gap:'10px',
-    display: 'flex',
-    transition: 'margin-left 0.3s ease'
-    }}>
-      <Header />
-    
-      
-    
-    
-      <main className="">
-     
-        <LeaveComponent/>
-    
-           
-            
-    
-         
-    
-    
-      </main>
+const Leave = () => {
+  return (
+    <div className="bg-slate-200 flex AddStudent">
+      <Sidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="">
+          <LeaveComponent />
+        </main>
+      </div>
     </div>
-    
-    </div>
-    )
-}
+  );
+};
 
 export default Leave;

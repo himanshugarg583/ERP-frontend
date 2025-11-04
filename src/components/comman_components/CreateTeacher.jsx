@@ -72,8 +72,9 @@ const CreateTeacher = ({formtitle}) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-      <h1 className="text-2xl font-bold mb-6">{formtitle}</h1>
+   <div className="w-full p-4">
+     <div className="w-full mx-auto bg-white p-8 rounded-lg shadow-lg">
+      <h1 className="text-2xl font-bold mb-6 text-violet-700">{formtitle}</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Teacher Name */}
@@ -84,7 +85,7 @@ const CreateTeacher = ({formtitle}) => {
             <input
               type="text"
               {...register("name", { required: "Teacher Name is required" })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
               placeholder="Teacher Name"
             />
             {errors.name && (
@@ -106,7 +107,7 @@ const CreateTeacher = ({formtitle}) => {
                   message: "Invalid email address",
                 },
               })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
               placeholder="Email"
             />
             {errors.email && (
@@ -128,7 +129,7 @@ const CreateTeacher = ({formtitle}) => {
                   message: "Password must be at least 6 characters",
                 },
               })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
               placeholder="Password"
             />
             {errors.password && (
@@ -147,7 +148,7 @@ const CreateTeacher = ({formtitle}) => {
                 id="male"
                 value="Male"
                 {...register("gender", { required: "Gender is required" })}
-                className="h-4 w-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                className="h-4 w-4 text-violet-600 border-gray-300 focus:ring-violet-600"
               />
               <label htmlFor="male" className="ml-2 text-gray-700">Male</label>
               <input
@@ -155,7 +156,7 @@ const CreateTeacher = ({formtitle}) => {
                 id="female"
                 value="Female"
                 {...register("gender")}
-                className="ml-6 h-4 w-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                className="ml-6 h-4 w-4 text-violet-600 border-gray-300 focus:ring-violet-600"
               />
               <label htmlFor="female" className="ml-2 text-gray-700">Female</label>
             </div>
@@ -178,7 +179,7 @@ const CreateTeacher = ({formtitle}) => {
                   message: "Mobile must be 10 digits",
                 },
               })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
               placeholder="Mobile"
             />
             {errors.mobile && (
@@ -194,7 +195,7 @@ const CreateTeacher = ({formtitle}) => {
             <input
               type="date"
               {...register("dob", { required: "Date of Birth is required" })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
             />
             {errors.dob && (
               <p className="text-red-500 text-sm">{errors.dob.message}</p>
@@ -209,7 +210,7 @@ const CreateTeacher = ({formtitle}) => {
             <input
               type="text"
               {...register("qualification", { required: "Qualification is required" })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
               placeholder="Qualification"
             />
             {errors.qualification && (
@@ -225,7 +226,7 @@ const CreateTeacher = ({formtitle}) => {
             <input
               type="text"
               {...register("currentaddress", { required: "Current Address is required" })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
               placeholder="Current Address"
             />
             {errors.currentaddress && (
@@ -241,7 +242,7 @@ const CreateTeacher = ({formtitle}) => {
             <input
               type="text"
               {...register("permenantaddress", { required: "Permanent Address is required" })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
               placeholder="Permanent Address"
             />
             {errors.permenantaddress && (
@@ -257,7 +258,7 @@ const CreateTeacher = ({formtitle}) => {
             <input
               type="date"
               {...register("joining_date", { required: "Joining Date is required" })}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-violet-600"
             />
             {errors.joining_date && (
               <p className="text-red-500 text-sm">{errors.joining_date.message}</p>
@@ -324,7 +325,7 @@ const CreateTeacher = ({formtitle}) => {
 
         <button
           type="submit"
-          className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-md"
+          className="mt-6 bg-violet-600 hover:bg-violet-700 text-white px-6 py-2 rounded-md"
           disabled={loading}
         >
           {loading ? "Adding..." : "Add Teacher"}
@@ -332,6 +333,7 @@ const CreateTeacher = ({formtitle}) => {
         
       </form>
     </div>
+   </div>
   );
 };
 

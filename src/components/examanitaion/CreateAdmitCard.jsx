@@ -297,7 +297,8 @@ const CreateAdmitCard = ({tabletitle,Product_Data,title1,title2,title3,title4,ti
       };
 
     return (
-        <motion.div
+       <div className='w-full p-4'>
+         <motion.div
             className='bg-white  shadow-lg backdrop-blur-md rounded-xl p-5   mb-6 relative z-1'
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
@@ -309,17 +310,17 @@ const CreateAdmitCard = ({tabletitle,Product_Data,title1,title2,title3,title4,ti
         
         <div class="border-b pb-4 mb-4">
             <h2 class="text-lg font-semibold text-gray-700 flex items-center">
-                <i class="fas fa-search text-blue-500 mr-2"></i> Select Criteria
+                <i class="fas fa-search text-violet-600 mr-2"></i> Select Criteria
             </h2>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label class="block text-gray-700">Exam Name</label>
-                <input type="text" class="text-black mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter Name" onChange={SearchHandler2}/>
+                <input type="text" class="text-black mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent" placeholder="Enter Name" onChange={SearchHandler2}/>
             </div>
             <div>
-                <label class="block text-gray-700">Class<i class="fas fa-calendar-alt text-blue-500"></i></label>
+                <label class="block text-gray-700">Class<i class="fas fa-calendar-alt text-violet-600"></i></label>
                 {/* <input type="text" class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500" placeholder="Enter Start Date" onChange={SearchHandler3}/> */}
                 <select class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500" placeholder="Enter Start Date" onChange={SearchHandler3}>
                 <option>select</option>
@@ -329,7 +330,7 @@ const CreateAdmitCard = ({tabletitle,Product_Data,title1,title2,title3,title4,ti
                 </select>
             </div>
             <div>
-                <label class="block text-gray-700">Section<i class="fas fa-calendar-alt text-blue-500"></i></label>
+                <label class="block text-gray-700">Section<i class="fas fa-calendar-alt text-violet-600"></i></label>
                 
                 <select class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500" placeholder="Enter Start Date" >
                 <option>select</option>
@@ -342,7 +343,7 @@ const CreateAdmitCard = ({tabletitle,Product_Data,title1,title2,title3,title4,ti
         </div>
 
         <div class="mt-6 flex justify-end">
-            <button class="bg-blue-900 text-white px-4 py-2 rounded-md flex items-center" onClick={Search3}>
+            <button class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-md flex items-center" onClick={Search3}>
                 <i class="fas fa-search mr-2"></i> Search
             </button>
         </div>
@@ -415,6 +416,7 @@ const CreateAdmitCard = ({tabletitle,Product_Data,title1,title2,title3,title4,ti
 
 
         </motion.div>
+       </div>
     );
 };
 

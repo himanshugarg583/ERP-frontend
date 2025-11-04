@@ -145,9 +145,9 @@ const ReusableTable = ({
     return (
       <div className="space-y-4">
         {/* Colorful Header */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-3 text-center">
+        <div className="bg-gradient-to-r from-violet-600 to-violet-500 rounded-lg p-3 text-center">
           <h4 className="text-white text-lg font-bold mb-1">Add New {title}</h4>
-          <p className="text-green-100 text-xs">Fill in the details below to create a new {title.toLowerCase()}</p>
+          <p className="text-violet-100 text-xs">Fill in the details below to create a new {title.toLowerCase()}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -163,7 +163,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-green-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
                     required={column.required}
                   >
                     <option value="">Select {column.header}</option>
@@ -178,7 +178,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-green-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
                     placeholder={column.placeholder || `Enter ${column.header}`}
                     required={column.required}
                     rows={3}
@@ -189,7 +189,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-green-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
                     placeholder={column.placeholder || `Enter ${column.header}`}
                     required={column.required}
                     min={column.min}
@@ -205,7 +205,7 @@ const ReusableTable = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium text-sm"
+              className="px-4 py-2 border-2 border-violet-300 rounded-lg text-violet-700 hover:bg-violet-50 transition-colors duration-200 font-medium text-sm"
             >
               Cancel
             </button>
@@ -215,7 +215,7 @@ const ReusableTable = ({
               className={`px-4 py-2 text-white rounded-lg font-medium transition-colors duration-200 text-sm ${
                 formLoading 
                   ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                  : 'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-700 hover:to-violet-600'
               }`}
             >
               {formLoading ? 'Adding...' : `Add ${title}`}
@@ -269,9 +269,9 @@ const ReusableTable = ({
     return (
       <div className="space-y-4">
         {/* Colorful Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-3 text-center">
+        <div className="bg-gradient-to-r from-violet-600 to-violet-500 rounded-lg p-3 text-center">
           <h4 className="text-white text-lg font-bold mb-1">Edit {title}</h4>
-          <p className="text-blue-100 text-xs">Update the details below to modify this {title.toLowerCase()}</p>
+          <p className="text-violet-100 text-xs">Update the details below to modify this {title.toLowerCase()}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -287,7 +287,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
                     required={column.required}
                   >
                     <option value="">Select {column.header}</option>
@@ -302,7 +302,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
                     required={column.required}
                     rows={3}
                   />
@@ -312,7 +312,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
                     required={column.required}
                     min={column.min}
                     max={column.max}
@@ -330,7 +330,7 @@ const ReusableTable = ({
                 setEditingItem(null); // Clear editing item
                 onClose();
               }}
-              className="px-4 py-2 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium text-sm"
+              className="px-4 py-2 border-2 border-violet-300 rounded-lg text-violet-700 hover:bg-violet-50 transition-colors duration-200 font-medium text-sm"
             >
               Cancel
             </button>
@@ -340,7 +340,7 @@ const ReusableTable = ({
               className={`px-4 py-2 text-white rounded-lg font-medium transition-colors duration-200 text-sm ${
                 formLoading 
                   ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
+                  : 'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-700 hover:to-violet-600'
               }`}
             >
               {formLoading ? 'Updating...' : `Update ${title}`}

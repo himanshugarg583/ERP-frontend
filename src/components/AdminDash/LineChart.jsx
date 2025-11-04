@@ -16,18 +16,18 @@ const LineChart = () => {
   return (
     <Card
     sx={{
-      maxWidth: 800,
-      margin: 'auto',
-      boxShadow: 3, // Material Design elevation
-      borderRadius: 2, // Rounded corners
-      backgroundColor: '#F5F5F5', // Light gray background
+      width: '100%',
+      boxShadow: 2,
+      borderRadius: 2,
+      backgroundColor: '#FFFFFF',
+      border: '1px solid #e5e7eb',
     }}
   >
     <CardContent>
       <Typography
         variant="h5"
         gutterBottom
-        sx={{ fontFamily: 'Roboto', fontWeight: 500, color: '#3F51B5' }}
+        sx={{ fontFamily: 'Roboto', fontWeight: 600, color: '#7C3AED' }}
       >
         Monthly Fee Collection - 2024-25
       </Typography>
@@ -37,7 +37,7 @@ const LineChart = () => {
           {
             data: feeData,
             label: 'Fees Collected',
-            color: '#3F51B5', // Indigo from Material palette
+            color: '#7C3AED',
           },
         ]}
         width={700}
