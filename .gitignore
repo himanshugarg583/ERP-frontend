@@ -47,3 +47,4 @@ temp/
 # Ignore specific database files
 *.sqlite
 *.db
+config.bat

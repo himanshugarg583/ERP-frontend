@@ -98,8 +98,8 @@ const LeaveComponent = () => {
   };
   
   return (
-    <div className="bg-gray-100 min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="bg-slate-200 min-h-screen p-6 rounded-md">
+      <div className="w-full mx-auto">
         {/* <header className="bg-blue-600 text-white p-4 rounded-t-lg shadow">
           <h1 className="text-2xl font-bold">School Management System</h1>
         </header> */}
@@ -244,7 +244,7 @@ const LeaveComponent = () => {
         {/* Leave Application Tab */}
         {/* {activeTab === 'leave' && (
           <> */}
-            <div className="bg-white shadow-md p-6 mb-6">
+            <div className="bg-white shadow-md p-6 mb-6 rounded-lg">
               <div className="flex items-center mb-6">
                 <h2 className="text-xl font-semibold">Apply for Student Leave</h2>
               </div>
@@ -326,7 +326,7 @@ const LeaveComponent = () => {
                 </div>
                 
                 <div className="mt-6">
-                  <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  <button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded">
                     Submit Leave Application
                   </button>
                 </div>
