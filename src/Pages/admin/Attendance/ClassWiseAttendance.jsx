@@ -12,60 +12,95 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { useState, useEffect } from "react";
+import { fetchAllClassesForAttendance, fetchStudentsByClass, markAttendance } from "../../../helper/requests-method/apiMethods";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ClassWiseAttendance = () => {
   const [activeMenu, setActiveMenu] = useState("Attendance");
   const [activeClass, setActiveClass] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
-
-  const teacherClasses = [
-    {
-      id: 1,
-      name: "Class 10A",
-      subject: "Mathematics",
-      students: generateStudents(8, "10A"),
-    },
-    {
-      id: 2,
-      name: "Class 9B",
-      subject: "Mathematics",
-      students: generateStudents(6, "9B"),
-    },
-    {
-      id: 3,
-      name: "Class 11C",
-      subject: "Physics",
-      students: generateStudents(9, "11C"),
-    },
-    {
-      id: 4,
-      name: "Class 11D",
-      subject: "Chemistry",
-      students: generateStudents(9, "11D"),
-    },
-  ];
-
-  function generateStudents(count, className) {
-    return Array.from({ length: count }, (_, index) => ({
-      id: index + 1,
-      name: `Student ${index + 1}`,
-      rollNo: `${className}${String(index + 1).padStart(2, "0")}`,
-      present: false,
-    }));
-  }
+  const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    const initialAttendanceData = {};
-    teacherClasses.forEach((classItem) => {
-      initialAttendanceData[classItem.id] = classItem.students.map(
-        (student) => ({
-          ...student,
-          present: false,
-        })
-      );
-    });
-    setAttendanceData(initialAttendanceData);
+    fetchClasses();
   }, []);
+
+  useEffect(() => {
+    if (activeClass) {
+      fetchStudentsForClass(activeClass);
+    }
+  }, [activeClass]);
+
+  const fetchClasses = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetchAllClassesForAttendance();
+      if (response.success && response.data && response.data.classes) {
+        const mappedClasses = response.data.classes.map((classItem) => ({
+          id: classItem.id,
+          name: `${classItem.class_name}${classItem.section_name ? ` - ${classItem.section_name}` : ''}`,
+          class_name: classItem.class_name,
+          section_name: classItem.section_name || '',
+          subject: classItem.classTeacher?.User?.name || 'No Teacher Assigned',
+          teacherName: classItem.classTeacher?.User?.name || null,
+          roomNo: classItem.room_No || null,
+          capacity: classItem.capacity || null,
+          students: [],
+        }));
+        setClasses(mappedClasses);
+      } else {
+        toast.error('Failed to fetch classes');
+        setClasses([]);
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      toast.error(error.response?.data?.message || 'Error fetching classes');
+      setClasses([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchStudentsForClass = async (classId) => {
+    try {
+      setIsLoadingStudents(true);
+      const response = await fetchStudentsByClass(classId);
+      if (response.success && response.data && response.data.students) {
+        const mappedStudents = response.data.students.map((student) => ({
+          id: student.id,
+          student_id: student.id,
+          name: student.User?.name || 'Unknown',
+          rollNo: student.roll_number || '',
+          present: false,
+        }));
+        setStudents(mappedStudents);
+        
+        // Initialize attendance data for this class
+        setAttendanceData((prevData) => ({
+          ...prevData,
+          [classId]: mappedStudents.map((student) => ({
+            ...student,
+            present: false,
+          })),
+        }));
+      } else {
+        toast.error('Failed to fetch students');
+        setStudents([]);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast.error(error.response?.data?.message || 'Error fetching students');
+      setStudents([]);
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  };
 
   const handleMenuClick = (menuName) => {
     setActiveMenu(menuName);
@@ -74,14 +109,6 @@ const ClassWiseAttendance = () => {
 
   const handleClassClick = (classId) => {
     setActiveClass(classId);
-  };
-
-  const handleNotificationClick = () => {
-    setNotificationCount(0);
-  };
-
-  const handleMailClick = () => {
-    setMailCount(0);
   };
 
   const handleAttendanceChange = (classId, studentId, isPresent) => {
@@ -125,6 +152,40 @@ const ClassWiseAttendance = () => {
     return { total, present, absent, percentage };
   };
 
+  const handleSaveAttendance = async () => {
+    if (!activeClass || !attendanceData[activeClass]) {
+      toast.error('No attendance data to save');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const attendancePayload = {
+        class_section_id: activeClass,
+        date: selectedDate,
+        attendances: attendanceData[activeClass].map((student) => ({
+          student_id: student.student_id || student.id,
+          status: student.present ? 'present' : 'absent',
+        })),
+      };
+
+      const response = await markAttendance(attendancePayload);
+      
+      if (response.success || response.message) {
+        toast.success(response.message || 'Attendance marked successfully');
+        // Optionally refresh students data or navigate back
+        setActiveClass(null);
+      } else {
+        toast.error('Failed to mark attendance');
+      }
+    } catch (error) {
+      console.error('Error marking attendance:', error);
+      toast.error(error.response?.data?.message || 'Error marking attendance');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="bg-slate-200 flex AddStudent">
       <Sidebar />
@@ -162,24 +223,29 @@ const ClassWiseAttendance = () => {
                         <div>
                           <h3 className="text-xl font-semibold text-gray-800">
                             {
-                              teacherClasses.find((c) => c.id === activeClass)
+                              classes.find((c) => c.id === activeClass)
                                 ?.name
                             }
                           </h3>
                           <p className="text-sm text-gray-500">
-                            Subject:{" "}
+                            Teacher:{" "}
                             {
-                              teacherClasses.find((c) => c.id === activeClass)
+                              classes.find((c) => c.id === activeClass)
                                 ?.subject
                             }
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center">
-                        <div className="flex items-center mr-4 text-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center text-sm">
                           <FaCalendarAlt className="mr-1 text-gray-600" />
-                          <span>{new Date().toLocaleDateString()}</span>
+                          <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-600"
+                          />
                         </div>
                         <div className="flex items-center text-sm">
                           <FaRegClock className="mr-1 text-gray-600" />
@@ -243,8 +309,12 @@ const ClassWiseAttendance = () => {
                         <FaCheck className="mr-2" />
                         Mark All Present
                       </button>
-                      <button className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-md transition-colors shadow-sm">
-                        Save Attendance
+                      <button 
+                        onClick={handleSaveAttendance}
+                        disabled={isSaving}
+                        className="bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-colors shadow-sm"
+                      >
+                        {isSaving ? 'Saving...' : 'Save Attendance'}
                       </button>
                     </div>
 
@@ -256,7 +326,16 @@ const ClassWiseAttendance = () => {
                         <div className="col-span-2 text-center">Status</div>
                       </div>
                       <div className="max-h-[300px] overflow-y-auto">
-                        {attendanceData[activeClass]?.map((student, index) => (
+                        {isLoadingStudents ? (
+                          <div className="flex justify-center items-center py-10">
+                            <p className="text-gray-600">Loading students...</p>
+                          </div>
+                        ) : attendanceData[activeClass]?.length === 0 ? (
+                          <div className="flex justify-center items-center py-10">
+                            <p className="text-gray-600">No students found in this class</p>
+                          </div>
+                        ) : (
+                          attendanceData[activeClass]?.map((student, index) => (
                           <div
                             key={student.id}
                             className={`grid grid-cols-12 p-3 ${
@@ -305,13 +384,24 @@ const ClassWiseAttendance = () => {
                               </div>
                             </div>
                           </div>
-                        ))}
+                        ))
+                        )}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {teacherClasses.map((classItem) => (
+                  <div>
+                    {isLoading ? (
+                      <div className="flex justify-center items-center py-10">
+                        <p className="text-gray-600">Loading classes...</p>
+                      </div>
+                    ) : classes.length === 0 ? (
+                      <div className="flex justify-center items-center py-10">
+                        <p className="text-gray-600">No classes found</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {classes.map((classItem) => (
                       <div
                         key={classItem.id}
                         className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200 hover:border-violet-300 cursor-pointer transform hover:-translate-y-1 transition-transform"
@@ -322,8 +412,13 @@ const ClassWiseAttendance = () => {
                             {classItem.name}
                           </h3>
                           <p className="text-violet-100 text-sm mt-1">
-                            Subject: {classItem.subject}
+                            Teacher: {classItem.subject}
                           </p>
+                          {classItem.roomNo && (
+                            <p className="text-violet-100 text-xs mt-1">
+                              Room: {classItem.roomNo}
+                            </p>
+                          )}
                         </div>
                         <div className="p-5">
                           <div className="flex items-center mb-4">
@@ -335,7 +430,7 @@ const ClassWiseAttendance = () => {
                           <div className="flex items-center mb-4">
                             <FaUsers className="text-violet-600 mr-2" />
                             <span className="text-gray-700">
-                              {classItem.students.length} students
+                              {classItem.capacity ? `${classItem.capacity} capacity` : 'Students'}
                             </span>
                           </div>
                           <div className="bg-violet-50 p-3 rounded-lg mt-4">
@@ -373,6 +468,8 @@ const ClassWiseAttendance = () => {
                         </div>
                       </div>
                     ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -396,9 +493,11 @@ const ClassWiseAttendance = () => {
             )}
           </div>
         </main>
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </div>
   );
 };
 
 export default ClassWiseAttendance;
+

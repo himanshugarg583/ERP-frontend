@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { addIncome } from '../../helper/requests-method/apiMethods';
+import { addExpense } from '../../helper/requests-method/apiMethods';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const IncomeForm = () => {
+const ExpenseForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const {
@@ -24,7 +24,7 @@ const IncomeForm = () => {
     try {
       setIsSubmitting(true);
       
-      // Prepare payload for income (without entry_type)
+      // Prepare payload for expense (without entry_type)
       const payload = {
         category: data.category,
         sub_category: data.sub_category,
@@ -36,15 +36,15 @@ const IncomeForm = () => {
         recorded_by: data.recorded_by,
       };
 
-      const response = await addIncome(payload);
+      const response = await addExpense(payload);
       
       if (response.success || response.message) {
-        toast.success(response.message || 'Income added successfully!');
+        toast.success(response.message || 'Expense added successfully!');
         reset();
-        // Trigger refresh of income table
-        window.dispatchEvent(new Event('incomeAdded'));
+        // Trigger refresh of expense table
+        window.dispatchEvent(new Event('expenseAdded'));
       } else {
-        toast.error('Failed to add income');
+        toast.error('Failed to add expense');
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -64,7 +64,7 @@ const IncomeForm = () => {
     >
       <div className="text-black p-4" style={{padding:'-10px'}}>
         <h2 className="text-xl font-semibold mb-1 flex items-center">
-          <i className="fas fa-edit mr-2"></i> Add Income
+          <i className="fas fa-edit mr-2"></i> Add Expense
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="">
@@ -211,4 +211,5 @@ const IncomeForm = () => {
   );
 }
 
-export default IncomeForm;
+export default ExpenseForm;
+

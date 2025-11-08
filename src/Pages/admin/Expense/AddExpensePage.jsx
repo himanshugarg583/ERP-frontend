@@ -1,9 +1,10 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, DollarSign, Package, TrendingUp } from 'lucide-react'
+import { ToastContainer } from 'react-toastify'
 import StatCards from '../../../components/comman_components/StatsCards'
-import ProductTable from '../../../components/Income/IncomeTable'
-import AddIncome from '../../../components/Income/IncomeForm'
+import ExpenseTable from '../../../components/Expense/ExpenseTable'
+import ExpenseForm from '../../../components/Expense/ExpenseForm'
 import Sidebar from '../Sidebar'
 import Header from '../../../components/comman_components/Header'
 import PageHeader from '../../../components/comman_components/PageHeader'
@@ -37,12 +38,12 @@ const AddExpensePage = () => {
             <div className='col-span-12 lg:col-span-4'>
               <div className='bg-white shadow-sm border border-slate-200 rounded-xl p-4 h-full'>
                 <PageHeader pageheading ="Expense" Subheading="Add Expense" className="m-auto"/> 
-                <AddIncome/>
+                <ExpenseForm/>
               </div>
             </div>
             <div className='col-span-12 lg:col-span-8'>
               <div className='bg-white shadow-sm border border-slate-200 rounded-xl p-0 h-full'>
-                <ProductTable />
+                <ExpenseTable />
               </div>
             </div>
         </div>
@@ -55,6 +56,7 @@ const AddExpensePage = () => {
 
 
       </main>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
 
     </div>

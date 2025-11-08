@@ -43,7 +43,7 @@ const AdminLogin = () => {
         console.log(response);
   
         if (response.role === "admin") {
-          navigate("/AdminDashboardPage");
+          navigate("/admin/dashboard");
         }
   
       } catch (error) {

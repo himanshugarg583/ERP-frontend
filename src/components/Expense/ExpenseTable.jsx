@@ -5,8 +5,9 @@ import { faEye } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPrint,faCoffee,faUser,faLanguage,faFileExcel,faFilePdf,faFileText} from '@fortawesome/free-solid-svg-icons';
 import ReactModal from "react-modal";
-import { getAllIncome, updateIncome, deleteIncome } from '../../helper/requests-method/apiMethods';
+import { getAllExpense, updateExpense, deleteExpense } from '../../helper/requests-method/apiMethods';
 import { toast } from 'react-toastify';
+
 const Receipt = ({ isOpen, onClose, receiptData }) => {
   const printReceipt = () => {
     const printContent = document.getElementById("receipt-print").innerHTML;
@@ -44,7 +45,7 @@ const Receipt = ({ isOpen, onClose, receiptData }) => {
       <div id="receipt-print">
         <div className="w-[768px] bg-white rounded-md shadow-lg overflow-hidden m-auto">
           <div className="bg-purple-900 text-white p-4 flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Income Receipt</h2>
+            <h2 className="text-xl font-semibold">Expense Receipt</h2>
             <button className="text-white text-xl hover:text-gray-300 transition-colors duration-300" onClick={onClose}>
               <X size={22} />
             </button>
@@ -83,8 +84,8 @@ const Receipt = ({ isOpen, onClose, receiptData }) => {
             </div>
 
             <div className="flex justify-center mb-6">
-              <button className="py-2 px-10 rounded-full transition-all duration-300 transform hover:scale-105 bg-green-500 hover:bg-green-600 text-white">
-                Income Receipt
+              <button className="py-2 px-10 rounded-full transition-all duration-300 transform hover:scale-105 bg-red-500 hover:bg-red-600 text-white">
+                Expense Receipt
               </button>
             </div>
 
@@ -132,9 +133,9 @@ const Receipt = ({ isOpen, onClose, receiptData }) => {
 };
 
 
-const IncomeTable = () => {
+const ExpenseTable = () => {
     const [searchTerm, setSearchTerm] = useState("");
-    const [incomeExpenseData, setIncomeExpenseData] = useState([]);
+    const [expenseData, setExpenseData] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -147,22 +148,22 @@ const IncomeTable = () => {
     const itemsPerPage = 10;
     
 
-    const fetchIncomeData = async () => {
+    const fetchExpenseData = async () => {
       try {
         setIsLoading(true);
-        const response = await getAllIncome();
-        if (response.success && response.data && response.data.incomes) {
-          setIncomeExpenseData(response.data.incomes);
-          setFilteredProducts(response.data.incomes);
+        const response = await getAllExpense();
+        if (response.success && response.data && response.data.expenses) {
+          setExpenseData(response.data.expenses);
+          setFilteredProducts(response.data.expenses);
         } else {
-          toast.error('Failed to fetch income data');
-          setIncomeExpenseData([]);
+          toast.error('Failed to fetch expense data');
+          setExpenseData([]);
           setFilteredProducts([]);
         }
       } catch (error) {
-        console.error('Error fetching income data:', error);
-        toast.error(error.response?.data?.message || 'Error fetching income data');
-        setIncomeExpenseData([]);
+        console.error('Error fetching expense data:', error);
+        toast.error(error.response?.data?.message || 'Error fetching expense data');
+        setExpenseData([]);
         setFilteredProducts([]);
       } finally {
         setIsLoading(false);
@@ -170,14 +171,14 @@ const IncomeTable = () => {
     };
 
     useEffect(() => {
-      fetchIncomeData();
-      // Listen for refresh event from IncomeForm
-      const handleIncomeAdded = () => {
-        fetchIncomeData();
+      fetchExpenseData();
+      // Listen for refresh event from ExpenseForm
+      const handleExpenseAdded = () => {
+        fetchExpenseData();
       };
-      window.addEventListener('incomeAdded', handleIncomeAdded);
+      window.addEventListener('expenseAdded', handleExpenseAdded);
       return () => {
-        window.removeEventListener('incomeAdded', handleIncomeAdded);
+        window.removeEventListener('expenseAdded', handleExpenseAdded);
       };
     }, []);
 
@@ -186,7 +187,7 @@ const IncomeTable = () => {
     const SearchHandler = (e) => {
         const term = e.target.value.toLowerCase();
         setSearchTerm(term);
-        const filtered = incomeExpenseData.filter(item =>
+        const filtered = expenseData.filter(item =>
             item.category?.toLowerCase().includes(term) ||
             item.sub_category?.toLowerCase().includes(term) ||
             item.recorded_by?.toLowerCase().includes(term) ||
@@ -211,18 +212,18 @@ const IncomeTable = () => {
         if (!itemToDelete) return;
         
         try {
-            const response = await deleteIncome(itemToDelete.id);
+            const response = await deleteExpense(itemToDelete.id);
             if (response.success || response.message) {
-                toast.success(response.message || 'Income deleted successfully');
+                toast.success(response.message || 'Expense deleted successfully');
                 setIsDeleteModalOpen(false);
                 setItemToDelete(null);
-                fetchIncomeData(); // Refresh data
+                fetchExpenseData(); // Refresh data
             } else {
-                toast.error('Failed to delete income');
+                toast.error('Failed to delete expense');
             }
         } catch (error) {
-            console.error('Error deleting income:', error);
-            toast.error(error.response?.data?.message || 'Error deleting income');
+            console.error('Error deleting expense:', error);
+            toast.error(error.response?.data?.message || 'Error deleting expense');
         }
     };
 
@@ -244,18 +245,18 @@ const IncomeTable = () => {
                 recorded_by: editProduct.recorded_by,
             };
 
-            const response = await updateIncome(editProduct.id, payload);
+            const response = await updateExpense(editProduct.id, payload);
             
             if (response.success || response.message) {
-                toast.success(response.message || 'Income updated successfully');
+                toast.success(response.message || 'Expense updated successfully');
                 setEditModalOpen(false);
-                fetchIncomeData(); // Refresh data
+                fetchExpenseData(); // Refresh data
             } else {
-                toast.error('Failed to update income');
+                toast.error('Failed to update expense');
             }
         } catch (error) {
-            console.error('Error updating income:', error);
-            toast.error(error.response?.data?.message || 'Error updating income');
+            console.error('Error updating expense:', error);
+            toast.error(error.response?.data?.message || 'Error updating expense');
         }
     };
 
@@ -263,7 +264,6 @@ const IncomeTable = () => {
       const handleViewClick = (data) => {
         setSelectedReceipt(data);
         setIsModalOpen(true);
-        // console.log(data)
       };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -279,52 +279,32 @@ const IncomeTable = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: 0.2 }}
         >
-
-
-            {/* add income */}
-        
-
     <div className=''>        
 
             <div className='flex justify-between items-center mb-6'>
                 <div className='flex items-center gap-6'>
-
-                
-                <h2 className='text-xl font-semibold text-black'>Income List</h2>
+                <h2 className='text-xl font-semibold text-black'>Expense List</h2>
                   <div class="row text-black">
-                    
                         <div class="dt-buttons btn-group flex gap-2">
-                            
                             <button class="btn btn-primary buttons-copy buttons-html5" tabindex="0" aria-controls="main_datatable" type="button" title="Copy">
-                             
                             <FontAwesomeIcon icon={faPrint} />
                                </button>
-                                                                     
-                             <button class="btn btn-primary buttons-excel buttons-html5" tabindex="0" aria-controls="main_datatable" type="button" title="Excel">
+                            <button class="btn btn-primary buttons-excel buttons-html5" tabindex="0" aria-controls="main_datatable" type="button" title="Excel">
                              <FontAwesomeIcon icon={faFileExcel} />
                                 </button>
-                            
-                             <button class="btn btn-primary buttons-csv buttons-html5" tabindex="0" aria-controls="main_datatable" type="button" title="CSV">
+                            <button class="btn btn-primary buttons-csv buttons-html5" tabindex="0" aria-controls="main_datatable" type="button" title="CSV">
                              <FontAwesomeIcon icon={faFileText} />
                              </button>
-                                
-                             <button class="btn btn-primary buttons-pdf buttons-html5" tabindex="0" aria-controls="main_datatable" type="button" title="PDF">
+                            <button class="btn btn-primary buttons-pdf buttons-html5" tabindex="0" aria-controls="main_datatable" type="button" title="PDF">
                              <FontAwesomeIcon icon={faFilePdf} />
                              </button>
-                            
-                             
                              <button class="btn btn-primary buttons-collection dropdown-toggle buttons-colvis" tabindex="0" aria-controls="main_datatable" type="button" aria-haspopup="true">
                                 <span>downloads</span>
                             </button> 
-                            
                             </div>
-                       
-
-                            
                 </div>
                 </div>
                 
-
                 <div className='relative flex items-center'>
                     <Search className='absolute left-3 text-black sm:left-2.5 top-2.5' size={20} />
                     <input
@@ -344,7 +324,7 @@ const IncomeTable = () => {
                     </div>
                 ) : filteredProducts.length === 0 ? (
                     <div className='flex justify-center items-center py-10'>
-                        <p className='text-gray-600'>No income entries found</p>
+                        <p className='text-gray-600'>No expense entries found</p>
                     </div>
                 ) : (
                     <table className='min-w-full divide-y divide-gray-400' >
@@ -401,7 +381,6 @@ const IncomeTable = () => {
                 )}
             </div>
 
-
             {/* Enhanced Pagination Controls */}
             <div className='flex flex-col md:flex-row justify-between mt-4 space-x-2 items-center'>
                 <div className='flex items-center'>
@@ -425,20 +404,15 @@ const IncomeTable = () => {
                 <div className='text-sm font-medium text-black tracking-wider mt-5 md:mt-0'>Total Entries: {filteredProducts.length}</div>
             </div>
             
-
             </div>
 
-          
             <Receipt
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         receiptData={selectedReceipt || {}}
                     />
   
-        
             {/* Edit model pop up */}
-
-
             {isEditModalOpen && editProduct && (
                 <div className='fixed inset-0 flex items-center justify-center bg-white bg-opacity-50 z-10'>
                     <motion.div
@@ -447,7 +421,7 @@ const IncomeTable = () => {
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <h1 className='text-2xl font-semibold text-gray-100 mb-3 underline tracking-wider'>Edit Income</h1>
+                        <h1 className='text-2xl font-semibold text-gray-100 mb-3 underline tracking-wider'>Edit Expense</h1>
 
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                             <div className='flex flex-col space-y-1'>
@@ -570,14 +544,14 @@ const IncomeTable = () => {
                                 <AlertTriangle className='text-red-600' size={24} />
                             </div>
                             <div>
-                                <h3 className='text-lg font-semibold text-gray-900'>Delete Income</h3>
+                                <h3 className='text-lg font-semibold text-gray-900'>Delete Expense</h3>
                                 <p className='text-sm text-gray-500'>This action cannot be undone</p>
                             </div>
                         </div>
 
                         <div className='mb-6'>
                             <p className='text-gray-700 mb-2'>
-                                Are you sure you want to delete this income entry?
+                                Are you sure you want to delete this expense entry?
                             </p>
                             <div className='bg-gray-50 rounded-lg p-3 border border-gray-200'>
                                 <p className='text-sm text-gray-600'>
@@ -614,5 +588,5 @@ const IncomeTable = () => {
     );
 };
 
-export default IncomeTable;
+export default ExpenseTable;
 

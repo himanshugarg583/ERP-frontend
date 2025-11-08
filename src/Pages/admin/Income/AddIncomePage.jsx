@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, DollarSign, Package, TrendingUp } from 'lucide-react'
+import { ToastContainer } from 'react-toastify'
 import StatCards from '../../../components/comman_components/StatsCards'
 import IncomeTable from '../../../components/Income/IncomeTable'
 import AddIncome from '../../../components/Income/IncomeForm'
@@ -34,6 +35,7 @@ const AddIncomePage = () => {
             
       <IncomeForm/>
       <IncomeTable />
+      <ToastContainer position="top-right" autoClose={3000} />
 
          
 

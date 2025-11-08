@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://d5758dxq-5000.inc1.devtunnels.ms'; // Backend base URL
+const API_BASE_URL = 'https://xd363v4j-5000.inc1.devtunnels.ms'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
@@ -20,7 +20,31 @@ export const API_ENDPOINTS = {
   ADD_TEACHER: '/admin/hr/register/addTeacher',
   GET_TEACHER_CREDENTIALS: '/api/teachers/credentials',
   UPDATE_TEACHER_CREDENTIALS: (id) => `/api/teachers/credentials/${id}`,
-  // Add more endpoints here as needed
+  // Income endpoints
+  GET_ALL_INCOME: '/admin/income/getAllIncome',
+  ADD_INCOME: '/admin/income/createIncome',
+  GET_INCOME_BY_ID: (id) => `/admin/income/getSingleIncome/${id}`,  
+  UPDATE_INCOME: (id) => `/admin/income/updateIncome/${id}`,
+  DELETE_INCOME: (id) => `/admin/income/deleteIncome/${id}`,
+
+  // Expense endpoints
+  GET_ALL_EXPENSE: '/admin/expense/getAllExpense',
+  ADD_EXPENSE: '/admin/expense/createExpense',
+  GET_EXPENSE_BY_ID: (id) => `/admin/expense/getSingleExpense/${id}`,  
+  UPDATE_EXPENSE: (id) => `/admin/expense/updateExpense/${id}`,
+  DELETE_EXPENSE: (id) => `/admin/expense/deleteExpense/${id}`,
+  // Subject endpoints
+  GET_ALL_SUBJECTS: '/admin/Subject/getAllSubjects',
+  CREATE_SUBJECT: '/admin/Subject/createSubject',
+  UPDATE_SUBJECT: (id) => `/admin/Subject/updateSubject/${id}`,
+  DELETE_SUBJECT: (id) => `/admin/Subject/deleteSubject/${id}`,
+  // student attendance endpoints
+  GET_ALL_CLASSES: '/admin/studentsAttendance/getAllClasses',
+  GET_STUDENTS_BY_CLASS: (classId) => `/admin/studentsAttendance/getStudentsByClass/${classId}`,
+  MARK_ATTENDANCE: '/admin/studentsAttendance/markClassAttendance',
+  GET_ATTENDANCE_REPORT: '/admin/studentsAttendance/getAttendanceReport'
+
+
 };
 
 // Reusable authorized GET request
@@ -225,4 +249,55 @@ export const addTeacher = async (teacherData, imageFile = null) => {
   }
   
   return authorizedPostFormData(API_ENDPOINTS.ADD_TEACHER, formData);
+};
+
+//get all income
+export const getAllIncome = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_INCOME);
+};
+
+// update income
+export const updateIncome = async (id, data) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_INCOME(id), data);
+};
+
+// add income
+export const addIncome = async (data) => {
+  return authorizedPost(API_ENDPOINTS.ADD_INCOME, data);
+};
+
+// delete income
+export const deleteIncome = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_INCOME(id));
+};
+
+//get all expense
+export const getAllExpense = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_EXPENSE);
+};
+// update expense
+export const updateExpense = async (id, data) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_EXPENSE(id), data);
+};
+// add expense
+export const addExpense = async (data) => {
+  return authorizedPost(API_ENDPOINTS.ADD_EXPENSE, data);
+};
+// delete expense
+export const deleteExpense = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_EXPENSE(id));
+};
+
+// fetch all classes for attendance
+export const fetchAllClassesForAttendance = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_CLASSES);
+};
+
+// fetch all the students basis on the class
+export const fetchStudentsByClass = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS(classId));
+};
+// mark attendance
+export const markAttendance = async (attendanceData) => {
+  return authorizedPost(API_ENDPOINTS.MARK_ATTENDANCE, attendanceData);
 };

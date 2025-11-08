@@ -6,7 +6,7 @@ export const ROUTE_CATEGORIES = {
 };
 
 export const ROLE_DASHBOARDS = {
-  admin: "/AdminDashboardPage",
+  admin: "/admin/dashboard",
   teacher: "/TeacherPortal", 
   student: "/StudentDashboard",
   accountant: "/AccountantDashboard",
