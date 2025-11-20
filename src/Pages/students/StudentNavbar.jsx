@@ -28,7 +28,7 @@ const StudentNavbar = ({ setIsSidebarOpen }) => {
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
-    navigate('/studentprofile');
+    navigate('/student/profile');
   };
 
   // Sample notifications

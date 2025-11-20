@@ -1,8 +1,7 @@
 import React from "react";
-import PageHeader from "../../../components/comman_components/PageHeader";
-import { Attendance } from "../../../components/comman_components/Reports";
 import Header from "../../../components/comman_components/Header";
 import Sidebar from "../Sidebar";
+import AttendanceReport from "../../../components/attendance/AttendanceReport";
 
 const StudentReports = () => {
   return (
@@ -21,8 +20,8 @@ const StudentReports = () => {
       >
         <Header />
 
-        <main className="">
-          <Attendance></Attendance>
+        <main className="p-6">
+          <AttendanceReport/>
         </main>
       </div>
     </div>

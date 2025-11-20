@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from './TeacherSidebar';
-import Header from './TeacherHeader';
+import TeacherSidebar from './TeacherSidebar';
+import Header from '../../components/comman_components/Header';
 import { FaCheckCircle, FaChalkboardTeacher, FaUsers, FaChevronLeft, FaCalendarAlt, FaRegClock, FaCheck, FaTimes } from 'react-icons/fa';
 
 const ClassCard = ({ cls, onClick }) => {
@@ -179,7 +179,6 @@ const AttendanceView = ({ classId, classes, attendance, setAttendance, history, 
 };
 
 const TeacherAttendance = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState('Attendance');
   const [activeClass, setActiveClass] = useState(null);
   const [counts, setCounts] = useState({ notifications: 3, mail: 5 });
@@ -211,19 +210,23 @@ const TeacherAttendance = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar 
-        isSidebarOpen={isSidebarOpen} 
-        handleMenuClick={setActiveMenu} 
-        activeMenu={activeMenu} />
-      <div className={`flex-1 flex flex-col transition-all ${isSidebarOpen ? 'pl-64' : 'pl-0'}`}>
-        <Header
-          currentDate={new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) ?? ''}
-          handleNotificationClick={() => setCounts(p => ({ ...p, notifications: 0 }))}
-          notificationCount={counts?.notifications ?? 0}
-          handleMailClick={() => setCounts(p => ({ ...p, mail: 0 }))}
-          mailCount={counts?.mail ?? 0}/>
-        <div className="flex-1 p-6 bg-white overflow-auto">
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
+          <div className="flex-1 p-6 bg-white overflow-auto">
           {activeMenu === 'Attendance' ? (
             activeClass ? (
               <AttendanceView
@@ -250,7 +253,8 @@ const TeacherAttendance = () => {
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

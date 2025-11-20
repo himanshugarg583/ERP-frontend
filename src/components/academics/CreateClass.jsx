@@ -4,7 +4,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createClass, fetchTeacherDropdown } from '../../helper/requests-method/apiMethods';
 
-const CreateClass = () => {
+const CreateClass = ({ onClassAdded }) => {
   const [newClass, setNewClass] = useState({
     class_name: '',
     section_name: '',
@@ -97,7 +97,7 @@ const CreateClass = () => {
       const payload = {
         class_name: newClass.class_name,
         section_name: newClass.section_name,
-        room_No: newClass.room_No,
+        room_no: newClass.room_No,
         capacity: newClass.capacity.toString(),
         teacher_id: newClass.teacher_id
       };
@@ -116,6 +116,10 @@ const CreateClass = () => {
           capacity: '',
           teacher_id: ''
         });
+        // Trigger refresh in parent component
+        if (onClassAdded) {
+          onClassAdded();
+        }
       } else {
         showToast(response, "Failed to create class");
       }

@@ -3,90 +3,104 @@ import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
 import CommonTable from '../../../components/tables/CommonTable';
 import CommonFilter from '../../../components/tables/CommonFilter';
-import ExamTermForm from '../../../components/examanitaion/ExamTermForm';
+import ExamForm from '../../../components/examanitaion/ExamForm';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
-  getAllExamTerms,
-  updateExamTerm,
-  deleteExamTerm,
-  getExamTermById
+  getAllExams,
+  updateExam,
+  deleteExam
 } from '../../../helper/requests-method/apiMethods';
 import Modal from '../../../components/comman_components/Modal';
 
-const TermListPage = () => {
-  const [terms, setTerms] = useState([]);
-  const [filteredTerms, setFilteredTerms] = useState([]);
+const ExamListPage = () => {
+  const [exams, setExams] = useState([]);
+  const [filteredExams, setFilteredExams] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [termToDelete, setTermToDelete] = useState(null);
+  const [examToDelete, setExamToDelete] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [termToView, setTermToView] = useState(null);
-  const [viewLoading, setViewLoading] = useState(false);
+  const [examToView, setExamToView] = useState(null);
   const itemsPerPage = 10;
 
-  const fetchTerms = useCallback(async () => {
+  const fetchExams = useCallback(async () => {
     setTableLoading(true);
     try {
-      const response = await getAllExamTerms();
+      const response = await getAllExams();
       // API response structure: { success: true, statusCode: 200, message: "...", data: [...] }
       const payload = Array.isArray(response?.data)
         ? response.data
-        : Array.isArray(response?.terms)
-          ? response.terms
+        : Array.isArray(response?.exams)
+          ? response.exams
           : Array.isArray(response)
             ? response
             : [];
       
-      const normalizedTerms = payload.map((term) => ({
-        id: term.id,
-        term_name: term.term_name || '',
-        academic_year: term.academic_year || '',
-        start_date: term.start_date || null,
-        end_date: term.end_date || null,
-        status: term.status || 'active'
+      const normalizedExams = payload.map((exam) => ({
+        id: exam.id,
+        term_id: exam.term_id || null,
+        exam_name: exam.exam_name || '',
+        description: exam.description || '',
+        start_date: exam.start_date || null,
+        end_date: exam.end_date || null,
+        status: exam.status || 'active',
+        term_name: exam.term?.term_name || '',
+        academic_year: exam.term?.academic_year || ''
       }));
 
-      setTerms(normalizedTerms);
-      setFilteredTerms(normalizedTerms);
+      setExams(normalizedExams);
+      setFilteredExams(normalizedExams);
     } catch (error) {
-      console.error('Error fetching exam terms:', error);
-      toast.error(error?.response?.data?.message || 'Failed to load exam terms');
+      console.error('Error fetching exams:', error);
+      toast.error(error?.response?.data?.message || 'Failed to load exams');
     } finally {
       setTableLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchTerms();
+    fetchExams();
     
-    // Listen for exam term added event
-    const handleTermAdded = () => {
-      fetchTerms();
+    // Listen for exam added event
+    const handleExamAdded = () => {
+      fetchExams();
     };
     
-    window.addEventListener('examTermAdded', handleTermAdded);
+    window.addEventListener('examAdded', handleExamAdded);
     
     return () => {
-      window.removeEventListener('examTermAdded', handleTermAdded);
+      window.removeEventListener('examAdded', handleExamAdded);
     };
-  }, [fetchTerms]);
+  }, [fetchExams]);
 
-  const termColumns = useMemo(
+  const examColumns = useMemo(
     () => [
       {
-        key: 'term_name',
-        header: 'Term Name',
+        key: 'exam_name',
+        header: 'Exam Name',
         type: 'text',
         required: true,
-        placeholder: 'e.g. First Term'
+        placeholder: 'e.g. Mid-Term Exam'
       },
       {
-        key: 'academic_year',
-        header: 'Academic Year',
+        key: 'term_name',
+        header: 'Term',
         type: 'text',
-        required: true,
-        placeholder: 'e.g. 2024-2025'
+        render: (value, item) => {
+          if (item.term_name && item.academic_year) {
+            return `${item.term_name} (${item.academic_year})`;
+          }
+          return item.term_name || 'N/A';
+        }
+      },
+      {
+        key: 'description',
+        header: 'Description',
+        type: 'text',
+        render: (value) => {
+          if (!value) return 'N/A';
+          return value.length > 50 ? `${value.substring(0, 50)}...` : value;
+        }
       },
       {
         key: 'start_date',
@@ -140,8 +154,8 @@ const TermListPage = () => {
 
   const filterFields = useMemo(
     () => [
-      { key: 'term_name', label: 'Term Name', type: 'text', placeholder: 'Search by term name' },
-      { key: 'academic_year', label: 'Academic Year', type: 'text', placeholder: 'Search by academic year' },
+      { key: 'exam_name', label: 'Exam Name', type: 'text', placeholder: 'Search by exam name' },
+      { key: 'term_name', label: 'Term', type: 'text', placeholder: 'Search by term name' },
       {
         key: 'status',
         label: 'Status',
@@ -156,15 +170,23 @@ const TermListPage = () => {
     []
   );
 
-  const handleUpdateTerm = useCallback(
+  const handleUpdateExam = useCallback(
     async (id, data) => {
       const payload = {
-        term_name: data.term_name?.trim(),
-        academic_year: data.academic_year?.trim(),
-        start_date: data.start_date,
-        end_date: data.end_date,
+        term_id: data.term_id ? Number(data.term_id) : undefined,
+        exam_name: data.exam_name?.trim(),
+        description: data.description?.trim() || null,
+        start_date: data.start_date || null,
+        end_date: data.end_date || null,
         status: data.status
       };
+
+      // Remove undefined fields
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
 
       // Validate dates
       if (payload.start_date && payload.end_date) {
@@ -175,76 +197,61 @@ const TermListPage = () => {
       }
 
       try {
-        const response = await updateExamTerm(id, payload);
+        const response = await updateExam(id, payload);
         if (response?.success) {
-          toast.success(response.message || 'Exam term updated successfully');
-          await fetchTerms();
+          toast.success(response.message || 'Exam updated successfully');
+          await fetchExams();
         } else {
-          toast.error(response?.message || 'Failed to update exam term');
+          toast.error(response?.message || 'Failed to update exam');
         }
         return response;
       } catch (error) {
-        console.error('Error updating exam term:', error);
-        toast.error(error?.response?.data?.message || 'Failed to update exam term');
+        console.error('Error updating exam:', error);
+        toast.error(error?.response?.data?.message || 'Failed to update exam');
         throw error;
       }
     },
-    [fetchTerms]
+    [fetchExams]
   );
 
-  const handleDeleteClick = useCallback(async (term) => {
-    setTermToDelete(term);
+  const handleDeleteClick = useCallback(async (exam) => {
+    setExamToDelete(exam);
     setDeleteModalOpen(true);
   }, []);
 
   const handleConfirmDelete = useCallback(async () => {
-    if (!termToDelete) return;
+    if (!examToDelete) return;
 
     try {
-      const response = await deleteExamTerm(termToDelete.id);
+      const response = await deleteExam(examToDelete.id);
       if (response?.success) {
-        toast.success(response.message || 'Exam term deleted successfully');
-        setTerms((prev) => prev.filter((term) => term.id !== termToDelete.id));
-        setFilteredTerms((prev) => prev.filter((term) => term.id !== termToDelete.id));
+        toast.success(response.message || 'Exam deleted successfully');
+        setExams((prev) => prev.filter((exam) => exam.id !== examToDelete.id));
+        setFilteredExams((prev) => prev.filter((exam) => exam.id !== examToDelete.id));
         setDeleteModalOpen(false);
-        setTermToDelete(null);
+        setExamToDelete(null);
       } else {
-        toast.error(response?.message || 'Failed to delete exam term');
+        toast.error(response?.message || 'Failed to delete exam');
       }
     } catch (error) {
-      console.error('Error deleting exam term:', error);
-      toast.error(error?.response?.data?.message || 'Failed to delete exam term');
+      console.error('Error deleting exam:', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete exam');
     }
-  }, [termToDelete]);
+  }, [examToDelete]);
 
-  const handleViewClick = useCallback(async (term) => {
-    setViewLoading(true);
+  const handleViewClick = useCallback(async (exam) => {
+    setExamToView(exam);
     setViewModalOpen(true);
-    try {
-      const response = await getExamTermById(term.id);
-      if (response?.success && response?.data) {
-        setTermToView(response.data);
-      } else {
-        // Fallback to term data if API fails
-        setTermToView(term);
-      }
-    } catch (error) {
-      console.error('Error fetching term details:', error);
-      // Fallback to term data if API fails
-      setTermToView(term);
-    } finally {
-      setViewLoading(false);
-    }
   }, []);
 
   // Handle filter changes
   const handleFilterChange = (filters) => {
-    let filtered = [...terms];
+    let filtered = [...exams];
 
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
         filtered = filtered.filter(item => {
-          if (key === 'term_name' || key === 'academic_year') {
+          if (key === 'exam_name' || key === 'term_name') {
             return item[key] && item[key].toLowerCase().includes(filters[key].toLowerCase());
           }
           if (key === 'status') {
@@ -255,17 +262,17 @@ const TermListPage = () => {
       }
     });
 
-    setFilteredTerms(filtered);
+    setFilteredExams(filtered);
   };
 
   // Handle clear filters
   const handleClearFilters = () => {
-    setFilteredTerms(terms);
+    setFilteredExams(exams);
   };
 
-  // Handle term addition from form component
-  const handleTermAdded = () => {
-    fetchTerms();
+  // Handle exam addition from form component
+  const handleExamAdded = () => {
+    fetchExams();
   };
 
   return (
@@ -282,28 +289,28 @@ const TermListPage = () => {
         <Header />
         
         <div className="flex-1 p-4 md:p-6">
-          {/* Add Exam Term Form Component */}
-          <ExamTermForm onTermAdded={handleTermAdded} />
+          {/* Add Exam Form Component */}
+          <ExamForm onExamAdded={handleExamAdded} />
 
           {/* Filter Component */}
           <CommonFilter
             filterFields={filterFields}
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
-            title="Exam Term Filters"
+            title="Exam Filters"
           />
 
           {/* Table Component */}
           <CommonTable
-            title="Exam Term Management"
-            columns={termColumns}
-            data={filteredTerms}
+            title="Exam Management"
+            columns={examColumns}
+            data={filteredExams}
             createApi={null}
-            updateApi={handleUpdateTerm}
+            updateApi={handleUpdateExam}
             deleteApi={null}
-            searchPlaceholder="Search exam terms..."
-            addButtonText="Add Exam Term"
-            exportFileName="exam_terms"
+            searchPlaceholder="Search exams..."
+            addButtonText="Add Exam"
+            exportFileName="exams"
             itemsPerPage={itemsPerPage}
             enableSearch={true}
             enablePagination={true}
@@ -323,26 +330,26 @@ const TermListPage = () => {
         isOpen={deleteModalOpen}
         onClose={() => {
           setDeleteModalOpen(false);
-          setTermToDelete(null);
+          setExamToDelete(null);
         }}
-        title="Delete Exam Term"
+        title="Delete Exam"
       >
-        {termToDelete && (
+        {examToDelete && (
           <div className="p-4">
             <p className="text-gray-700 mb-4">
-              Are you sure you want to delete the exam term <strong>"{termToDelete.term_name}"</strong>?
+              Are you sure you want to delete the exam <strong>"{examToDelete.exam_name}"</strong>?
             </p>
             <div className="bg-gray-50 p-3 rounded-md mb-4">
-              <p className="text-sm text-gray-600"><strong>Academic Year:</strong> {termToDelete.academic_year}</p>
-              <p className="text-sm text-gray-600"><strong>Start Date:</strong> {termToDelete.start_date ? new Date(termToDelete.start_date).toLocaleDateString('en-GB') : 'N/A'}</p>
-              <p className="text-sm text-gray-600"><strong>End Date:</strong> {termToDelete.end_date ? new Date(termToDelete.end_date).toLocaleDateString('en-GB') : 'N/A'}</p>
+              <p className="text-sm text-gray-600"><strong>Term:</strong> {examToDelete.term_name || 'N/A'}</p>
+              <p className="text-sm text-gray-600"><strong>Start Date:</strong> {examToDelete.start_date ? new Date(examToDelete.start_date).toLocaleDateString('en-GB') : 'N/A'}</p>
+              <p className="text-sm text-gray-600"><strong>End Date:</strong> {examToDelete.end_date ? new Date(examToDelete.end_date).toLocaleDateString('en-GB') : 'N/A'}</p>
             </div>
             <p className="text-red-600 text-sm mb-4">This action cannot be undone.</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => {
                   setDeleteModalOpen(false);
-                  setTermToDelete(null);
+                  setExamToDelete(null);
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
               >
@@ -359,60 +366,66 @@ const TermListPage = () => {
         )}
       </Modal>
 
-      {/* View Term Details Modal */}
+      {/* View Exam Details Modal */}
       <Modal
         isOpen={viewModalOpen}
         onClose={() => {
           setViewModalOpen(false);
-          setTermToView(null);
+          setExamToView(null);
         }}
-        title="Exam Term Details"
+        title="Exam Details"
+        size="lg"
       >
-        {viewLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-            <p className="mt-2 text-gray-600">Loading term details...</p>
-          </div>
-        ) : termToView ? (
+        {examToView ? (
           <div className="p-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Term Name</label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{termToView.term_name || 'N/A'}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Exam Name</label>
+                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{examToView.exam_name || 'N/A'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{termToView.academic_year || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Term</label>
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {termToView.start_date ? new Date(termToView.start_date).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  }) : 'N/A'}
+                  {examToView.term_name && examToView.academic_year 
+                    ? `${examToView.term_name} (${examToView.academic_year})`
+                    : examToView.term_name || 'N/A'}
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {termToView.end_date ? new Date(termToView.end_date).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  }) : 'N/A'}
-                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{examToView.description || 'N/A'}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
+                    {examToView.start_date ? new Date(examToView.start_date).toLocaleDateString('en-GB', { 
+                      day: '2-digit', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    }) : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
+                    {examToView.end_date ? new Date(examToView.end_date).toLocaleDateString('en-GB', { 
+                      day: '2-digit', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    }) : 'N/A'}
+                  </p>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    termToView.status === 'active' ? 'bg-green-100 text-green-800' :
-                    termToView.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                    examToView.status === 'active' ? 'bg-green-100 text-green-800' :
+                    examToView.status === 'completed' ? 'bg-blue-100 text-blue-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {termToView.status ? termToView.status.charAt(0).toUpperCase() + termToView.status.slice(1) : 'N/A'}
+                    {examToView.status ? examToView.status.charAt(0).toUpperCase() + examToView.status.slice(1) : 'N/A'}
                   </span>
                 </p>
               </div>
@@ -421,7 +434,7 @@ const TermListPage = () => {
               <button
                 onClick={() => {
                   setViewModalOpen(false);
-                  setTermToView(null);
+                  setExamToView(null);
                 }}
                 className="px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors"
               >
@@ -437,4 +450,5 @@ const TermListPage = () => {
   );
 };
 
-export default TermListPage;
+export default ExamListPage;
+

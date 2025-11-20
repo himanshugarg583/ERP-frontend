@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import TeacherHeader from './TeacherHeader';
 import TeacherSidebar from './TeacherSidebar';
+import Header from '../../components/comman_components/Header';
 import { FaSearch, FaBus, FaExchangeAlt, FaBell, FaUser, FaUsers } from 'react-icons/fa';
 
-const TeacherTransportation = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
+const TeacherTransportation = () => { 
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([
@@ -42,14 +41,22 @@ const TeacherTransportation = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-gray-100 w-full">
-      <div className={`${isSidebarOpen ? 'fixed inset-y-0 left-0 w-64 z-50' : 'hidden'} md:block md:w-64 md:static md:flex-shrink-0 transition-all duration-300`}>
-        <TeacherSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      </div>
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
 
-      <div className="flex-1 w-full md:ml-0">
-        <TeacherHeader setIsSidebarOpen={setIsSidebarOpen} />
-        <main className="p-4 sm:p-6 lg:p-8">
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
           <div className="bg-white rounded-lg shadow mx-auto max-w-7xl">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 sm:p-6 rounded-t-lg text-white">
               <h1 className="text-xl sm:text-2xl font-bold">Student Transportation Management</h1>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from 'framer-motion';
 import ReportHeading from "../../../components/comman_components/ReportHeading";
 import CommonTable from "../../../components/tables/CommonTable";
@@ -8,76 +8,91 @@ import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import "../Admin.css";
-import { 
-  teacherCredentialsReportData,
-  teacherAttendanceReportData,
-  teacherPerformanceReportData,
-  teacherQualificationReportData,
-  teacherSalaryReportData
-} from "../../../data.js";
+import { getTeacherCredentials, getTeacherSalary } from "../../../helper/requests-method/apiMethods";
 
 const HRReports = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
+  const [credentialsData, setCredentialsData] = useState([]);
+  const [salaryData, setSalaryData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Mock departments and subjects data
-  const departments = [
-    { value: "Primary", label: "Primary" },
-    { value: "Secondary", label: "Secondary" },
-    { value: "Senior Secondary", label: "Senior Secondary" },
-    { value: "Administration", label: "Administration" }
-  ];
+  // Fetch teacher credentials
+  const fetchTeacherCredentials = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getTeacherCredentials();
+      if (response.success && response.data) {
+        const mappedData = response.data.map((item) => ({
+          teacher_id: item.teacher_id || item.id || "N/A",
+          name: item.name || "N/A",
+          email: item.email || "N/A",
+          password: item.password || "N/A",
+          role: item.role || "N/A",
+        }));
+        setCredentialsData(mappedData);
+        setFilteredData(mappedData);
+      } else {
+        toast.error(response.message || "Failed to fetch teacher credentials");
+      }
+    } catch (error) {
+      console.error("Failed to fetch teacher credentials:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch teacher credentials");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const subjects = [
-    { value: "Mathematics", label: "Mathematics" },
-    { value: "English", label: "English" },
-    { value: "Science", label: "Science" },
-    { value: "Hindi", label: "Hindi" },
-    { value: "Social Studies", label: "Social Studies" },
-    { value: "Physics", label: "Physics" },
-    { value: "Chemistry", label: "Chemistry" }
-  ];
+  // Fetch teacher salary
+  const fetchTeacherSalary = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getTeacherSalary();
+      if (response.success && response.data) {
+        const mappedData = response.data.map((item) => ({
+          teacher_id: item.teacher_id || item.id || "N/A",
+          name: item.name || "N/A",
+          email: item.email || "N/A",
+          salary: item.salary || "0.00",
+          role: item.role || "N/A",
+        }));
+        setSalaryData(mappedData);
+        setFilteredData(mappedData);
+      } else {
+        toast.error(response.message || "Failed to fetch teacher salary");
+      }
+    } catch (error) {
+      console.error("Failed to fetch teacher salary:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch teacher salary");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const statuses = [
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
-    { value: "on_leave", label: "On Leave" }
-  ];
-
-  const attendanceStatuses = [
-    { value: "Excellent", label: "Excellent" },
-    { value: "Good", label: "Good" },
-    { value: "Average", label: "Average" },
-    { value: "Poor", label: "Poor" }
-  ];
-
-  const performanceRatings = [
-    { value: "Excellent", label: "Excellent" },
-    { value: "Good", label: "Good" },
-    { value: "Average", label: "Average" },
-    { value: "Poor", label: "Poor" }
-  ];
-
-  const certificationStatuses = [
-    { value: "Certified", label: "Certified" },
-    { value: "Renewal Required", label: "Renewal Required" },
-    { value: "Expired", label: "Expired" }
-  ];
-
-  const paymentStatuses = [
-    { value: "Paid", label: "Paid" },
-    { value: "Pending", label: "Pending" },
-    { value: "Overdue", label: "Overdue" }
-  ];
+  // Fetch data when report is selected
+  useEffect(() => {
+    if (selectedReport === 'teacher-credentials') {
+      if (credentialsData.length === 0) {
+        fetchTeacherCredentials();
+      } else {
+        setFilteredData(credentialsData);
+      }
+    } else if (selectedReport === 'teacher-salary') {
+      if (salaryData.length === 0) {
+        fetchTeacherSalary();
+      } else {
+        setFilteredData(salaryData);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedReport]);
 
   // Report configurations
   const reportConfigs = {
     'teacher-credentials': {
       title: "Teacher Credentials Report",
-      data: teacherCredentialsReportData,
       columns: [
         {
           key: 'count',
@@ -93,286 +108,41 @@ const HRReports = () => {
           key: 'teacher_id',
           header: 'Teacher ID',
           type: 'text',
-          required: true,
-          placeholder: 'Enter teacher ID'
+          required: true
         },
         {
           key: 'name',
           header: 'Teacher Name',
           type: 'text',
-          required: true,
-          placeholder: 'Enter teacher name'
+          required: true
         },
         {
           key: 'email',
           header: 'Email',
           type: 'email',
-          required: true,
-          placeholder: 'Enter email address'
-        },
-        {
-          key: 'phone',
-          header: 'Phone',
-          type: 'text',
-          required: true,
-          placeholder: 'Enter phone number'
-        },
-        {
-          key: 'subject',
-          header: 'Subject',
-          type: 'select',
-          required: true,
-          options: subjects
-        },
-        {
-          key: 'department',
-          header: 'Department',
-          type: 'select',
-          required: true,
-          options: departments
-        },
-        {
-          key: 'lastLogin',
-          header: 'Last Login',
-          type: 'date',
           required: true
-        }
-      ],
-      filterFields: [
-        { key: 'subject', label: 'Subject', type: 'select', options: subjects },
-        { key: 'department', label: 'Department', type: 'select', options: departments },
-        { key: 'status', label: 'Status', type: 'select', options: statuses }
-      ]
-    },
-    'teacher-attendance': {
-      title: "Teacher Attendance Report",
-      data: teacherAttendanceReportData,
-      columns: [
-        {
-          key: 'count',
-          header: 'S.No',
-          type: 'text',
-          render: (value, item, index) => {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            return startIndex + index + 1;
-          },
-          required: false
         },
         {
-          key: 'teacher_id',
-          header: 'Teacher ID',
+          key: 'password',
+          header: 'Password',
           type: 'text',
           required: true
         },
         {
-          key: 'name',
-          header: 'Teacher Name',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'department',
-          header: 'Department',
-          type: 'select',
-          required: true,
-          options: departments
-        },
-        {
-          key: 'attendance',
-          header: 'Attendance %',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'presentDays',
-          header: 'Present Days',
-          type: 'number',
-          required: true
-        },
-        {
-          key: 'absentDays',
-          header: 'Absent Days',
-          type: 'number',
-          required: true
-        },
-        {
-          key: 'lateArrivals',
-          header: 'Late Arrivals',
-          type: 'number',
-          required: true
-        },
-        {
-          key: 'month',
-          header: 'Month',
+          key: 'role',
+          header: 'Role',
           type: 'text',
           required: true
         }
       ],
       filterFields: [
-        { key: 'department', label: 'Department', type: 'select', options: departments },
-        { key: 'status', label: 'Performance', type: 'select', options: attendanceStatuses },
-        { key: 'month', label: 'Month', type: 'text', placeholder: 'Search by month' }
-      ]
-    },
-    'teacher-performance': {
-      title: "Teacher Performance Report",
-      data: teacherPerformanceReportData,
-      columns: [
-        {
-          key: 'count',
-          header: 'S.No',
-          type: 'text',
-          render: (value, item, index) => {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            return startIndex + index + 1;
-          },
-          required: false
-        },
-        {
-          key: 'teacher_id',
-          header: 'Teacher ID',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'name',
-          header: 'Teacher Name',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'subject',
-          header: 'Subject',
-          type: 'select',
-          required: true,
-          options: subjects
-        },
-        {
-          key: 'classesAssigned',
-          header: 'Classes',
-          type: 'number',
-          required: true
-        },
-        {
-          key: 'studentsCount',
-          header: 'Students',
-          type: 'number',
-          required: true
-        },
-        {
-          key: 'avgStudentScore',
-          header: 'Avg Score',
-          type: 'number',
-          required: true
-        },
-        {
-          key: 'parentFeedback',
-          header: 'Parent Rating',
-          type: 'number',
-          required: true
-        },
-        {
-          key: 'overallRating',
-          header: 'Overall Rating',
-          type: 'select',
-          required: true,
-          options: performanceRatings
-        },
-        {
-          key: 'lastEvaluation',
-          header: 'Last Evaluation',
-          type: 'date',
-          required: true
-        }
-      ],
-      filterFields: [
-        { key: 'subject', label: 'Subject', type: 'select', options: subjects },
-        { key: 'department', label: 'Department', type: 'select', options: departments },
-        { key: 'overallRating', label: 'Rating', type: 'select', options: performanceRatings }
-      ]
-    },
-    'teacher-qualification': {
-      title: "Teacher Qualification Report",
-      data: teacherQualificationReportData,
-      columns: [
-        {
-          key: 'count',
-          header: 'S.No',
-          type: 'text',
-          render: (value, item, index) => {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            return startIndex + index + 1;
-          },
-          required: false
-        },
-        {
-          key: 'teacher_id',
-          header: 'Teacher ID',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'name',
-          header: 'Teacher Name',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'highestQualification',
-          header: 'Highest Qualification',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'teachingQualification',
-          header: 'Teaching Qualification',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'experience',
-          header: 'Experience',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'certifications',
-          header: 'Certifications',
-          type: 'text',
-          required: true
-        },
-        {
-          key: 'lastTraining',
-          header: 'Last Training',
-          type: 'date',
-          required: true
-        },
-        {
-          key: 'renewalDue',
-          header: 'Renewal Due',
-          type: 'date',
-          required: true
-        },
-        {
-          key: 'status',
-          header: 'Status',
-          type: 'select',
-          required: true,
-          options: certificationStatuses
-        }
-      ],
-      filterFields: [
-        { key: 'status', label: 'Certification Status', type: 'select', options: certificationStatuses },
-        { key: 'trainingCompleted', label: 'Training Status', type: 'select', options: [
-          { value: 'Yes', label: 'Completed' },
-          { value: 'No', label: 'Pending' }
-        ]},
-        { key: 'experience', label: 'Experience', type: 'text', placeholder: 'Search by experience' }
+        { key: 'name', label: 'Teacher Name', type: 'text', placeholder: 'Search by name' },
+        { key: 'email', label: 'Email', type: 'text', placeholder: 'Search by email' },
+        { key: 'role', label: 'Role', type: 'text', placeholder: 'Search by role' }
       ]
     },
     'teacher-salary': {
       title: "Teacher Salary Report",
-      data: teacherSalaryReportData,
       columns: [
         {
           key: 'count',
@@ -397,58 +167,29 @@ const HRReports = () => {
           required: true
         },
         {
-          key: 'department',
-          header: 'Department',
-          type: 'select',
-          required: true,
-          options: departments
-        },
-        {
-          key: 'basicSalary',
-          header: 'Basic Salary',
-          type: 'number',
-          required: true,
-          render: (value) => `₹${value?.toLocaleString()}`
-        },
-        {
-          key: 'allowances',
-          header: 'Allowances',
-          type: 'number',
-          required: true,
-          render: (value) => `₹${value?.toLocaleString()}`
-        },
-        {
-          key: 'deductions',
-          header: 'Deductions',
-          type: 'number',
-          required: true,
-          render: (value) => `₹${value?.toLocaleString()}`
-        },
-        {
-          key: 'netSalary',
-          header: 'Net Salary',
-          type: 'number',
-          required: true,
-          render: (value) => `₹${value?.toLocaleString()}`
-        },
-        {
-          key: 'month',
-          header: 'Month',
-          type: 'text',
+          key: 'email',
+          header: 'Email',
+          type: 'email',
           required: true
         },
         {
-          key: 'status',
-          header: 'Payment Status',
-          type: 'select',
+          key: 'salary',
+          header: 'Salary',
+          type: 'text',
           required: true,
-          options: paymentStatuses
+          render: (value) => `₹${parseFloat(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        },
+        {
+          key: 'role',
+          header: 'Role',
+          type: 'text',
+          required: true
         }
       ],
       filterFields: [
-        { key: 'department', label: 'Department', type: 'select', options: departments },
-        { key: 'status', label: 'Payment Status', type: 'select', options: paymentStatuses },
-        { key: 'month', label: 'Month', type: 'text', placeholder: 'Search by month' }
+        { key: 'name', label: 'Teacher Name', type: 'text', placeholder: 'Search by name' },
+        { key: 'email', label: 'Email', type: 'text', placeholder: 'Search by email' },
+        { key: 'role', label: 'Role', type: 'text', placeholder: 'Search by role' }
       ]
     }
   };
@@ -456,8 +197,8 @@ const HRReports = () => {
   // Handle report selection
   const handleReportClick = (reportKey) => {
     setSelectedReport(reportKey);
-    setFilteredData(reportConfigs[reportKey].data);
     setCurrentPage(1);
+    // Data will be set by useEffect when report is selected
   };
 
   // Handle page change
@@ -469,20 +210,21 @@ const HRReports = () => {
   const handleFilterChange = (filters) => {
     if (!selectedReport) return;
 
-    const config = reportConfigs[selectedReport];
-    let filtered = [...config.data];
+    let dataToFilter = [];
+    if (selectedReport === 'teacher-credentials') {
+      dataToFilter = [...credentialsData];
+    } else if (selectedReport === 'teacher-salary') {
+      dataToFilter = [...salaryData];
+    }
 
-    // Apply filters based on selected report
+    // Apply filters
+    let filtered = dataToFilter;
     Object.keys(filters).forEach(key => {
       if (filters[key]) {
         filtered = filtered.filter(item => {
-          if (key === 'department' || key === 'subject' || key === 'status') {
-            return item[key] === filters[key];
-          }
-          if (key === 'month' || key === 'experience') {
-            return item[key] && item[key].toLowerCase().includes(filters[key].toLowerCase());
-          }
-          return item[key] === filters[key];
+          const itemValue = item[key];
+          if (!itemValue) return false;
+          return itemValue.toString().toLowerCase().includes(filters[key].toLowerCase());
         });
       }
     });
@@ -494,7 +236,11 @@ const HRReports = () => {
   // Handle clear filters
   const handleClearFilters = () => {
     if (!selectedReport) return;
-    setFilteredData(reportConfigs[selectedReport].data);
+    if (selectedReport === 'teacher-credentials') {
+      setFilteredData(credentialsData);
+    } else if (selectedReport === 'teacher-salary') {
+      setFilteredData(salaryData);
+    }
     setCurrentPage(1);
   };
 
@@ -527,18 +273,9 @@ const HRReports = () => {
           </motion.div>
 
           {/* Report Headings Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div onClick={() => handleReportClick('teacher-credentials')} className="cursor-pointer">
               <ReportHeading mainheading="Teacher Credentials" subheading="login and access report" />
-            </div>
-            <div onClick={() => handleReportClick('teacher-attendance')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Attendance" subheading="monthly attendance report" />
-            </div>
-            <div onClick={() => handleReportClick('teacher-performance')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Performance" subheading="evaluation and rating" />
-            </div>
-            <div onClick={() => handleReportClick('teacher-qualification')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Qualification" subheading="certification and training" />
             </div>
             <div onClick={() => handleReportClick('teacher-salary')} className="cursor-pointer">
               <ReportHeading mainheading="Teacher Salary" subheading="payroll and compensation" />

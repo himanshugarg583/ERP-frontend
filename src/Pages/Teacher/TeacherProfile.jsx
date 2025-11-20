@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { FaEdit, FaSave, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import TeacherSidebar from './TeacherSidebar';
+import Header from '../../components/comman_components/Header';
 
 const TeacherProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -86,8 +88,24 @@ const TeacherProfile = () => {
   ), [isEditing, profileData, handleFileChange, inputStyles]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-full">
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-full">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="sticky top-0 z-10 flex justify-between items-center p-4 bg-white">
             <button onClick={handleBack} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-gray-600 hover:bg-gray-700 transition-all duration-200 shadow-md">
@@ -166,6 +184,9 @@ const TeacherProfile = () => {
             </section>
           </div>
         </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

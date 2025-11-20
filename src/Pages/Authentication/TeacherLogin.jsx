@@ -43,7 +43,7 @@ const TeacherLogin = () => {
         console.log(response);
   
         if (response.role === "teacher") {
-          navigate("/TeacherPortal");
+          navigate("/teacher/dashboard");
         }
   
       } catch (error) {

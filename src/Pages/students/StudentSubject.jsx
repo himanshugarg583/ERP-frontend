@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaClipboardList, FaCalendarAlt } from 'react-icons/fa';
-import StudentNavbar from './StudentNavbar';
 import StudentSidebar from './StudentSidebar';
+import Header from '../../components/comman_components/Header';
 import StudentAllSubject from './StudentAllSubject';
 
 const StudentSubject = () => {
@@ -89,14 +89,22 @@ const StudentSubject = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex font-sans">
-      <StudentSidebar className="fixed top-0 left-0 w-64 h-full" />
-      
-      <div className="fixed top-0 left-64 right-0 z-10 bg-white shadow-md">
-        <StudentNavbar />
-      </div>
-      
-      <main className="pt-16 md:ml-64 p-6">
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
         <div className="space-y-6">
           <StudentAllSubject />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -153,7 +161,8 @@ const StudentSubject = () => {
             </table>
           </div>
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

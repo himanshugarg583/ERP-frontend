@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import Sidebar from './TeacherSidebar';
-import Header from './TeacherHeader';
+import TeacherSidebar from './TeacherSidebar';
+import Header from '../../components/comman_components/Header';
 import { MdGrade, MdTrendingUp, MdTrendingDown, MdArrowForward } from 'react-icons/md';
 import { BarChart } from '@mui/x-charts';
 import { LinearProgress } from '@mui/material';
 
 const TeacherNotice = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [assessments] = useState(getInitialAssessments);
   const [showAll, setShowAll] = useState(false);
@@ -33,14 +32,22 @@ const TeacherNotice = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-        className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 z-30`}/>
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-0'} md:ml-64`}>
-        <Header setIsSidebarOpen={setIsSidebarOpen} />
-        <main className="p-4 sm:p-6 flex-1 overflow-y-auto">
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
           {selectedStudent ? (
             <StudentDashboard student={selectedStudent} onBack={setSelectedStudent} />
           ) : (

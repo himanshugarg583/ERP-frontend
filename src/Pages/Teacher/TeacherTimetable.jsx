@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import Sidebar from './TeacherSidebar'; 
-import Header from './TeacherHeader';   
+import TeacherSidebar from './TeacherSidebar'; 
+import Header from '../../components/comman_components/Header';   
 import { FaClock, FaBook, FaChalkboardTeacher } from 'react-icons/fa';
 
 const TeacherTimetable = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [timetable] = useState({
     Monday: [
@@ -46,11 +45,22 @@ const TeacherTimetable = () => {
   const maxPeriods = getMaxPeriods();
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-blue-100 min-h-screen w-full">
-      <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="flex-1 flex flex-col md:ml-64"> 
-        <Header setIsSidebarOpen={setIsSidebarOpen} />
-        <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center mb-4 sm:mb-0">

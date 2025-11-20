@@ -7,8 +7,8 @@ export const ROUTE_CATEGORIES = {
 
 export const ROLE_DASHBOARDS = {
   admin: "/admin/dashboard",
-  teacher: "/TeacherPortal", 
-  student: "/StudentDashboard",
+  teacher: "/teacher/dashboard", 
+  student: "/student/dashboard",
   accountant: "/AccountantDashboard",
   parent: "/ParentDashboard",
   superadmin: "/superAdminDash",

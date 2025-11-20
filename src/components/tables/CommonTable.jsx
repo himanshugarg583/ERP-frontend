@@ -200,12 +200,20 @@ const CommonTable = ({
 
   // Handle delete click
   const handleDeleteClick = async (item) => {
-    if (!window.confirm("Are you sure you want to delete this item?")) {
+    // If onDelete is provided, use custom handler (which should show custom modal)
+    // Otherwise, use browser confirm for deleteApi
+    if (onDelete) {
+      await onDelete(item);
       return;
     }
     
-    try {
-      if (deleteApi) {
+    // Only show browser confirm if using deleteApi directly
+    if (deleteApi) {
+      if (!window.confirm("Are you sure you want to delete this item?")) {
+        return;
+      }
+      
+      try {
         const response = await deleteApi(item.id);
         if (response && response.success) {
           showToast(response, "Item deleted successfully!");
@@ -214,12 +222,10 @@ const CommonTable = ({
         } else {
           showToast(response, "Failed to delete item");
         }
-      } else if (onDelete) {
-        await onDelete(item);
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        toast.error("Failed to delete item");
       }
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      toast.error("Failed to delete item");
     }
   };
 

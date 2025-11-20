@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import StudentNavbar from './StudentNavbar';
 import StudentSidebar from './StudentSidebar';
+import Header from '../../components/comman_components/Header';
 import { FaChevronDown, FaExclamationTriangle, FaCalendarAlt, FaFileAlt, FaEnvelope, FaUpload, FaEye, FaTachometerAlt, FaTasks, FaCalendar, FaUser } from 'react-icons/fa';
 
 const StudentAssignment = () => {
@@ -38,17 +38,22 @@ const StudentAssignment = () => {
   const buttonClasses = "w-full flex justify-center items-center px-4 py-2 rounded-lg transition-all duration-300 cursor-pointer shadow-md";
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <div className="fixed top-0 left-0 right-0 z-20 bg-white shadow-md md:left-64">
-        <StudentNavbar />
-      </div>
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
 
-      <div className="flex flex-1">
-        <div className="fixed top-0 bottom-0 w-64 hidden md:block z-30 bg-white shadow-lg">
-          <StudentSidebar />
-        </div>
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
 
-        <main className="flex-1 md:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
+        <main className="w-full px-4 md:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-end items-center mb-8">
               <div className="relative">
@@ -162,26 +167,6 @@ const StudentAssignment = () => {
             </div>
           </div>
         </main>
-      </div>
-
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 z-50 shadow-lg">
-        <div className="flex justify-around">
-          {[
-            { icon: FaTachometerAlt, label: 'Dashboard' },
-            { icon: FaTasks, label: 'Assignments', active: true },
-            { icon: FaCalendar, label: 'Calendar' },
-            { icon: FaUser, label: 'Profile' }
-          ].map(({ icon: Icon, label, active }) => (
-            <a 
-              key={label}
-              href="#" 
-              className={`flex flex-col items-center p-2 ${active ? 'text-indigo-600 font-semibold' : 'text-gray-700'}`}
-            >
-              <Icon />
-              <span className="text-xs mt-1">{label}</span>
-            </a>
-          ))}
-        </div>
       </div>
     </div>
   );

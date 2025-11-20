@@ -56,7 +56,7 @@ const StudentLogin = () => {
           console.log(response);
     
           if (response.role === "student") {
-            navigate("/StudentDashboard");
+            navigate("/student/dashboard");
           }
     
         } catch (error) {

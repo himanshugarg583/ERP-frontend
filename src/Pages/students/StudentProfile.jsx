@@ -1,33 +1,31 @@
 // StudentProfile.js
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   FaCamera, FaAddressCard, FaHeartbeat, FaTrophy,
   FaAward, FaBasketballBall, FaMusic, FaEdit,
   FaUser, FaGraduationCap, FaCalendarAlt, FaIdBadge
 } from 'react-icons/fa';
-import StudentNavbar from './StudentNavbar';
-import StudentSidebar from './StudentSidebar'; // Adjust the path if necessary
+import StudentSidebar from './StudentSidebar';
+import Header from '../../components/comman_components/Header';
 
 const StudentProfile = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
   return (
-    <div className="bg-gray-100">
-      {/* Navbar */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-white shadow-md md:left-64">
-        <StudentNavbar />
-      </div>
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
 
-      <div className="fixed top-0 bottom-0 w-64 hidden md:block z-30 bg-white shadow-lg">
-        <StudentSidebar />
-      </div>
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
 
-      {/* Main Layout */}
-      <div className="flex pt-16">
-        {/* Main Content Area */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 md:ml-64">
+        <main className="w-full px-4 md:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Profile Card */}
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 hover:shadow-md transition-shadow duration-300">

@@ -92,7 +92,8 @@ const SIDEBAR_ITEMS = [
     name: "Examination",
     icon: WalletCards,
     subItems: [
-      { name: "Exam List", href: "/admin/term-list-page" },
+      { name: "Exam Term", href: "/admin/term-list-page" },
+      { name: "Exam List", href: "/admin/exam-list-page" },
       { name: "Exam timetable", href: "/admin/exam-time-table-page" },
       { name: "Admit Card", href: "/admin/admit-card-page" },
       { name: "Marks Register", href: "/admin/marks-register-page" },
@@ -107,18 +108,14 @@ const SIDEBAR_ITEMS = [
     subItems: [{ name: "Events", href: "/admin/event-page" }],
   },
 
-  {
-    name: "Teacher Info",
-    icon: TicketPlus,
-    subItems: [
-      { name: "Add Teacher", href: "/admin/add-teacher" },
-      // { name: "Class Time Table", href: "/admin/tc-page" },
-      // { name: "Teacher Time Table", href: "/admin/incomehead" },
-      // { name: "Subject", href: "/admin/student-id-page" },
-      // { name: "Assign Subject", href: "/admin/incomehead" },
-      // { name: "Assign Class Teacher", href: "/admin/assign-class"}
-    ],
-  },
+  // Teacher Info section removed - functionality integrated into Teacher Management
+  // {
+  //   name: "Teacher Info",
+  //   icon: TicketPlus,
+  //   subItems: [
+  //     { name: "Add Teacher", href: "/admin/add-teacher" },
+  //   ],
+  // },
 
   {
     name: "Download Center",
@@ -135,9 +132,6 @@ const SIDEBAR_ITEMS = [
       { name: "Teacher Management", href: "/admin/teacher-management" },
       { name: "Teacher Credentials", href: "/admin/teacher-credentials" },
       { name: "HR Reports", href: "/admin/hr-reports" },
-      { name: "Add Accontant", href: "/admin/add-accountant-page" },
-      { name: "Add Staff", href: "/admin/add-staff" },
-      { name: "Add Librarian", href: "/admin/add-librarian" },
       // { name: "Payroll", href: "/admin/payroll" },
     ],
   },

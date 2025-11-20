@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://xd363v4j-5000.inc1.devtunnels.ms'; // Backend base URL
+const API_BASE_URL = 'http://localhost:5000'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
@@ -42,7 +42,71 @@ export const API_ENDPOINTS = {
   GET_ALL_CLASSES: '/admin/studentsAttendance/getAllClasses',
   GET_STUDENTS_BY_CLASS: (classId) => `/admin/studentsAttendance/getStudentsByClass/${classId}`,
   MARK_ATTENDANCE: '/admin/studentsAttendance/markClassAttendance',
-  GET_ATTENDANCE_REPORT: '/admin/studentsAttendance/getAttendanceReport'
+  // student leave endpoints
+  GET_ALL_LEAVES: '/admin/studentLeave/getAllLeaves',
+  APPLY_LEAVE: '/admin/studentLeave/applyLeave',
+  GET_LEAVE_BY_ID: (id) => `/admin/studentLeave/getLeave/${id}`,
+  UPDATE_LEAVE: (id) => `/admin/studentLeave/updateLeaveStatus/${id}`,
+  // student report endpoints
+  GET_STUDENT_REPORT_BY_DATE: (className, sectionName, date) => `admin/studentsAttendance/attendanceReportByDate?class_name=${className}&section_name=${sectionName}&date=${date}`,
+  GET_STUDENT_REPORT_BY_MONTH: (className, sectionName, month, year) => `admin/studentsAttendance/monthlyAttendanceReport?class_name=${className}&section_name=${sectionName}&month=${month}&year=${year}`,
+  GET_CLASS_WISE_SUMMARY: (date) => `admin/studentsAttendance/classWiseSummary?date=${date}`,
+
+  // get class sections endpoint
+  GET_ALL_CLASSES_DROPDOWN: '/admin/dropdown/getClassDropdown',
+  // get students by class and section
+  GET_ALL_STUDENTS_BY_CLASS: (classId) => `/admin/dropdown/getStudentsByClass/${classId}`,
+  // class section endpoints
+  CREATE_CLASSES: '/api/Classsection/createClass',
+  GET_ALL_CLASS_SECTIONS: '/api/Classsection/getAllClassSections',
+  UPDATE_CLASS_SECTION: (id) => `/api/Classsection/updateClassSection/${id}`,
+  DELETE_CLASS_SECTION: (id) => `/api/Classsection/DeleteClassSection/${id}`,
+
+  // subject endpoints
+  ADD_SUBJECTS: '/api/classSubject/addSubject',
+  GET_ALL_SUBJECTS_CLASS: '/admin/Subject/getAllSubjectsWithDetails',
+  UPDATE_SUBJECT_CLASS: (id) => `/api/classSubject/updateSubject/${id}`,
+  DELETE_SUBJECT_CLASS: (id) => `/api/classSubject/deleteSubject/${id}`,
+  GET_SUBJECT_BY_ID: (id) => `/api/classSubject/getSingleSubject/${id}`,
+  GET_SUBJECT_BY_CLASS_SECTION: (classSectionId) => `/admin/timetable/getByClass/${classSectionId}`,
+  
+  // time table endpoints
+  GET_TIME_TABLE_BY_CLASS_SECTION: (classSectionId) => `/admin/timetable/getByClass/${classSectionId}`,
+  GET_TEACHER_TIME_TABLE: (teacherId) => `/admin/timetable/getByTeacher/${teacherId}`,
+  ADD_BULK_TIME_TABLE: '/admin/timetable/bulkCreate',
+  
+  //Examinaton related endpoints
+  GET_ALL_EXAM_TERMS: '/admin/examTerm/getAllExamTerms',
+  CREATE_EXAM_TERM: '/admin/examTerm/createExamTerm',
+  GET_EXAM_TERM_BY_ID: (id) => `/admin/examTerm/getSingleExamTerm/${id}`,
+  UPDATE_EXAM_TERM: (id) => `/admin/examTerm/updateExamTerm/${id}`,
+  DELETE_EXAM_TERM: (id) => `/admin/examTerm/deleteExamTerm/${id}`,
+  
+  // Exam related endpoints
+  GET_ALL_EXAMS: '/admin/exam/getAllExams',
+  CREATE_EXAM: '/admin/exam/createExam',
+  UPDATE_EXAM: (id) => `/admin/exam/updateExam/${id}`,
+  DELETE_EXAM: (id) => `/admin/exam/deleteExam/${id}`,
+  
+  // Admin profile endpoints
+  GET_ADMIN_PROFILE: '/admin/setting/profile',
+  CHANGE_PASSWORD: '/admin/setting/changePassword',
+  // Teacher management endpoints
+  GET_ALL_TEACHERS: '/api/admin/getAllTeachers',
+  ADD_TEACHER: '/api/admin/register/addTeacher',
+  GET_TEACHER_BY_ID: (id) => `/api/admin/getSingleTeacher/${id}`,
+  UPDATE_TEACHER: (id) => `/api/admin/updateTeacher/${id}`,
+  DELETE_TEACHER: (id) => `/api/admin/softDeleteTeacher/${id}`,
+  GET_TEACHERS_CREDENTIALS: '/admin/hr/getTeacherCredentials',
+  GET_TEACHERS_SALARY: '/admin/hr/getTeacherSalary',
+
+
+  // Teacher Page Endpoints
+  GET_CLASS_LIST: '/admin/class/getClassList',
+  GET_STUDENTS_BY_CLASS: (classId) => `/classattendance/getClassStudentList/${classId}`,
+  MARK_ATTENDANCE: '/classattendance/markClassAttendance',
+  GET_CLASS_ATTENDANCE_BY_DATE: (classId, date) => `/classattendance/getClassAttendanceByDate?class_section_id=${classId}&date=${date}`,
+
 
 
 };
@@ -90,6 +154,18 @@ export const authorizedPut = async (endpoint, data) => {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
+    },
+  });
+  return response.data;
+};
+
+// Reusable authorized PUT request with FormData (for file uploads)
+export const authorizedPutFormData = async (endpoint, formData) => {
+  const token = localStorage.getItem('authToken');
+  const response = await axios.put(`${API_BASE_URL}${endpoint}`, formData, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
     },
   });
   return response.data;
@@ -300,4 +376,194 @@ export const fetchStudentsByClass = async (classId) => {
 // mark attendance
 export const markAttendance = async (attendanceData) => {
   return authorizedPost(API_ENDPOINTS.MARK_ATTENDANCE, attendanceData);
+};
+
+// get all leaves
+export const getAllLeaves = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_LEAVES);
+};
+// apply leave (with file upload support)
+export const applyLeave = async (leaveData, attachmentFile = null) => {
+  if (attachmentFile) {
+    const formData = new FormData();
+    // Append all leave data fields
+    Object.keys(leaveData).forEach(key => {
+      if (leaveData[key] !== null && leaveData[key] !== undefined) {
+        formData.append(key, leaveData[key]);
+      }
+    });
+    // Append attachment file if provided
+    if (attachmentFile) {
+      formData.append('attachment', attachmentFile);
+    }
+    return authorizedPostFormData(API_ENDPOINTS.APPLY_LEAVE, formData);
+  } else {
+    return authorizedPost(API_ENDPOINTS.APPLY_LEAVE, leaveData);
+  }
+};
+// update leave status
+export const updateLeaveStatus = async (id, statusData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_LEAVE(id), statusData);
+};
+// get leave by id
+export const getLeaveById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_LEAVE_BY_ID(id));
+};
+
+// get student report by date
+export const getStudentReportByDate = async (className, sectionName, date) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_REPORT_BY_DATE(className, sectionName, date));
+};
+// get student report by month
+export const getStudentReportByMonth = async (className, sectionName, month, year) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_REPORT_BY_MONTH(className, sectionName, month, year));
+};
+// get class wise summary
+export const getClassWiseSummary = async (date) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_WISE_SUMMARY(date));
+};
+
+// get all the classes for dropdown
+export const getAllClassesDropdown = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_CLASSES_DROPDOWN);
+};
+// get all students by class
+export const getAllStudentsByClass = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_STUDENTS_BY_CLASS(classId));
+};
+
+// class section endpoints
+export const createClasses = async (classData) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_CLASSES, classData);
+};
+export const getAllClassSections = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_CLASS_SECTIONS); 
+};
+export const updateClassSection = async (id, classData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_CLASS_SECTION(id), classData);
+};
+export const deleteClassSection = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_CLASS_SECTION(id));
+}
+// subject endpoints
+export const addSubjects = async (subjectData) => {
+  return authorizedPost(API_ENDPOINTS.ADD_SUBJECTS, subjectData);
+};
+export const getAllSubjectsClass = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_SUBJECTS_CLASS); 
+}
+export const updateSubjectClass = async (id, subjectData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_SUBJECT_CLASS(id), subjectData);
+}
+export const deleteSubjectClass = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_SUBJECT_CLASS(id));
+}
+
+// TIME TABLE ENDPOINTS
+export const getTimeTableByClassSection = async (classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_TIME_TABLE_BY_CLASS_SECTION(classSectionId));
+};
+
+export const getTeacherTimeTable = async (teacherId) => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_TIME_TABLE(teacherId));
+};
+
+// EXAM TERM ENDPOINTS
+export const getAllExamTerms = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_EXAM_TERMS);
+};
+
+export const createExamTerm = async (termData) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_EXAM_TERM, termData);
+};
+
+export const getExamTermById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXAM_TERM_BY_ID(id));
+};
+
+export const updateExamTerm = async (id, termData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_EXAM_TERM(id), termData);
+};
+
+export const deleteExamTerm = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_EXAM_TERM(id));
+};
+
+// EXAM ENDPOINTS
+export const getAllExams = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_EXAMS);
+};
+
+export const createExam = async (examData) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_EXAM, examData);
+};
+
+export const updateExam = async (id, examData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_EXAM(id), examData);
+};
+
+export const deleteExam = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_EXAM(id));
+};
+
+// ADMIN PROFILE ENDPOINTS
+export const getAdminProfile = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ADMIN_PROFILE);
+};
+
+export const changePassword = async (passwordData) => {
+  return authorizedPost(API_ENDPOINTS.CHANGE_PASSWORD, passwordData);
+};
+
+// TEACHER MANAGEMENT ENDPOINTS
+export const getAllTeachers = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_TEACHERS);
+};
+
+export const getTeacherById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_BY_ID(id));
+};
+
+export const createTeacher = async (teacherData, imageFile = null) => {
+  const formData = new FormData();
+  Object.keys(teacherData).forEach(key => {
+    if (teacherData[key] !== null && teacherData[key] !== undefined) {
+      formData.append(key, teacherData[key]);
+    }
+  });
+  if (imageFile) {
+    formData.append('image', imageFile);
+  }
+  return authorizedPostFormData(API_ENDPOINTS.ADD_TEACHER, formData);
+};
+
+export const updateTeacher = async (id, teacherData, imageFile = null) => {
+  if (imageFile) {
+    const formData = new FormData();
+    Object.keys(teacherData).forEach(key => {
+      if (teacherData[key] !== null && teacherData[key] !== undefined) {
+        formData.append(key, teacherData[key]);
+      }
+    });
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+    return authorizedPutFormData(API_ENDPOINTS.UPDATE_TEACHER(id), formData);
+  } else {
+    return authorizedPut(API_ENDPOINTS.UPDATE_TEACHER(id), teacherData);
+  }
+};
+
+export const deleteTeacher = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_TEACHER(id));
+};
+
+// Get teacher credentials
+export const getTeacherCredentials = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHERS_CREDENTIALS);
+};
+
+// Get teacher salary
+export const getTeacherSalary = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHERS_SALARY);
 };

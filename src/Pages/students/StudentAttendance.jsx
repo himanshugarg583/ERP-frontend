@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
-import StudentNavbar from './StudentNavbar';
 import StudentSidebar from './StudentSidebar';
+import Header from '../../components/comman_components/Header';
 import { FaClipboardList, FaCalendarAlt, FaExclamationCircle } from 'react-icons/fa';
 
 const StudentAttendance = () => {
@@ -183,15 +183,22 @@ const StudentAttendance = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex font-sans">
-      {/* Sidebar: Fixed left panel */}
-      <StudentSidebar className="fixed top-0 left-0 w-64 h-full" />
-      {/* Navbar: Fixed top bar */}
-      <div className="fixed top-0 left-64 right-0 z-10 bg-white shadow-md">
-        <StudentNavbar />
-      </div>
-      {/* Main Content Area */}
-      <main className="mt-16 md:ml-64 p-6 lg:p-8">
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
         <div className="max-w-9xl mx-auto space-y-8">
           {/* Summary Cards Section */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -280,7 +287,8 @@ const StudentAttendance = () => {
           {/* Subject Attendance Popup */}
           {selectedSubject && <Popup subject={selectedSubject} records={attendanceData.records.filter(r => r.subject === selectedSubject)} onClose={() => setSelectedSubject(null)} />}
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
