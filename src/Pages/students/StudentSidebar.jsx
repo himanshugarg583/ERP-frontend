@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Bus,
   User,
+  Wallet,
   ChevronRight,
   ChevronsRight,
 } from "lucide-react";
@@ -49,6 +50,11 @@ const SIDEBAR_ITEMS = [
     name: "Transport",
     icon: Bus,
     subItems: [{ name: "Transport", href: "/student/transport" }],
+  },
+  {
+    name: "Fees",
+    icon: Wallet,
+    subItems: [{ name: "Fees", href: "/student/fees" }],
   },
   {
     name: "Profile",

@@ -53,6 +53,7 @@ import StudentAssignment from './Pages/students/StudentAssignment';
 import StudentResult from './Pages/students/StudentResult';
 import StudentProgress from './Pages/students/StudentProgress';
 import StudentTransport from "./Pages/students/StudentTransport";
+import StudentFees from "./Pages/students/StudentFees";
 import StudentProfile from "./Pages/students/StudentProfile";
 
 // **Library Pages**
@@ -208,6 +209,7 @@ const routes = {
     { path: "/student/results", element: <StudentResult /> },
     { path: "/student/progress", element: <StudentProgress /> },
     { path: "/student/transport", element: <StudentTransport /> },
+    { path: "/student/fees", element: <StudentFees /> },
     { path: "/student/profile", element: <StudentProfile /> },
   ],
   library: [

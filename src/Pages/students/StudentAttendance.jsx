@@ -1,31 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import StudentSidebar from './StudentSidebar';
 import Header from '../../components/comman_components/Header';
 import { FaClipboardList, FaCalendarAlt, FaExclamationCircle } from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { getStudentAttendance } from '../../helper/requests-method/apiMethods';
 
 const StudentAttendance = () => {
-  const [attendanceData] = useState({
-    summary: { totalClasses: 60, classesAttended: 48, percentage: 80 },
-    records: [
-      { date: "2025-03-01", subject: "Mathematics", course: "MATH-11", teacher: "Prof. Anil Kumar", status: "Present" },
-      { date: "2025-03-02", subject: "Physics", course: "PHY-11", teacher: "Dr. Rakesh Sharma", status: "Absent" },
-      { date: "2025-03-03", subject: "Mathematics", course: "MATH-11", teacher: "Prof. Anil Kumar", status: "Present" },
-      { date: "2025-03-04", subject: "Physics", course: "PHY-11", teacher: "Dr. Rakesh Sharma", status: "Present" },
-      { date: "2025-03-05", subject: "Chemistry", course: "CHEM-11", teacher: "Dr. Priya Gupta", status: "Absent" },
-      { date: "2025-03-06", subject: "English", course: "ENG-11", teacher: "Ms. Shalini Verma", status: "Present" },
-      { date: "2025-03-07", subject: "Computer Science", course: "CS-11", teacher: "Mr. Vikram Patel", status: "Present" },
-      { date: "2025-03-08", subject: "Mathematics", course: "MATH-11", teacher: "Prof. Anil Kumar", status: "Absent" },
-      { date: "2025-03-09", subject: "Physics", course: "PHY-11", teacher: "Dr. Rakesh Sharma", status: "Present" },
-      { date: "2025-03-10", subject: "Chemistry", course: "CHEM-11", teacher: "Dr. Priya Gupta", status: "Present" },
-      { date: "2025-03-11", subject: "English", course: "ENG-11", teacher: "Ms. Shalini Verma", status: "Absent" },
-      { date: "2025-03-12", subject: "Computer Science", course: "CS-11", teacher: "Mr. Vikram Patel", status: "Present" },
-      { date: "2025-03-13", subject: "Mathematics", course: "MATH-11", teacher: "Prof. Anil Kumar", status: "Present" },
-      { date: "2025-03-14", subject: "Physics", course: "PHY-11", teacher: "Dr. Rakesh Sharma", status: "Present" },
-      { date: "2025-03-15", subject: "Chemistry", course: "CHEM-11", teacher: "Dr. Priya Gupta", status: "Present" },
-    ],
+  const [attendanceData, setAttendanceData] = useState({
+    summary: { total_days_marked: 0, present: 0, absent: 0, leave: 0, attendance_percentage: 0 },
+    attendance: [],
   });
-
+  const [loading, setLoading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [filters, setFilters] = useState({ subject: '' });
   const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', status: 'Pending' });
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -33,16 +22,40 @@ const StudentAttendance = () => {
   const [formSuccess, setFormSuccess] = useState('');
   const [selectedSubject, setSelectedSubject] = useState(null);
 
-  const uniqueSubjects = [...new Set(attendanceData.records.map(r => r.subject))];
-  const latestRecords = uniqueSubjects.map(subject => attendanceData.records.filter(r => r.subject === subject).slice(-1)[0]);
-  const filteredRecords = filters.subject ? latestRecords.filter(r => r.subject === filters.subject) : latestRecords;
+  useEffect(() => {
+    fetchAttendance();
+  }, [selectedMonth, selectedYear]);
+
+  const fetchAttendance = async () => {
+    try {
+      setLoading(true);
+      const response = await getStudentAttendance(selectedMonth, selectedYear);
+      if (response.success && response.data) {
+        setAttendanceData({
+          summary: response.data.summary || { total_days_marked: 0, present: 0, absent: 0, leave: 0, attendance_percentage: 0 },
+          attendance: response.data.attendance || [],
+        });
+      } else {
+        toast.error(response.message || 'Failed to fetch attendance');
+      }
+    } catch (error) {
+      console.error('Failed to fetch attendance:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch attendance');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const pieData = [
-    { id: 0, value: attendanceData.summary.classesAttended, label: 'Attended', color: '#10B981' },
-    { id: 1, value: attendanceData.summary.totalClasses - attendanceData.summary.classesAttended, label: 'Missed', color: '#EF4444' },
-  ];
+    { id: 0, value: attendanceData.summary.present || 0, label: 'Present', color: '#10B981' },
+    { id: 1, value: attendanceData.summary.absent || 0, label: 'Absent', color: '#EF4444' },
+    { id: 2, value: attendanceData.summary.leave || 0, label: 'Leave', color: '#F59E0B' },
+  ].filter(item => item.value > 0);
 
-  const handleFilterChange = e => setFilters({ subject: e.target.value });
+  const totalDays = attendanceData.summary.total_days_marked || 0;
+  const classesAttended = attendanceData.summary.present || 0;
+  const attendancePercentage = parseFloat(attendanceData.summary.attendance_percentage || 0);
+
   const handleLeaveFormChange = e => setLeaveForm({ ...leaveForm, [e.target.name]: e.target.value });
   const handleLeaveSubmit = e => {
     e.preventDefault();
@@ -57,130 +70,92 @@ const StudentAttendance = () => {
   };
 
   // Card component used for Total Classes, Classes Attended, and Attendance summary
-  const Card = ({ title, value, color }) => (
+  const Card = ({ title, value, color, details }) => (
     <div 
-      className={`relative bg-white p-6 rounded-xl shadow-lg border border-gray-200 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl hover:bg-${color}-100 flex flex-col items-center justify-center`}
-      // Container: White background, rounded corners, shadow, border, hover effects (lift and color-specific background)
+      className={`relative bg-white p-6 rounded-xl shadow-lg border border-gray-200 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl flex flex-col items-center justify-center`}
     >
       <div className={`absolute top-0 left-0 w-full h-2 bg-${color}-500 rounded-t-xl opacity-75`} />
-      {/* Top Bar: Color-specific bar at the top (blue, green, purple) */}
       <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">{title}</h3>
-      {/* Title: Displays "Total Classes", "Classes Attended", or "Attendance" */}
       <p className={`text-3xl font-bold text-${color}-600`}>{value}</p>
-      {/* Value: Displays the number (e.g., 60, 48, 80%) in bold, color-specific text */}
+      {details && <p className="text-xs text-gray-500 mt-2">{details}</p>}
     </div>
   );
 
   // Table component used for displaying attendance records
-  const Table = ({ records, subjects, filters, onFilterChange, onSubjectClick, totalClasses, classesAttended }) => (
-    <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 flex items-center">
-          <FaClipboardList className="w-6 h-6 mr-2 text-indigo-600" /> Attendance Records
-        </h2>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4 sm:mt-0">
-          <p className="text-sm font-medium text-gray-700">Total Attendance: <span className="text-indigo-600">{classesAttended}/{totalClasses}</span></p>
-          <select
-            name="subject"
-            value={filters.subject}
-            onChange={onFilterChange}
-            className="w-full sm:w-52 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white shadow-sm transition-all duration-200 hover:border-indigo-400"
-          >
-            <option value="">All Subjects</option>
-            {subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}
-          </select>
-        </div>
-      </div>
-      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-        {records.length ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-indigo-50">
-              <tr>
-                {["Date", "Subject", "Course", "Teacher"].map(header => (
-                  <th key={header} className="px-6 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">{header}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {records.map((record, index) => (
-                <tr key={index} className="hover:bg-indigo-50 transition-colors duration-150">
-                  <td className="px-6 py-4 text-sm text-gray-800">{record.date}</td>
-                  <td 
-                    className="px-6 py-4 text-sm text-indigo-600 font-medium cursor-pointer hover:underline hover:text-indigo-800" 
-                    onClick={() => onSubjectClick(record.subject)}
-                  >
-                    {record.subject}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.course}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{record.teacher}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : <p className="text-center py-6 text-gray-500 text-sm">No attendance records found.</p>}
-      </div>
-    </div>
-  );
-
-  // Popup component used for showing detailed attendance of a selected subject
-  const Popup = ({ subject, records, onClose }) => {
-    const totalClasses = records.length;
-    const classesAttended = records.filter(r => r.status === "Present").length;
-    const percentage = totalClasses > 0 ? Math.round((classesAttended / totalClasses) * 100) : 0;
+  const Table = ({ records, totalDays, classesAttended }) => {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
 
     return (
-      <div className="fixed inset-0 bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
-        <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-6 border-b pb-3">
-            <h2 className="text-2xl font-bold text-indigo-700 flex items-center">
-              <FaClipboardList className="w-6 h-6 mr-2" /> {subject} Attendance
-            </h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-3xl font-bold transition-colors">×</button>
-          </div>
-          <div className="space-y-6">
-            <div className="bg-indigo-50 p-4 rounded-lg shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-              <p className="text-sm text-gray-700 font-medium">Total Classes: <span className="text-indigo-600 font-bold">{totalClasses}</span></p>
-              <p className="text-sm text-gray-700 font-medium">Attended: <span className="text-indigo-600 font-bold">{classesAttended}</span></p>
-              <p className="text-sm text-gray-700 font-medium">Percentage: <span className="text-indigo-600 font-bold">{percentage}%</span></p>
+      <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold text-gray-800 flex items-center">
+            <FaClipboardList className="w-6 h-6 mr-2 text-indigo-600" /> Attendance Records
+          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4 sm:mt-0">
+            <div className="flex gap-2">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white"
+              >
+                {months.map((month, index) => (
+                  <option key={index} value={index + 1}>{month}</option>
+                ))}
+              </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white"
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
             </div>
-            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-indigo-50">
-                  <tr>
-                    {["Date", "Course", "Teacher", "Status"].map(header => (
-                      <th key={header} className="px-6 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {records.map((record, index) => (
-                    <tr key={index} className="hover:bg-indigo-50 transition-colors duration-150">
-                      <td className="px-6 py-4 text-sm text-gray-800">{record.date}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{record.course}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{record.teacher}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full shadow-sm ${record.status === 'Present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {record.status}
-                        </span>
-                      </td>
-                    </tr>
+            <p className="text-sm font-medium text-gray-700">Total Attendance: <span className="text-indigo-600">{classesAttended}/{totalDays}</span></p>
+          </div>
+        </div>
+        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+          {records.length ? (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-indigo-50">
+                <tr>
+                  {["Date", "Status", "Marked At"].map(header => (
+                    <th key={header} className="px-6 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">{header}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="mt-6 flex justify-end">
-            <button 
-              onClick={onClose} 
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg"
-            >
-              Close
-            </button>
-          </div>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {records.map((record, index) => (
+                  <tr key={index} className="hover:bg-indigo-50 transition-colors duration-150">
+                    <td className="px-6 py-4 text-sm text-gray-800">
+                      {new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full shadow-sm ${
+                        record.status === 'present' ? 'bg-green-100 text-green-700' :
+                        record.status === 'absent' ? 'bg-red-100 text-red-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {new Date(record.marked_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <p className="text-center py-6 text-gray-500 text-sm">No attendance records found for this month.</p>}
         </div>
       </div>
     );
   };
+
 
   return (
     <div className="bg-gray-100 flex AddStudent">
@@ -200,25 +175,31 @@ const StudentAttendance = () => {
 
         <main className="w-full px-4 md:px-6">
         <div className="max-w-9xl mx-auto space-y-8">
-          {/* Summary Cards Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Total Classes Card - Blue */}
-            <Card title="Total Classes" value={attendanceData.summary.totalClasses} color="blue" />
-            {/* Classes Attended Card - Green */}
-            <Card title="Classes Attended" value={attendanceData.summary.classesAttended} color="green" />
-            {/* Attendance Card - Purple */}
-            <Card title="Attendance" value={`${attendanceData.summary.percentage}%`} color="purple" />
-          </div>
-          {/* Attendance Records Table */}
-          <Table 
-            records={filteredRecords} 
-            subjects={uniqueSubjects} 
-            filters={filters} 
-            onFilterChange={handleFilterChange} 
-            onSubjectClick={setSelectedSubject} 
-            totalClasses={attendanceData.summary.totalClasses} 
-            classesAttended={attendanceData.summary.classesAttended} 
-          />
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : (
+            <>
+              {/* Summary Cards Section */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Total Days Card - Blue */}
+                <Card title="Total Days" value={totalDays} color="blue" details={`Days marked: ${totalDays}`} />
+                {/* Present Card - Green */}
+                <Card title="Present" value={attendanceData.summary.present || 0} color="green" details={`Days present`} />
+                {/* Absent Card - Red */}
+                <Card title="Absent" value={attendanceData.summary.absent || 0} color="red" details={`Days absent`} />
+                {/* Attendance Card - Purple */}
+                <Card title="Attendance" value={`${attendancePercentage.toFixed(1)}%`} color="purple" details={`Attendance percentage`} />
+              </div>
+              {/* Attendance Records Table */}
+              <Table 
+                records={attendanceData.attendance} 
+                totalDays={totalDays}
+                classesAttended={classesAttended}
+              />
+            </>
+          )}
           {/* Pie Chart and Leave Form Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Pie Chart Card */}
@@ -278,17 +259,16 @@ const StudentAttendance = () => {
             </div>
           </div>
           {/* Low Attendance Warning */}
-          {attendanceData.summary.percentage < 75 && (
+          {attendancePercentage < 75 && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg flex items-center animate-pulse">
               <FaExclamationCircle className="h-6 w-6 text-red-600 mr-3" />
               <p className="text-red-700 text-sm font-medium">Warning: Your attendance is below 75%. Please attend classes regularly.</p>
             </div>
           )}
-          {/* Subject Attendance Popup */}
-          {selectedSubject && <Popup subject={selectedSubject} records={attendanceData.records.filter(r => r.subject === selectedSubject)} onClose={() => setSelectedSubject(null)} />}
         </div>
         </main>
       </div>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

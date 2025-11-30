@@ -100,15 +100,38 @@ export const API_ENDPOINTS = {
   GET_TEACHERS_CREDENTIALS: '/admin/hr/getTeacherCredentials',
   GET_TEACHERS_SALARY: '/admin/hr/getTeacherSalary',
 
-
-  // Teacher Page Endpoints
-  GET_CLASS_LIST: '/admin/class/getClassList',
+  // Teacher Attendance Endpoints
+  GET_TEACHER_CLASSES: '/classattendance/getTeacherClasses',
   GET_STUDENTS_BY_CLASS: (classId) => `/classattendance/getClassStudentList/${classId}`,
-  MARK_ATTENDANCE: '/classattendance/markClassAttendance',
+  MARK_CLASS_ATTENDANCE: '/classattendance/markClassAttendance',
   GET_CLASS_ATTENDANCE_BY_DATE: (classId, date) => `/classattendance/getClassAttendanceByDate?class_section_id=${classId}&date=${date}`,
 
+  // Teacher Timetable Endpoints
+  GET_TEACHER_TIMETABLE: '/teacherTimetable/getTeacherTimetable',
+  GET_CLASS_TIMETABLE: (classSectionId) => `/teacherTimetable/getClassTimetable/${classSectionId}`,
 
+  // Teacher subject allocation endpoints
+  GET_TEACHER_SUBJECT_ALLOCATION: '/teacher/subject/getMySubjects',
 
+  // teacher profile and change password endpoints
+  GET_TEACHER_PROFILE: '/teacher/setting/getProfile',
+  CHANGE_TEACHER_PASSWORD: '/teacher/setting/changePassword',
+
+// Student Dashboard Endpoints
+  // GET STUDENT ATTENDANCE
+  GET_STUDENT_ATTENDANCE: (month, year) => `/studentattendance/getMonthlyAttendance?month=${month}&year=${year}`,
+  // GET STUDENT SUBJECTS
+  GET_STUDENT_SUBJECTS: '/studentattendance/getClassAndSubjects',
+  // Get student timetable
+  GET_STUDENT_TIMETABLE: '/studentattendance/getTimetable',
+  // get student fees
+  GET_STUDENT_FEES_DETAILS: '/student/fees/getFeeDetails',
+  // get student installments
+  GET_STUDENT_INSTALLMENTS: '/student/fees/getInstallments',
+  // get student profile and change password
+  GET_STUDENT_PROFILE: '/student/setting/getProfile',
+  CHANGE_STUDENT_PASSWORD: '/student/setting/changePassword',
+  
 };
 
 // Reusable authorized GET request
@@ -566,4 +589,89 @@ export const getTeacherCredentials = async () => {
 // Get teacher salary
 export const getTeacherSalary = async () => {
   return authorizedGet(API_ENDPOINTS.GET_TEACHERS_SALARY);
+};
+
+// TEACHER ATTENDANCE ENDPOINTS
+// Get all classes for a teacher (static teacher ID: 35)
+export const getTeacherClasses = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_CLASSES);
+};
+
+// Get students by class
+export const getStudentsByClass = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS(classId));
+};
+
+// Mark class attendance
+export const markClassAttendance = async (attendanceData) => {
+  return authorizedPost(API_ENDPOINTS.MARK_CLASS_ATTENDANCE, attendanceData);
+};
+
+// Get class attendance by date
+export const getClassAttendanceByDate = async (classId, date) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_ATTENDANCE_BY_DATE(classId, date));
+};
+
+// TEACHER TIMETABLE ENDPOINTS
+// Get teacher timetable
+export const getTeacherTimetable = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_TIMETABLE);
+};
+
+// Get class timetable
+export const getClassTimetable = async (classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_TIMETABLE(classSectionId));
+};
+
+// TEACHER SUBJECT ALLOCATION ENDPOINTS
+// Get teacher subject allocation
+export const getTeacherSubjectAllocation = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_SUBJECT_ALLOCATION);
+};
+
+// TEACHER PROFILE ENDPOINTS
+// Get teacher profile
+export const getTeacherProfile = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_PROFILE);
+};
+
+// Change teacher password
+export const changeTeacherPassword = async (passwordData) => {
+  return authorizedPut(API_ENDPOINTS.CHANGE_TEACHER_PASSWORD, passwordData);
+};
+
+// STUDENT DASHBOARD ENDPOINTS
+// Get student attendance
+export const getStudentAttendance = async (month, year) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_ATTENDANCE(month, year));
+};
+
+// Get student subjects
+export const getStudentSubjects = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_SUBJECTS);
+};
+
+// Get student timetable
+export const getStudentTimetable = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_TIMETABLE);
+};
+
+// Get student profile
+export const getStudentProfile = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_PROFILE);
+};
+
+// Change student password
+export const changeStudentPassword = async (passwordData) => {
+  return authorizedPut(API_ENDPOINTS.CHANGE_STUDENT_PASSWORD, passwordData);
+};
+
+// Get student fees details
+export const getStudentFeesDetails = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_FEES_DETAILS);
+};
+
+// Get student installments
+export const getStudentInstallments = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_INSTALLMENTS);
 };
