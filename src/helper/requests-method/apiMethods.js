@@ -421,7 +421,7 @@ export const applyLeave = async (leaveData, attachmentFile = null) => {
     }
     return authorizedPostFormData(API_ENDPOINTS.APPLY_LEAVE, formData);
   } else {
-    return authorizedPost(API_ENDPOINTS.APPLY_LEAVE, leaveData);
+  return authorizedPost(API_ENDPOINTS.APPLY_LEAVE, leaveData);
   }
 };
 // update leave status

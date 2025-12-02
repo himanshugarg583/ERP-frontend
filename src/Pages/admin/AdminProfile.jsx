@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FaCamera, FaAddressCard, FaHeartbeat, FaTrophy,
-  FaAward, FaBasketballBall, FaMusic, FaEdit,
-  FaUser, FaGraduationCap, FaCalendarAlt, FaIdBadge, FaLock
+  FaCamera, FaAddressCard, FaUser, FaGraduationCap, 
+  FaCalendarAlt, FaIdBadge, FaLock, FaEnvelope
 } from 'react-icons/fa';
-import StudentSidebar from './StudentSidebar';
+import Sidebar from './Sidebar';
 import Header from '../../components/comman_components/Header';
-import { getStudentProfile, changeStudentPassword } from '../../helper/requests-method/apiMethods';
+import { getAdminProfile, changePassword } from '../../helper/requests-method/apiMethods';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSearchParams } from 'react-router-dom';
 
-const StudentProfile = () => {
+const AdminProfile = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
   const [profile, setProfile] = useState(null);
@@ -19,7 +18,7 @@ const StudentProfile = () => {
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
     new_password: "",
-    confirm_new_password: "",
+    confirm_password: "",
   });
   const [passwordErrors, setPasswordErrors] = useState({});
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -38,17 +37,9 @@ const StudentProfile = () => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await getStudentProfile();
+      const response = await getAdminProfile();
       if (response && response.success && response.data) {
-        const studentData = {
-          name: response.data.personal_info?.name || '',
-          email: response.data.personal_info?.email || '',
-          role: 'student',
-          ...response.data.personal_info,
-          ...response.data.academic_info,
-          ...response.data.address_info,
-        };
-        setProfile(studentData);
+        setProfile(response.data);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -85,10 +76,10 @@ const StudentProfile = () => {
       errors.new_password = "New password must be at least 6 characters";
     }
 
-    if (!passwordForm.confirm_new_password.trim()) {
-      errors.confirm_new_password = "Please confirm your new password";
-    } else if (passwordForm.new_password !== passwordForm.confirm_new_password) {
-      errors.confirm_new_password = "Passwords do not match";
+    if (!passwordForm.confirm_password.trim()) {
+      errors.confirm_password = "Please confirm your new password";
+    } else if (passwordForm.new_password !== passwordForm.confirm_password) {
+      errors.confirm_password = "Passwords do not match";
     }
 
     if (passwordForm.current_password === passwordForm.new_password) {
@@ -113,17 +104,17 @@ const StudentProfile = () => {
       const payload = {
         current_password: passwordForm.current_password,
         new_password: passwordForm.new_password,
-        confirm_new_password: passwordForm.confirm_new_password,
+        confirm_password: passwordForm.confirm_password,
       };
 
-      const response = await changeStudentPassword(payload);
+      const response = await changePassword(payload);
 
       if (response && (response.success === true || response.statusCode === 200)) {
         toast.success(response.message || "Password changed successfully");
         setPasswordForm({
           current_password: "",
           new_password: "",
-          confirm_new_password: "",
+          confirm_password: "",
         });
         setPasswordErrors({});
         setSearchParams({ tab: 'profile' });
@@ -162,10 +153,10 @@ const StudentProfile = () => {
 
   return (
     <div className="bg-gray-100 flex AddStudent">
-      <StudentSidebar />
+      <Sidebar />
 
       <div
-        className=" overflow-auto relative z-1 flex-col"
+        className="overflow-auto relative z-1 flex-col"
         style={{
           height: "95vh",
           width: "100vw",
@@ -226,21 +217,19 @@ const StudentProfile = () => {
                         <div className="h-32 w-32 rounded-full overflow-hidden border-4 border-blue-100">
                           <img
                             src={profile.image || "https://randomuser.me/api/portraits/women/44.jpg"}
-                            alt="Student Profile"
+                            alt="Admin Profile"
                             className="w-full h-full object-cover"
                           />
                         </div>
                       </div>
                       <h2 className="text-xl font-bold mt-4">{profile.name || 'N/A'}</h2>
-                      <p className="text-gray-500 mb-2">Roll Number: {profile.roll_number || 'N/A'}</p>
+                      <p className="text-gray-500 mb-2">Admin ID: {profile.id || 'N/A'}</p>
                       <div className="flex space-x-2 mt-2">
-                        {profile.class_name && (
-                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                            {profile.class_name} {profile.section_name ? `- ${profile.section_name}` : ''}
-                          </span>
-                        )}
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                          {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Admin'}
+                        </span>
                         <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                          {profile.account_status === 'active' ? 'Active' : 'Inactive'}
+                          {profile.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </div>
                     </div>
@@ -249,8 +238,8 @@ const StudentProfile = () => {
                         <div className="flex items-center bg-gray-50 p-3 rounded-lg">
                           <FaIdBadge className="text-gray-500 mr-3 text-xl" />
                           <div>
-                            <p className="text-xs text-gray-500">Roll Number</p>
-                            <p className="font-medium">{profile.roll_number || 'N/A'}</p>
+                            <p className="text-xs text-gray-500">Admin ID</p>
+                            <p className="font-medium">{profile.id || 'N/A'}</p>
                           </div>
                         </div>
                       </div>
@@ -258,8 +247,8 @@ const StudentProfile = () => {
                         <div className="flex items-center bg-gray-50 p-3 rounded-lg h-full">
                           <FaCalendarAlt className="text-gray-500 mr-3 text-xl" />
                           <div>
-                            <p className="text-xs text-gray-500">DOB</p>
-                            <p className="font-medium">{formatDate(profile.dob)}</p>
+                            <p className="text-xs text-gray-500">Created At</p>
+                            <p className="font-medium">{formatDate(profile.created_at)}</p>
                           </div>
                         </div>
                       </div>
@@ -267,8 +256,14 @@ const StudentProfile = () => {
                         <div className="flex items-center bg-gray-50 p-3 rounded-lg h-full">
                           <FaUser className="text-gray-500 mr-3 text-xl" />
                           <div>
-                            <p className="text-xs text-gray-500">Gender</p>
-                            <p className="font-medium">{profile.gender || 'N/A'}</p>
+                            <p className="text-xs text-gray-500">Status</p>
+                            <p className="font-medium">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {profile.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : 'N/A'}
+                              </span>
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -288,57 +283,65 @@ const StudentProfile = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
-                        <p className="bg-gray-50 p-3 rounded-lg">{profile.email || 'N/A'}</p>
+                        <p className="bg-gray-50 p-3 rounded-lg flex items-center">
+                          <FaEnvelope className="mr-2 text-gray-400" />
+                          {profile.email || 'N/A'}
+                        </p>
                       </div>
-                      {profile.mobile_no && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
-                          <p className="bg-gray-50 p-3 rounded-lg">{profile.mobile_no}</p>
-                        </div>
-                      )}
-                      {(profile.current_address || profile.permanent_address) && (
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-500 mb-1">Address</label>
-                          <p className="bg-gray-50 p-3 rounded-lg">
-                            <strong>Current:</strong> {profile.current_address || 'N/A'}<br />
-                            <strong>Permanent:</strong> {profile.permanent_address || 'N/A'}
-                          </p>
-                        </div>
-                      )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Role</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">
+                          <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">
+                            {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Admin'}
+                          </span>
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {profile.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : 'N/A'}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Academic Information */}
-                  {profile.class_name && (
-                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 lg:col-span-3 hover:shadow-md transition-shadow duration-300">
-                      <h3 className="text-lg font-semibold mb-4 flex items-center">
-                        <FaGraduationCap className="mr-2 text-blue-600 text-xl" />
-                        Academic Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-500 mb-1">Class & Section</label>
-                          <p className="bg-gray-50 p-3 rounded-lg">
-                            {profile.class_name} {profile.section_name ? `- ${profile.section_name}` : ''}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-500 mb-1">Roll Number</label>
-                          <p className="bg-gray-50 p-3 rounded-lg">{profile.roll_number || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
-                          <p className="bg-gray-50 p-3 rounded-lg">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              profile.account_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {profile.account_status ? profile.account_status.charAt(0).toUpperCase() + profile.account_status.slice(1) : 'N/A'}
-                            </span>
-                          </p>
-                        </div>
+                  {/* Account Information */}
+                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 lg:col-span-3 hover:shadow-md transition-shadow duration-300">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <FaGraduationCap className="mr-2 text-blue-600 text-xl" />
+                      Account Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Created At</label>
+                        <p className="bg-gray-50 p-3 rounded-lg flex items-center">
+                          <FaCalendarAlt className="mr-2 text-gray-400" />
+                          {formatDate(profile.created_at)}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Last Updated</label>
+                        <p className="bg-gray-50 p-3 rounded-lg flex items-center">
+                          <FaCalendarAlt className="mr-2 text-gray-400" />
+                          {formatDate(profile.updated_at)}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Account Status</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {profile.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : 'N/A'}
+                          </span>
+                        </p>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
@@ -417,27 +420,27 @@ const StudentProfile = () => {
 
                 <div>
                   <label
-                    htmlFor="confirm_new_password"
+                    htmlFor="confirm_password"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     Confirm New Password <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="password"
-                    id="confirm_new_password"
-                    name="confirm_new_password"
-                    value={passwordForm.confirm_new_password}
+                    id="confirm_password"
+                    name="confirm_password"
+                    value={passwordForm.confirm_password}
                     onChange={handlePasswordChange}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
-                      passwordErrors.confirm_new_password
+                      passwordErrors.confirm_password
                         ? "border-red-500"
                         : "border-gray-300"
                     }`}
                     placeholder="Confirm new password"
                   />
-                  {passwordErrors.confirm_new_password && (
+                  {passwordErrors.confirm_password && (
                     <p className="mt-1 text-sm text-red-600">
-                      {passwordErrors.confirm_new_password}
+                      {passwordErrors.confirm_password}
                     </p>
                   )}
                 </div>
@@ -451,7 +454,7 @@ const StudentProfile = () => {
                       setPasswordForm({
                         current_password: "",
                         new_password: "",
-                        confirm_new_password: "",
+                        confirm_password: "",
                       });
                       setPasswordErrors({});
                     }}
@@ -477,4 +480,4 @@ const StudentProfile = () => {
   );
 };
 
-export default StudentProfile;
+export default AdminProfile;

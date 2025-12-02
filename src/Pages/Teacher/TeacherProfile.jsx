@@ -1,91 +1,163 @@
-import React, { useState, useCallback } from 'react';
-import { FaEdit, FaSave, FaArrowLeft } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { 
+  FaCamera, FaAddressCard, FaUser, FaGraduationCap, 
+  FaCalendarAlt, FaIdBadge, FaLock, FaEnvelope
+} from 'react-icons/fa';
 import TeacherSidebar from './TeacherSidebar';
 import Header from '../../components/comman_components/Header';
+import { getTeacherProfile, changeTeacherPassword } from '../../helper/requests-method/apiMethods';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useSearchParams } from 'react-router-dom';
 
 const TeacherProfile = () => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
-  const [tempImage, setTempImage] = useState(null);
-  const [profileData, setProfileData] = useState({
-    teacherId: 'T12345', firstName: 'Jane', lastName: 'Johnson',
-    class: 'Grade 5', subjects: 'Math, Science', gender: 'Female',
-    primaryContact: '123-456-7890', email: 'jane.johnson@example.com',
-    bloodGroup: 'A+', dateOfJoining: '2020-08-15', dob: '1985-03-10',
-    maritalStatus: 'Married', qualification: 'M.Ed', workExperience: '10 years',
-    previousSchool: 'ABC School', previousSchoolAddress: '123 Main St, City',
-    previousSchoolContact: '987-654-3210', permanentAddress: '456 Elm St, Town',
-    phoneNumber: '123-456-7890', panNumber: 'ABCDE1234F', status: 'Active',
-    epfNo: 'EPF123456', basicSalary: '50000', contractType: 'Permanent',
-    workShift: 'Morning', medicalLeave: '2/10', casualLeave: '5/15',
-    sickLeave: '3/10', accountName: 'Jane Johnson', accountNumber: '123456789012',
-    bankName: 'XYZ Bank', ifscCode: 'XYZA0001234', branchName: 'Main Branch',
-    resume: 'resume.pdf', otherDocuments: 'certificate.pdf',
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_new_password: "",
   });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const navigate = useNavigate();
-  const inputStyles = 'w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 text-gray-800';
-  const sectionStyles = 'mb-10 bg-white rounded-xl shadow-sm p-6 border border-gray-100';
-
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e?.target ?? {};
-    if (name) {
-      setProfileData((prev) => ({ ...prev, [name]: value }));
-    }
+  useEffect(() => {
+    fetchProfile();
   }, []);
 
-  const handleFileChange = useCallback((e, field) => {
-    const file = e?.target?.files?.[0];
-    if (file) {
-      if (field === 'profileImage') {
-        const imageUrl = URL.createObjectURL(file);
-        setTempImage(imageUrl);
-      } else {
-        setProfileData((prev) => ({ ...prev, [field]: file.name }));
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await getTeacherProfile();
+      if (response && response.success && response.data) {
+        const teacherData = {
+          name: response.data.personal_info?.name || '',
+          email: response.data.personal_info?.email || '',
+          role: response.data.professional_info?.role || 'teacher',
+          ...response.data.personal_info,
+          ...response.data.professional_info,
+          ...response.data.address_info,
+        };
+        setProfile(teacherData);
       }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile");
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const toggleEdit = useCallback(() => setIsEditing((prev) => !prev), []);
-
-  const handleSave = useCallback(() => {
-    if (tempImage) {
-      setProfileImage(tempImage);
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (passwordErrors[name]) {
+      setPasswordErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
     }
-    setTempImage(null);
-    setIsEditing(false);
-    alert('Profile updated successfully!');
-  }, [tempImage]);
+  };
 
-  const handleBack = useCallback(() => navigate?.(-1), [navigate]);
+  const validatePasswordForm = () => {
+    const errors = {};
 
-  const renderField = useCallback((label, name, type = 'text') => (
-    <div key={name} className="flex flex-col">
-      <label htmlFor={name} className="text-sm font-medium text-gray-600 mb-1">{label}</label>
-      {isEditing ? (
-        <input
-          id={name} type={type} name={name} value={profileData?.[name] ?? ''}
-          onChange={handleInputChange} className={inputStyles}/>
-      ) : (
-        <p className="text-gray-700 bg-gray-50 p-2.5 rounded-lg">{profileData?.[name] ?? 'N/A'}</p>
-      )}
-    </div>
-  ), [isEditing, profileData, handleInputChange, inputStyles]);
+    if (!passwordForm.current_password.trim()) {
+      errors.current_password = "Current password is required";
+    }
 
-  const renderFileField = useCallback((label, name) => (
-    <div key={name} className="flex flex-col">
-      <label htmlFor={name} className="text-sm font-medium text-gray-600 mb-1">{label}</label>
-      {isEditing ? (
-        <input
-          id={name} type="file" name={name}
-          onChange={(e) => handleFileChange(e, name)}
-          className={`${inputStyles} file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200`}/>
-      ) : (
-        <p className="text-gray-700 bg-gray-50 p-2.5 rounded-lg">{profileData?.[name] ?? 'No file'}</p>
-      )}
-    </div>
-  ), [isEditing, profileData, handleFileChange, inputStyles]);
+    if (!passwordForm.new_password.trim()) {
+      errors.new_password = "New password is required";
+    } else if (passwordForm.new_password.length < 6) {
+      errors.new_password = "New password must be at least 6 characters";
+    }
+
+    if (!passwordForm.confirm_new_password.trim()) {
+      errors.confirm_new_password = "Please confirm your new password";
+    } else if (passwordForm.new_password !== passwordForm.confirm_new_password) {
+      errors.confirm_new_password = "Passwords do not match";
+    }
+
+    if (passwordForm.current_password === passwordForm.new_password) {
+      errors.new_password = "New password must be different from current password";
+    }
+
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validatePasswordForm()) {
+      toast.error("Please fix the errors in the form");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const payload = {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+        confirm_new_password: passwordForm.confirm_new_password,
+      };
+
+      const response = await changeTeacherPassword(payload);
+
+      if (response && (response.success === true || response.statusCode === 200)) {
+        toast.success(response.message || "Password changed successfully");
+        setPasswordForm({
+          current_password: "",
+          new_password: "",
+          confirm_new_password: "",
+        });
+        setPasswordErrors({});
+        setSearchParams({ tab: 'profile' });
+        setActiveTab('profile');
+      } else {
+        toast.error(response?.message || "Failed to change password");
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      let errorMessage = "Failed to change password";
+
+      if (error?.response) {
+        errorMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.response?.data?.errorMessage ||
+          `Error: ${error.response.status} ${error.response.statusText}`;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   return (
     <div className="bg-gray-100 flex AddStudent">
@@ -104,90 +176,320 @@ const TeacherProfile = () => {
         <Header />
 
         <main className="w-full px-4 md:px-6">
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-full">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="sticky top-0 z-10 flex justify-between items-center p-4 bg-white">
-            <button onClick={handleBack} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-gray-600 hover:bg-gray-700 transition-all duration-200 shadow-md">
-              <FaArrowLeft />
-            </button>
-            <button onClick={isEditing ? handleSave : toggleEdit} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-indigo-700 hover:bg-indigo-800 transition-all duration-200 shadow-md">
-              {isEditing ? (<><FaSave /> Save Changes</>) : (<><FaEdit /> Edit Profile</>)}
-            </button>
+          {/* Tabs */}
+          <div className="bg-white rounded-xl shadow-sm mb-6">
+            <div className="border-b border-gray-200">
+              <nav className="flex -mb-px">
+                <button
+                  onClick={() => {
+                    setActiveTab('profile');
+                    setSearchParams({});
+                  }}
+                  className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'profile'
+                      ? 'border-indigo-600 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('password');
+                    setSearchParams({ tab: 'password' });
+                  }}
+                  className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'password'
+                      ? 'border-indigo-600 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Change Password
+                </button>
+              </nav>
+            </div>
           </div>
 
-          <div className="p-8">
-            <section className={sectionStyles}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">Personal Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="flex flex-col items-center md:items-start">
-                  <div className="mb-4">
-                    {profileImage ? (
-                      <img src={profileImage} alt="Profile" className="w-48 h-48 rounded-full object-cover shadow-md" />
-                    ) : (
-                      <div className="w-48 h-48 rounded-full bg-gray-200 flex items-center justify-center shadow-md">
-                        <span className="text-gray-500 text-sm">No Image</span>
+          {activeTab === 'profile' && (
+            <>
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : profile ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Profile Card */}
+                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 hover:shadow-md transition-shadow duration-300">
+                    <div className="flex flex-col items-center">
+                      <div className="relative group">
+                        <div className="h-32 w-32 rounded-full overflow-hidden border-4 border-blue-100">
+                          <img
+                            src={profile.image || "https://randomuser.me/api/portraits/women/44.jpg"}
+                            alt="Teacher Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       </div>
-                    )}
+                      <h2 className="text-xl font-bold mt-4">{profile.name || 'N/A'}</h2>
+                      <p className="text-gray-500 mb-2">Teacher ID: {profile.teacher_id || 'N/A'}</p>
+                      <div className="flex space-x-2 mt-2">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                          {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Teacher'}
+                        </span>
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                          {profile.account_status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-6 grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <div className="flex items-center bg-gray-50 p-3 rounded-lg">
+                          <FaIdBadge className="text-gray-500 mr-3 text-xl" />
+                          <div>
+                            <p className="text-xs text-gray-500">Teacher ID</p>
+                            <p className="font-medium">{profile.teacher_id || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-span-1">
+                        <div className="flex items-center bg-gray-50 p-3 rounded-lg h-full">
+                          <FaCalendarAlt className="text-gray-500 mr-3 text-xl" />
+                          <div>
+                            <p className="text-xs text-gray-500">DOB</p>
+                            <p className="font-medium">{formatDate(profile.dob)}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-span-1">
+                        <div className="flex items-center bg-gray-50 p-3 rounded-lg h-full">
+                          <FaUser className="text-gray-500 mr-3 text-xl" />
+                          <div>
+                            <p className="text-xs text-gray-500">Gender</p>
+                            <p className="font-medium">{profile.gender || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  {isEditing && (
-                    <div>
-                      <input
-                        type="file" accept="image/*"
-                        onChange={(e) => handleFileChange(e, 'profileImage')} className={`${inputStyles} text-sm w-48`}/>
-                      {tempImage && (
-                        <div className="mt-2">
-                          <img 
-                            src={tempImage} alt="Preview" className="w-48 h-48 rounded-full object-cover shadow-md"/>
+
+                  {/* Personal Information */}
+                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 lg:col-span-2 hover:shadow-md transition-shadow duration-300">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <FaAddressCard className="mr-2 text-blue-600 text-xl" />
+                      Personal Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">{profile.name || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">{profile.email || 'N/A'}</p>
+                      </div>
+                      {profile.mobile_no && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
+                          <p className="bg-gray-50 p-3 rounded-lg">{profile.mobile_no}</p>
+                        </div>
+                      )}
+                      {profile.qualification && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Qualification</label>
+                          <p className="bg-gray-50 p-3 rounded-lg">{profile.qualification}</p>
+                        </div>
+                      )}
+                      {profile.joining_date && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Joining Date</label>
+                          <p className="bg-gray-50 p-3 rounded-lg">{formatDate(profile.joining_date)}</p>
+                        </div>
+                      )}
+                      {profile.salary && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Salary</label>
+                          <p className="bg-gray-50 p-3 rounded-lg">
+                            ₹{parseFloat(profile.salary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
+                      {(profile.current_address || profile.permanent_address) && (
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Address</label>
+                          <p className="bg-gray-50 p-3 rounded-lg">
+                            <strong>Current:</strong> {profile.current_address || 'N/A'}<br />
+                            <strong>Permanent:</strong> {profile.permanent_address || 'N/A'}
+                          </p>
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Professional Information */}
+                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 lg:col-span-3 hover:shadow-md transition-shadow duration-300">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <FaGraduationCap className="mr-2 text-blue-600 text-xl" />
+                      Professional Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Role</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">
+                          <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">
+                            {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Teacher'}
+                          </span>
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Qualification</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">{profile.qualification || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+                        <p className="bg-gray-50 p-3 rounded-lg">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            profile.account_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {profile.account_status ? profile.account_status.charAt(0).toUpperCase() + profile.account_status.slice(1) : 'N/A'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <p>Failed to load profile</p>
+                  <button
+                    onClick={fetchProfile}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'password' && (
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 max-w-2xl mx-auto">
+              <h3 className="text-lg font-semibold mb-6 flex items-center">
+                <FaLock className="mr-2 text-indigo-600 text-xl" />
+                Change Password
+              </h3>
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="current_password"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Current Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="current_password"
+                    name="current_password"
+                    value={passwordForm.current_password}
+                    onChange={handlePasswordChange}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+                      passwordErrors.current_password
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
+                    placeholder="Enter current password"
+                  />
+                  {passwordErrors.current_password && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {passwordErrors.current_password}
+                    </p>
                   )}
                 </div>
 
-                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {['Teacher ID:teacherId', 'First Name:firstName', 'Last Name:lastName', 'Class:class', 'Subjects:subjects', 'Gender:gender', 'Primary Contact:primaryContact', 'Email Address:email', 'Blood Group:bloodGroup', 'Date of Joining:dateOfJoining:date', 'Date of Birth:dob:date', 'Marital Status:maritalStatus', 'Qualification:qualification', 'Work Experience:workExperience', 'Previous School:previousSchool', 'Previous School Address:previousSchoolAddress', 'Previous School Contact:previousSchoolContact', 'Permanent Address:permanentAddress', 'Phone Number:phoneNumber', 'PAN Number:panNumber', 'Status:status'].map(field => {
-                    const [label, name, type] = field.split(':');
-                    return renderField(label, name, type);
-                  })}
+                <div>
+                  <label
+                    htmlFor="new_password"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    New Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="new_password"
+                    name="new_password"
+                    value={passwordForm.new_password}
+                    onChange={handlePasswordChange}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+                      passwordErrors.new_password
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
+                    placeholder="Enter new password"
+                  />
+                  {passwordErrors.new_password && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {passwordErrors.new_password}
+                    </p>
+                  )}
                 </div>
-              </div>
-            </section>
 
-            <section className={sectionStyles}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">Employment Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {['EPF No:epfNo', 'Basic Salary:basicSalary', 'Contract Type:contractType', 'Work Shift:workShift'].map(field => renderField(...field.split(':')))}
-              </div>
-            </section>
+                <div>
+                  <label
+                    htmlFor="confirm_new_password"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Confirm New Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="confirm_new_password"
+                    name="confirm_new_password"
+                    value={passwordForm.confirm_new_password}
+                    onChange={handlePasswordChange}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+                      passwordErrors.confirm_new_password
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
+                    placeholder="Confirm new password"
+                  />
+                  {passwordErrors.confirm_new_password && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {passwordErrors.confirm_new_password}
+                    </p>
+                  )}
+                </div>
 
-            <section className={sectionStyles}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">Leave Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {['Medical Leave:medicalLeave', 'Casual Leave:casualLeave', 'Sick Leave:sickLeave'].map(field => renderField(...field.split(':')))}
-              </div>
-            </section>
-
-            <section className={sectionStyles}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">Bank Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {['Account Name:accountName', 'Account Number:accountNumber', 'Bank Name:bankName', 'IFSC Code:ifscCode', 'Branch Name:branchName'].map(field => renderField(...field.split(':')))}
-              </div>
-            </section>
-
-            <section className={sectionStyles}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">Documents</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderFileField('Resume', 'resume')}
-                {renderFileField('Other Documents', 'otherDocuments')}
-              </div>
-            </section>
-          </div>
-        </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('profile');
+                      setSearchParams({});
+                      setPasswordForm({
+                        current_password: "",
+                        new_password: "",
+                        confirm_new_password: "",
+                      });
+                      setPasswordErrors({});
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                  </button>
+                </div>
+              </form>
             </div>
-          </div>
+          )}
         </main>
       </div>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

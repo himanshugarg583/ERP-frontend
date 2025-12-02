@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Circle,
   ChevronsRight,
+  User,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
@@ -144,6 +145,13 @@ const SIDEBAR_ITEMS = [
       { name: "Staff Certificate", href: "/admin/staff-certificate" },
       { name: "Student Id Card", href: "/admin/student-id-page" },
       { name: "Staff Id Card", href: "/admin/staff-id-card" },
+    ],
+  },
+  {
+    name: "Profile",
+    icon: User,
+    subItems: [
+      { name: "My Profile", href: "/admin/profile" },
     ],
   },
 ];

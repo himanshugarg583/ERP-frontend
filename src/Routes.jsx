@@ -80,6 +80,7 @@ import AccountantSetting from "./Pages/Accountant/Accountant_Setting.jsx";
 
 // **Admin Routes**
 import AdminDashboardPage from "./Pages/admin/AdminDashboardPage.jsx";
+import AdminProfile from "./Pages/admin/AdminProfile.jsx";
 import EnquiryPage from "./Pages/admin/front_office/EnquiryPage";
 import AddStudent from "./Pages/admin/Student_info/AddStudent";
 import StudentReports from "./Pages/admin/Student_info/StudentReports";
@@ -223,6 +224,7 @@ const routes = {
   ],
   admin: [
     { path: "/admin/dashboard", element: <AdminDashboardPage /> },
+    { path: "/admin/profile", element: <AdminProfile /> },
     { path: "/admin/admission-enquiry", element: <EnquiryPage /> },
     { path: "/admin/add-students", element: <AddStudent /> },
     { path: "/admin/student-credential", element: <Student_Crediential /> },

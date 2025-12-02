@@ -21,8 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "../../context/AuthContext";
-import { getAdminProfile, changePassword, getTeacherProfile, changeTeacherPassword, getStudentProfile, changeStudentPassword } from "../../helper/requests-method/apiMethods";
-import Modal from "./Modal";
+import { getAdminProfile, getTeacherProfile, getStudentProfile } from "../../helper/requests-method/apiMethods";
 
 const Header = ({ title }) => {
   const navigate = useNavigate();
@@ -31,18 +30,8 @@ const Header = ({ title }) => {
   const isStudent = user?.role === 'student';
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    current_password: "",
-    new_password: "",
-    confirm_password: "",
-    confirm_new_password: "",
-  });
-  const [passwordErrors, setPasswordErrors] = useState({});
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const dropdownRef = useRef(null);
 
   // Fetch profile based on user role
@@ -114,22 +103,26 @@ const Header = ({ title }) => {
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
-    setProfileModalOpen(true);
-    // Refresh profile data when opening modal
-    fetchProfile();
+    // Redirect to profile page based on user role
+    if (isStudent) {
+      navigate("/student/profile");
+    } else if (isTeacher) {
+      navigate("/teacher/profile");
+    } else {
+      navigate("/admin/profile");
+    }
   };
 
   const handleChangePasswordClick = () => {
     setIsDropdownOpen(false);
-    setChangePasswordModalOpen(true);
-    // Reset form
-    setPasswordForm({
-      current_password: "",
-      new_password: "",
-      confirm_password: "",
-      confirm_new_password: "",
-    });
-    setPasswordErrors({});
+    // Redirect to profile page with password change option based on user role
+    if (isStudent) {
+      navigate("/student/profile?tab=password");
+    } else if (isTeacher) {
+      navigate("/teacher/profile?tab=password");
+    } else {
+      navigate("/admin/profile?tab=password");
+    }
   };
 
   const handleLogout = () => {
@@ -357,361 +350,6 @@ const Header = ({ title }) => {
           </button>
         </div>
       </header>
-
-      {/* Profile Modal */}
-      <Modal
-        isOpen={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
-        title="My Profile"
-        size="md"
-      >
-        {profileLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-            <p className="mt-2 text-gray-600">Loading profile...</p>
-          </div>
-        ) : profile ? (
-          <div className="p-4">
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <img
-                  src={profile.image || "https://randomuser.me/api/portraits/women/44.jpg"}
-                  alt="Profile"
-                  className="h-24 w-24 rounded-full mx-auto border-4 border-violet-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {profile.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {profile.email || "N/A"}
-                </p>
-              </div>
-              {(isTeacher || isStudent) && profile.mobile_no && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mobile Number
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {profile.mobile_no || "N/A"}
-                  </p>
-                </div>
-              )}
-              {(isTeacher || isStudent) && profile.gender && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Gender
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {profile.gender || "N/A"}
-                  </p>
-                </div>
-              )}
-              {(isTeacher || isStudent) && profile.dob && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date of Birth
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {new Date(profile.dob).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-              )}
-              {isTeacher && profile.qualification && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Qualification
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {profile.qualification || "N/A"}
-                  </p>
-                </div>
-              )}
-              {isTeacher && profile.joining_date && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Joining Date
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {new Date(profile.joining_date).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-              )}
-              {isTeacher && profile.salary && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Salary
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    ₹{parseFloat(profile.salary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-              )}
-              {isStudent && profile.roll_number && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Roll Number
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {profile.roll_number || "N/A"}
-                  </p>
-                </div>
-              )}
-              {isStudent && profile.class_name && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Class
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {profile.class_name || "N/A"}
-                  </p>
-                </div>
-              )}
-              {(isTeacher || isStudent) && (profile.current_address || profile.permanent_address) && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded-md text-sm">
-                    <strong>Current:</strong> {profile.current_address || "N/A"}<br />
-                    <strong>Permanent:</strong> {profile.permanent_address || "N/A"}
-                  </p>
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  <span className="px-2 py-1 bg-violet-100 text-violet-800 rounded-full text-xs font-medium">
-                    {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : "N/A"}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      (profile.status === "active" || profile.account_status === "active")
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {(profile.status || profile.account_status)
-                      ? (profile.status || profile.account_status).charAt(0).toUpperCase() +
-                        (profile.status || profile.account_status).slice(1)
-                      : "N/A"}
-                  </span>
-                </p>
-              </div>
-              {!isTeacher && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Created At
-                    </label>
-                    <p className="text-gray-900 bg-gray-50 p-2 rounded-md text-sm">
-                      {profile.created_at
-                        ? new Date(profile.created_at).toLocaleDateString(
-                            "en-GB",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Updated
-                    </label>
-                    <p className="text-gray-900 bg-gray-50 p-2 rounded-md text-sm">
-                      {profile.updated_at
-                        ? new Date(profile.updated_at).toLocaleDateString(
-                            "en-GB",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )
-                        : "N/A"}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setProfileModalOpen(false)}
-                className="px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="p-8 text-center">
-            <p className="text-gray-600">Failed to load profile</p>
-            <button
-              onClick={fetchProfile}
-              className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-      </Modal>
-
-      {/* Change Password Modal */}
-      <Modal
-        isOpen={changePasswordModalOpen}
-        onClose={() => {
-          setChangePasswordModalOpen(false);
-          setPasswordForm({
-            current_password: "",
-            new_password: "",
-            confirm_password: "",
-            confirm_new_password: "",
-          });
-          setPasswordErrors({});
-        }}
-        title="Change Password"
-        size="md"
-      >
-        <form onSubmit={handlePasswordSubmit} className="p-4">
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="current_password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Current Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                id="current_password"
-                name="current_password"
-                value={passwordForm.current_password}
-                onChange={handlePasswordChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  passwordErrors.current_password
-                    ? "border-red-500"
-                    : "border-gray-300"
-                }`}
-                placeholder="Enter current password"
-              />
-              {passwordErrors.current_password && (
-                <p className="mt-1 text-sm text-red-600">
-                  {passwordErrors.current_password}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="new_password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                New Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                id="new_password"
-                name="new_password"
-                value={passwordForm.new_password}
-                onChange={handlePasswordChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  passwordErrors.new_password
-                    ? "border-red-500"
-                    : "border-gray-300"
-                }`}
-                placeholder="Enter new password"
-              />
-              {passwordErrors.new_password && (
-                <p className="mt-1 text-sm text-red-600">
-                  {passwordErrors.new_password}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor={(isTeacher || isStudent) ? "confirm_new_password" : "confirm_password"}
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Confirm New Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                id={(isTeacher || isStudent) ? "confirm_new_password" : "confirm_password"}
-                name={(isTeacher || isStudent) ? "confirm_new_password" : "confirm_password"}
-                value={(isTeacher || isStudent) ? passwordForm.confirm_new_password : passwordForm.confirm_password}
-                onChange={handlePasswordChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  passwordErrors[(isTeacher || isStudent) ? "confirm_new_password" : "confirm_password"]
-                    ? "border-red-500"
-                    : "border-gray-300"
-                }`}
-                placeholder="Confirm new password"
-              />
-              {passwordErrors[(isTeacher || isStudent) ? "confirm_new_password" : "confirm_password"] && (
-                <p className="mt-1 text-sm text-red-600">
-                  {passwordErrors[(isTeacher || isStudent) ? "confirm_new_password" : "confirm_password"]}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setChangePasswordModalOpen(false);
-                setPasswordForm({
-                  current_password: "",
-                  new_password: "",
-                  confirm_password: "",
-                  confirm_new_password: "",
-                });
-                setPasswordErrors({});
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isChangingPassword}
-              className="px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isChangingPassword ? "Changing..." : "Change Password"}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       <ToastContainer position="top-right" autoClose={3000} />
     </>

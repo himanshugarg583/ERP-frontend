@@ -41,16 +41,16 @@ const SIDEBAR_ITEMS = [
     icon: ClipboardCheck,
     subItems: [{ name: "Results", href: "/student/results" }],
   },
-  {
-    name: "Progress",
-    icon: TrendingUp,
-    subItems: [{ name: "Progress", href: "/student/progress" }],
-  },
-  {
-    name: "Transport",
-    icon: Bus,
-    subItems: [{ name: "Transport", href: "/student/transport" }],
-  },
+  // {
+  //   name: "Progress",
+  //   icon: TrendingUp,
+  //   subItems: [{ name: "Progress", href: "/student/progress" }],
+  // },
+  // {
+  //   name: "Transport",
+  //   icon: Bus,
+  //   subItems: [{ name: "Transport", href: "/student/transport" }],
+  // },
   {
     name: "Fees",
     icon: Wallet,

@@ -51,11 +51,11 @@ const SIDEBAR_ITEMS = [
     icon: Bell,
     subItems: [{ name: "Notice", href: "/teacher/notice" }],
   },
-  {
-    name: "Transport",
-    icon: Bus,
-    subItems: [{ name: "Transport", href: "/teacher/transportation" }],
-  },
+  // {
+  //   name: "Transport",
+  //   icon: Bus,
+  //   subItems: [{ name: "Transport", href: "/teacher/transportation" }],
+  // },
   {
     name: "Profile",
     icon: User,
