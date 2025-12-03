@@ -131,6 +131,14 @@ export const API_ENDPOINTS = {
   // get student profile and change password
   GET_STUDENT_PROFILE: '/student/setting/getProfile',
   CHANGE_STUDENT_PASSWORD: '/student/setting/changePassword',
+
+  // Student leave endpoints
+  GET_STUDENT_LEAVES: '/student/leave/getMyLeaves',
+  APPLY_STUDENT_LEAVE: '/student/leave/applyLeave',
+  DELETE_STUDENT_LEAVE: (id) => `/student/leave/deleteLeave/${id}`,
+
+  //student notice endpoints
+  GET_STUDENT_NOTICES: '/student/notice/getNoticesForMe',
   
 };
 
@@ -674,4 +682,22 @@ export const getStudentFeesDetails = async () => {
 // Get student installments
 export const getStudentInstallments = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_INSTALLMENTS);
+};
+
+// Student Leave API functions
+export const getStudentLeaves = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_LEAVES);
+};
+
+export const applyStudentLeave = async (payload) => {
+  return authorizedPost(API_ENDPOINTS.APPLY_STUDENT_LEAVE, payload);
+};
+
+export const deleteStudentLeave = async (leaveId) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_STUDENT_LEAVE(leaveId));
+};
+
+// Student Notice API functions
+export const getStudentNotices = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_NOTICES);
 };

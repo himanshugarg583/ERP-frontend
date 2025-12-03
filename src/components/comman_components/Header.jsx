@@ -127,10 +127,19 @@ const Header = ({ title }) => {
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
-    // Remove token from localStorage
+    // Clear all authentication-related localStorage items
     localStorage.removeItem("authToken");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("rememberEmail");
+    // Clear sidebar state
+    localStorage.removeItem("studentSidebar:openDropdown");
+    localStorage.removeItem("teacherSidebar:openDropdown");
+    localStorage.removeItem("sidebar:openDropdown");
+    localStorage.removeItem("studentSidebar:isOpen");
+    localStorage.removeItem("teacherSidebar:isOpen");
+    localStorage.removeItem("sidebar:isOpen");
     // Redirect to login page
-    navigate("/login");
+    navigate("/login", { replace: true });
     toast.success("Logged out successfully");
   };
 

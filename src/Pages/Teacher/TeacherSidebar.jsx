@@ -269,6 +269,14 @@ const TeacherSidebar = () => {
             <button
               onClick={() => { 
                 localStorage.removeItem("authToken");
+                localStorage.removeItem("userData");
+                localStorage.removeItem("rememberEmail");
+                localStorage.removeItem("studentSidebar:openDropdown");
+                localStorage.removeItem("teacherSidebar:openDropdown");
+                localStorage.removeItem("sidebar:openDropdown");
+                localStorage.removeItem("studentSidebar:isOpen");
+                localStorage.removeItem("teacherSidebar:isOpen");
+                localStorage.removeItem("sidebar:isOpen");
                 window.location.href = '/login'; 
               }}
               className={`group flex items-center gap-2 py-2 px-4 rounded-xl bg-white text-slate-800 font-semibold shadow hover:shadow-md border border-slate-200 hover:border-violet-500 transition-colors w-full ${isSidebarOpen ? '' : 'justify-center px-2'}`}
