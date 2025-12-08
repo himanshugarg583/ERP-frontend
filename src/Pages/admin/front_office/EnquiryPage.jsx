@@ -295,9 +295,9 @@ const EnquiryPage = () => {
             >
                 <Header />
                 
-                <main className="max-w-full py-4 px-4 md:px-6">
+                <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 overflow-x-hidden">
                     <div
-                        className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-7"
+                        className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-7"
                     >  
                         <StatCards name="Total Enquiry" icon={UserIcon} value={stats.totalEnquiries.toLocaleString()} color="#7c3aed"/>
                         <StatCards name="Active Enquiry" icon={UserCheck} value={stats.activeEnquiries.toLocaleString()} color="#f59e0b" />

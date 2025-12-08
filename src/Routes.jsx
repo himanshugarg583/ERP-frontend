@@ -125,6 +125,7 @@ import TcPage from "./Pages/admin/Certificates/TcPage.jsx";
 import StudentIdPage from "./Pages/admin/Certificates/StudentIdPage.jsx";
 import StaffCertificate from "./Pages/admin/Certificates/StaffCertificate.jsx";
 import StaffIdCard from "./Pages/admin/Certificates/StaffIdCard.jsx";
+import AdminNotes from "./Pages/admin/AdminNotes";
 
 // online learning
 import OnlineLearningDash from "./Pages/OnlineLearning/OnlineLearningDash";
@@ -262,6 +263,7 @@ const routes = {
     { path: "/admin/exam-list-page", element: <ExamListPage/> },
     { path: "/admin/exam-report-page", element: <ExamReportPage/> },
     { path: "/admin/event-page", element: <EventPage/> },
+    { path: "/admin/notes", element: <AdminNotes/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },
     { path: "/admin/teacher-credentials", element: <TeacherCredentials/> },
     { path: "/admin/hr-reports", element: <HRReports/> },

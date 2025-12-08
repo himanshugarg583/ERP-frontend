@@ -91,6 +91,12 @@ export const API_ENDPOINTS = {
   // Admin profile endpoints
   GET_ADMIN_PROFILE: '/admin/setting/profile',
   CHANGE_PASSWORD: '/admin/setting/changePassword',
+ // Admin notice endpoints
+  GET_ADMIN_NOTICES: '/admin/notice/getAllNotices',
+  ADD_ADMIN_NOTICE: '/admin/notice/createNotices',
+  UPDATE_ADMIN_NOTICE: (id) => `/admin/notice/updateNotice/${id}`,
+  DELETE_ADMIN_NOTICE: (id) => `/admin/notice/deleteNotice/${id}`,
+
   // Teacher management endpoints
   GET_ALL_TEACHERS: '/api/admin/getAllTeachers',
   ADD_TEACHER: '/api/admin/register/addTeacher',
@@ -116,6 +122,12 @@ export const API_ENDPOINTS = {
   // teacher profile and change password endpoints
   GET_TEACHER_PROFILE: '/teacher/setting/getProfile',
   CHANGE_TEACHER_PASSWORD: '/teacher/setting/changePassword',
+
+  // teacher notes endpoints
+  GET_TEACHER_NOTES: '/teacher/notice/getMyNotices',
+  ADD_TEACHER_NOTE: '/teacher/notice/createNotice',
+  UPDATE_TEACHER_NOTE: (id) => `/teacher/notice/updateNotice/${id}`,
+  DELETE_TEACHER_NOTE: (id) => `/teacher/notice/deleteNotice/${id}`,
 
 // Student Dashboard Endpoints
   // GET STUDENT ATTENDANCE
@@ -700,4 +712,64 @@ export const deleteStudentLeave = async (leaveId) => {
 // Student Notice API functions
 export const getStudentNotices = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_NOTICES);
+};
+
+// Admin Notice API functions
+export const getAdminNotices = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ADMIN_NOTICES);
+};
+
+export const addAdminNotice = async (noticeData, attachmentFile = null) => {
+  if (attachmentFile) {
+    const formData = new FormData();
+    Object.keys(noticeData).forEach(key => {
+      if (noticeData[key] !== null && noticeData[key] !== undefined) {
+        formData.append(key, noticeData[key]);
+      }
+    });
+    if (attachmentFile) {
+      formData.append('attachment', attachmentFile);
+    }
+    return authorizedPostFormData(API_ENDPOINTS.ADD_ADMIN_NOTICE, formData);
+  } else {
+    return authorizedPost(API_ENDPOINTS.ADD_ADMIN_NOTICE, noticeData);
+  }
+};
+
+export const updateAdminNotice = async (id, noticeData, attachmentFile = null) => {
+  if (attachmentFile) {
+    const formData = new FormData();
+    Object.keys(noticeData).forEach(key => {
+      if (noticeData[key] !== null && noticeData[key] !== undefined) {
+        formData.append(key, noticeData[key]);
+      }
+    });
+    if (attachmentFile) {
+      formData.append('attachment', attachmentFile);
+    }
+    return authorizedPutFormData(API_ENDPOINTS.UPDATE_ADMIN_NOTICE(id), formData);
+  } else {
+    return authorizedPut(API_ENDPOINTS.UPDATE_ADMIN_NOTICE(id), noticeData);
+  }
+};
+
+export const deleteAdminNotice = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_ADMIN_NOTICE(id));
+};
+
+// Teacher Notice API functions
+export const getTeacherNotes = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_NOTES);
+};
+
+export const addTeacherNote = async (noteData) => {
+  return authorizedPost(API_ENDPOINTS.ADD_TEACHER_NOTE, noteData);
+};
+
+export const updateTeacherNote = async (id, noteData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_TEACHER_NOTE(id), noteData);
+};
+
+export const deleteTeacherNote = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_TEACHER_NOTE(id));
 };

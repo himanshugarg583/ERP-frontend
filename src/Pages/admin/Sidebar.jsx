@@ -106,7 +106,10 @@ const SIDEBAR_ITEMS = [
   {
     name: "Communication",
     icon: Users,
-    subItems: [{ name: "Events", href: "/admin/event-page" }],
+    subItems: [
+      { name: "Events", href: "/admin/event-page" },
+      { name: "Notices", href: "/admin/notes" },
+    ],
   },
 
   // Teacher Info section removed - functionality integrated into Teacher Management

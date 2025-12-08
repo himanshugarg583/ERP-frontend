@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Plus, Edit, Trash2, FileText, X, Eye } from 'lucide-react';
-import TeacherSidebar from './TeacherSidebar';
+import { Bell, Plus, Edit, Trash2, FileText, Download, X, Eye } from 'lucide-react';
+import Sidebar from './Sidebar';
 import Header from '../../components/comman_components/Header';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getTeacherNotes, addTeacherNote, updateTeacherNote, deleteTeacherNote } from '../../helper/requests-method/apiMethods';
+import { getAdminNotices, addAdminNotice, updateAdminNotice, deleteAdminNotice } from '../../helper/requests-method/apiMethods';
 
-const TeacherNotice = () => {
+const AdminNotes = () => {
   const [notices, setNotices] = useState([]);
   const [totalNotices, setTotalNotices] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -19,10 +19,12 @@ const TeacherNotice = () => {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
-    target_type: 'all_classes',
+    target_type: 'all',
+    attachment: null,
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachmentPreview, setAttachmentPreview] = useState(null);
 
   useEffect(() => {
     fetchNotices();
@@ -31,7 +33,7 @@ const TeacherNotice = () => {
   const fetchNotices = async () => {
     try {
       setLoading(true);
-      const response = await getTeacherNotes();
+      const response = await getAdminNotices();
       if (response.success && response.data) {
         setNotices(response.data.notices || []);
         setTotalNotices(response.data.total_notices || 0);
@@ -54,6 +56,14 @@ const TeacherNotice = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, attachment: file }));
+      setAttachmentPreview(URL.createObjectURL(file));
+    }
+  };
+
   const validateForm = () => {
     const errors = {};
     if (!formData.title.trim()) errors.title = 'Title is required';
@@ -67,9 +77,11 @@ const TeacherNotice = () => {
     setFormData({
       title: '',
       message: '',
-      target_type: 'all_classes',
+      target_type: 'all',
+      attachment: null,
     });
     setFormErrors({});
+    setAttachmentPreview(null);
     setIsEditMode(false);
     setSelectedNotice(null);
   };
@@ -79,10 +91,12 @@ const TeacherNotice = () => {
       setFormData({
         title: notice.title || '',
         message: notice.message || '',
-        target_type: notice.targets?.[0]?.target_type || 'all_classes',
+        target_type: notice.targets?.[0]?.target_type || 'all',
+        attachment: null,
       });
       setIsEditMode(true);
       setSelectedNotice(notice);
+      setAttachmentPreview(notice.attachment || null);
     } else {
       resetForm();
     }
@@ -111,9 +125,9 @@ const TeacherNotice = () => {
 
       let response;
       if (isEditMode && selectedNotice) {
-        response = await updateTeacherNote(selectedNotice.notice_id, payload);
+        response = await updateAdminNotice(selectedNotice.notice_id, payload, formData.attachment);
       } else {
-        response = await addTeacherNote(payload);
+        response = await addAdminNotice(payload, formData.attachment);
       }
 
       if (response.success) {
@@ -150,7 +164,7 @@ const TeacherNotice = () => {
 
     try {
       setLoading(true);
-      const response = await deleteTeacherNote(noticeToDelete.notice_id);
+      const response = await deleteAdminNotice(noticeToDelete.notice_id);
       if (response.success) {
         toast.success(response.message || 'Notice deleted successfully');
         setIsDeleteModalOpen(false);
@@ -190,25 +204,27 @@ const TeacherNotice = () => {
   const getTargetTypeBadge = (targetType) => {
     const typeLower = targetType?.toLowerCase();
     const colors = {
-      all_classes: 'bg-blue-100 text-blue-800',
+      all: 'bg-blue-100 text-blue-800',
       teacher: 'bg-purple-100 text-purple-800',
       student: 'bg-green-100 text-green-800',
-    };
-    const labels = {
-      all_classes: 'All Classes',
-      teacher: 'Teacher',
-      student: 'Student',
+      parent: 'bg-yellow-100 text-yellow-800',
     };
     return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${colors[typeLower] || colors.all_classes}`}>
-        {labels[typeLower] || targetType?.charAt(0).toUpperCase() + targetType?.slice(1) || 'All Classes'}
+      <span className={`px-2 py-1 rounded text-xs font-medium ${colors[typeLower] || colors.all}`}>
+        {targetType?.charAt(0).toUpperCase() + targetType?.slice(1) || 'All'}
       </span>
     );
   };
 
+  const handleDownloadAttachment = (attachment) => {
+    if (attachment) {
+      window.open(attachment, '_blank');
+    }
+  };
+
   return (
     <div className="bg-gray-100 flex AddStudent">
-      <TeacherSidebar />
+      <Sidebar />
       <div
         className="overflow-auto relative z-1 flex-col"
         style={{
@@ -226,10 +242,10 @@ const TeacherNotice = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                  Teacher Notices
+                  Admin Notices
                 </h1>
                 <p className="text-gray-600 text-sm sm:text-base">
-                  Manage and create notices for your classes
+                  Manage and create notices for all users
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -286,7 +302,7 @@ const TeacherNotice = () => {
                           {notice.title || 'Untitled Notice'}
                         </h3>
                         <div className="flex items-center gap-2 mt-2">
-                          {getTargetTypeBadge(notice.targets?.[0]?.target_type || 'all_classes')}
+                          {getTargetTypeBadge(notice.targets?.[0]?.target_type || 'all')}
                         </div>
                       </div>
                     </div>
@@ -304,6 +320,9 @@ const TeacherNotice = () => {
                     <div className="border-t border-gray-200 pt-4 mt-auto">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                         <div className="flex flex-col gap-2 text-xs text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <span>By: {notice.created_by || 'Admin'}</span>
+                          </div>
                           <div className="flex items-center gap-2">
                             <span>{formatDateShort(notice.created_at)}</span>
                           </div>
@@ -333,6 +352,15 @@ const TeacherNotice = () => {
                         >
                           <Trash2 size={16} />
                         </button>
+                        {notice.attachment && (
+                          <button
+                            onClick={() => handleDownloadAttachment(notice.attachment)}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                            title="Download attachment"
+                          >
+                            <Download size={16} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -411,11 +439,30 @@ const TeacherNotice = () => {
                         formErrors.target_type ? 'border-red-500' : 'border-gray-300'
                       }`}
                     >
-                      <option value="all_classes">All Classes</option>
+                      <option value="all">All</option>
                       <option value="teacher">Teacher</option>
+                      <option value="student">Student</option>
+                      <option value="parent">Parent</option>
                     </select>
                     {formErrors.target_type && (
                       <p className="mt-1 text-sm text-red-600">{formErrors.target_type}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Attachment (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    />
+                    {attachmentPreview && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600">File selected</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -454,7 +501,7 @@ const TeacherNotice = () => {
                       {selectedNotice.title || 'Notice Details'}
                     </h2>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {getTargetTypeBadge(selectedNotice.targets?.[0]?.target_type || 'all_classes')}
+                      {getTargetTypeBadge(selectedNotice.targets?.[0]?.target_type || 'all')}
                     </div>
                   </div>
                   <button
@@ -470,6 +517,12 @@ const TeacherNotice = () => {
               </div>
               <div className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-1 font-medium">Created By</div>
+                    <p className="text-gray-900 font-semibold">
+                      {selectedNotice.created_by || 'Admin'}
+                    </p>
+                  </div>
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <div className="text-sm text-gray-600 mb-1 font-medium">Date</div>
                     <p className="text-gray-900 font-semibold">
@@ -488,6 +541,21 @@ const TeacherNotice = () => {
                     </p>
                   </div>
                 </div>
+                {selectedNotice.attachment && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+                      <Download size={16} />
+                      <span>Attachment</span>
+                    </div>
+                    <button
+                      onClick={() => handleDownloadAttachment(selectedNotice.attachment)}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      <Download size={18} />
+                      <span>Download Attachment</span>
+                    </button>
+                  </div>
+                )}
                 <div className="flex justify-end pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
@@ -552,4 +620,5 @@ const TeacherNotice = () => {
   );
 };
 
-export default TeacherNotice;
+export default AdminNotes;
+

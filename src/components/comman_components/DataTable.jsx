@@ -22,7 +22,8 @@ const DataTable = ({
   onView,
   loading = false,
   searchPlaceholder = "Search...",
-  exportFileName = "data"
+  exportFileName = "data",
+  addButtonText = "Add New"
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredData, setFilteredData] = useState(data || []);
@@ -44,21 +45,7 @@ const DataTable = ({
     }
   }, [data]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.relative')) {
-        setExportDropdownOpen(false);
-      }
-    };
-
-    if (isExportDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [isExportDropdownOpen]);
+  // Close dropdown when clicking outside - handled by backdrop in JSX
 
   // Handle Search
   const handleSearch = (e) => {
@@ -369,70 +356,71 @@ const DataTable = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.3 }}
       >
-        {/* Header and Search */}
-        <div className='flex justify-between items-center mb-6'>
-          <div className='flex items-center gap-6'>
-            <h2 className='text-xl font-semibold text-black'>{title}</h2>
+        {/* Header and Search - Responsive Layout */}
+        <div className='flex flex-col lg:flex-row gap-4 mb-6'>
+          {/* Left Side: Title and Export */}
+          <div className='flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1'>
+            <h2 className='text-xl font-semibold text-black whitespace-nowrap'>{title}</h2>
 
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <button 
-                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors duration-200 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors duration-200 cursor-pointer w-full sm:w-auto justify-center"
                 onClick={() => setExportDropdownOpen(!isExportDropdownOpen)}
                 title="Export Data"
               >
                 <Download size={16} />
-                Export
+                <span className="hidden sm:inline">Export</span>
                 <ChevronDown size={16} className={`transition-transform duration-200 ${isExportDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {isExportDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[150px]">
-                  <button 
-                    onClick={() => handleExport('pdf')}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100"
-                  >
-                    <FontAwesomeIcon icon={faFilePdf} className="text-red-500" />
-                    <span className="text-gray-700">PDF</span>
-                  </button>
-                  
-                  <button 
-                    onClick={() => handleExport('excel')}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100"
-                  >
-                    <FontAwesomeIcon icon={faFileExcel} className="text-green-500" />
-                    <span className="text-gray-700">Excel</span>
-                  </button>
-                  
-                  <button 
-                    onClick={() => handleExport('csv')}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer rounded-b-lg"
-                  >
-                    <FontAwesomeIcon icon={faFileText} className="text-violet-600" />
-                    <span className="text-gray-700">CSV</span>
-                  </button>
-                </div>
+                <>
+                  {/* Backdrop to close on outside click */}
+                  <div 
+                    className="fixed inset-0 z-[9998]" 
+                    onClick={() => setExportDropdownOpen(false)}
+                  />
+                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] min-w-[150px]">
+                    <button 
+                      onClick={() => handleExport('pdf')}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100"
+                    >
+                      <FontAwesomeIcon icon={faFilePdf} className="text-red-500" />
+                      <span className="text-gray-700">PDF</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleExport('excel')}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100"
+                    >
+                      <FontAwesomeIcon icon={faFileExcel} className="text-green-500" />
+                      <span className="text-gray-700">Excel</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleExport('csv')}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer rounded-b-lg"
+                    >
+                      <FontAwesomeIcon icon={faFileText} className="text-violet-600" />
+                      <span className="text-gray-700">CSV</span>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
 
-          <div className='relative flex justify-between items-center' style={{width:'30%'}}>
-            <button 
-              onClick={() => setAddModalOpen(true)} 
-              className='group relative text-violet-600 hover:text-violet-700 cursor-pointer p-3 rounded-full bg-violet-50 hover:bg-violet-100 transition-all duration-300 shadow-sm hover:shadow-md'
-              title="Add New Entry"
-            >
-              <UserPlus size={20} className="transition-transform duration-200 group-hover:scale-110" />
-              <div className="absolute inset-0 rounded-full bg-violet-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            </button> 
-            
-            <div className="relative group">
+          {/* Right Side: Search Bar and Add Button */}
+          <div className='flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full lg:w-auto lg:flex-1 lg:max-w-2xl'>
+            {/* Search Bar - First */}
+            <div className="relative group flex-1">
               <div className="absolute inset-0 bg-gradient-to-r from-violet-400 to-violet-600 rounded-xl opacity-0 group-focus-within:opacity-20 transition-opacity duration-300 blur-sm"></div>
               <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 group-focus-within:border-violet-400 transition-all duration-300 group-focus-within:shadow-xl">
                 <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-violet-600 transition-colors duration-300' size={20} />
                 <input
                   type="text"
                   placeholder={searchPlaceholder}
-                  className='w-full bg-transparent text-gray-700 placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none font-medium'
+                  className='w-full bg-transparent text-gray-700 placeholder-gray-400 rounded-xl pl-12 pr-10 py-3 focus:outline-none font-medium'
                   onChange={handleSearch}
                   value={searchTerm}
                 />
@@ -458,58 +446,76 @@ const DataTable = ({
                 </div>
               )}
             </div>
+
+            {/* Add Button - Second with name and icon */}
+            {onAdd && (
+              <button 
+                onClick={() => setAddModalOpen(true)} 
+                className='group flex items-center justify-center gap-2 px-4 py-3 text-violet-600 hover:text-violet-700 cursor-pointer rounded-lg bg-violet-50 hover:bg-violet-100 transition-all duration-300 shadow-sm hover:shadow-md whitespace-nowrap'
+                title={addButtonText}
+              >
+                <UserPlus size={20} className="transition-transform duration-200 group-hover:scale-110" />
+                <span className="font-medium hidden sm:inline">{addButtonText}</span>
+                <span className="font-medium sm:hidden">Add</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table - Responsive */}
         <div className='overflow-x-auto' style={{ minHeight: '400px' }}>
-          <table className='min-w-full divide-y divide-gray-400'>
-            <thead>
-              <tr>
-                {columns.map((column, index) => (
-                  <th key={index} className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>
-                    {column.header}
-                  </th>
-                ))}
-                <th className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>Action</th>
-              </tr>
-            </thead>
-            <tbody className='divide-y divide-gray-500'>
-              {getCurrentPageData().map((item, index) => (
-                <motion.tr
-                  key={item.id || index}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1.1, delay: 0.2 }}
-                >
-                  {columns.map((column, colIndex) => (
-                    <td key={colIndex} className='px-6 py-4 whitespace-nowrap'>
-                      {column.render ? column.render(item[column.key], item) : (
-                        <div className='text-sm text-black'>{item[column.key]}</div>
-                      )}
-                    </td>
+          <div className="inline-block min-w-full align-middle">
+            <table className='min-w-full divide-y divide-gray-400'>
+              <thead className="bg-gray-50">
+                <tr>
+                  {columns.map((column, index) => (
+                    <th key={index} className='px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider'>
+                      {column.header}
+                    </th>
                   ))}
-                  <td className='px-6 py-4 whitespace-nowrap'>
-                    {onView && (
-                      <button onClick={() => handleViewClick(item)} className='text-violet-600 hover:text-violet-700 mr-3 cursor-pointer'>
-                        <FontAwesomeIcon icon={faEye} />
-                      </button>
-                    )}
-                    {onEdit && (
-                      <button className='text-violet-600 hover:text-violet-700 mr-3 cursor-pointer' onClick={() => handleEditClick(item)}>
-                        <Edit size={18} />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button className='text-red-400 hover:text-red-300 cursor-pointer' onClick={() => handleDeleteClick(item)}>
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+                  <th className='px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-medium text-black uppercase tracking-wider'>Action</th>
+                </tr>
+              </thead>
+              <tbody className='divide-y divide-gray-500 bg-white'>
+                {getCurrentPageData().map((item, index) => (
+                  <motion.tr
+                    key={item.id || index}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1.1, delay: 0.2 }}
+                    className="hover:bg-gray-50"
+                  >
+                    {columns.map((column, colIndex) => (
+                      <td key={colIndex} className='px-3 sm:px-6 py-4 whitespace-nowrap'>
+                        {column.render ? column.render(item[column.key], item) : (
+                          <div className='text-xs sm:text-sm text-black'>{item[column.key] || 'N/A'}</div>
+                        )}
+                      </td>
+                    ))}
+                    <td className='px-3 sm:px-6 py-4 whitespace-nowrap'>
+                      <div className="flex items-center gap-2">
+                        {onView && (
+                          <button onClick={() => handleViewClick(item)} className='text-violet-600 hover:text-violet-700 cursor-pointer p-1 rounded hover:bg-violet-50 transition-colors' title="View">
+                            <FontAwesomeIcon icon={faEye} />
+                          </button>
+                        )}
+                        {onEdit && (
+                          <button className='text-violet-600 hover:text-violet-700 cursor-pointer p-1 rounded hover:bg-violet-50 transition-colors' onClick={() => handleEditClick(item)} title="Edit">
+                            <Edit size={18} />
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button className='text-red-400 hover:text-red-500 cursor-pointer p-1 rounded hover:bg-red-50 transition-colors' onClick={() => handleDeleteClick(item)} title="Delete">
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* PAGINATION */}
