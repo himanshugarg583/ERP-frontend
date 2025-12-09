@@ -1,23 +1,13 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
-import {
-  FaCheckCircle,
-  FaChalkboardTeacher,
-  FaUsers,
-  FaChevronLeft,
-  FaCalendarAlt,
-  FaRegClock,
-  FaCheck,
-  FaTimes,
-} from "react-icons/fa";
-import { useState, useEffect } from "react";
+import StandardStatCard from "../../../components/comman_components/StandardStatCard";
+import { Users, Calendar, Clock, ChevronLeft, Check, X, UserCheck } from "lucide-react";
 import { fetchAllClassesForAttendance, fetchStudentsByClass, markAttendance } from "../../../helper/requests-method/apiMethods";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ClassWiseAttendance = () => {
-  const [activeMenu, setActiveMenu] = useState("Attendance");
   const [activeClass, setActiveClass] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
   const [classes, setClasses] = useState([]);
@@ -59,7 +49,6 @@ const ClassWiseAttendance = () => {
         setClasses([]);
       }
     } catch (error) {
-      console.error('Error fetching classes:', error);
       toast.error(error.response?.data?.message || 'Error fetching classes');
       setClasses([]);
     } finally {
@@ -81,7 +70,6 @@ const ClassWiseAttendance = () => {
         }));
         setStudents(mappedStudents);
         
-        // Initialize attendance data for this class
         setAttendanceData((prevData) => ({
           ...prevData,
           [classId]: mappedStudents.map((student) => ({
@@ -94,17 +82,11 @@ const ClassWiseAttendance = () => {
         setStudents([]);
       }
     } catch (error) {
-      console.error('Error fetching students:', error);
       toast.error(error.response?.data?.message || 'Error fetching students');
       setStudents([]);
     } finally {
       setIsLoadingStudents(false);
     }
-  };
-
-  const handleMenuClick = (menuName) => {
-    setActiveMenu(menuName);
-    setActiveClass(null);
   };
 
   const handleClassClick = (classId) => {
@@ -173,27 +155,28 @@ const ClassWiseAttendance = () => {
       
       if (response.success || response.message) {
         toast.success(response.message || 'Attendance marked successfully');
-        // Optionally refresh students data or navigate back
         setActiveClass(null);
       } else {
         toast.error('Failed to mark attendance');
       }
     } catch (error) {
-      console.error('Error marking attendance:', error);
       toast.error(error.response?.data?.message || 'Error marking attendance');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const selectedClass = classes.find((c) => c.id === activeClass);
+  const stats = activeClass ? calculateAttendanceStats(activeClass) : null;
+
   return (
-    <div className="bg-slate-200 flex AddStudent">
+    <div className="bg-slate-200 flex h-screen overflow-hidden">
       <Sidebar />
 
       <div
-        className=" overflow-auto relative z-1 flex-col"
+        className="overflow-auto relative z-1 flex-col"
         style={{
-          height: "95vh",
+          height: "100vh",
           width: "100vw",
           gap: "10px",
           display: "flex",
@@ -202,153 +185,156 @@ const ClassWiseAttendance = () => {
       >
         <Header />
 
-        <main className="w-full py-6 px-4 md:px-6">
-          <div className="flex-1 overflow-auto p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-            {activeMenu === "Attendance" && (
-              <div className="h-full">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                  Attendance Management
-                </h2>
+        <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
+          {activeClass ? (
+            // Student Attendance View
+            <div className="space-y-6">
+              {/* Stats Cards - At the Top */}
+              {stats && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StandardStatCard 
+                    name="Total Students" 
+                    icon={Users} 
+                    value={stats.total.toString()} 
+                    color="#7c3aed"
+                  />
+                  <StandardStatCard 
+                    name="Present" 
+                    icon={UserCheck} 
+                    value={stats.present.toString()} 
+                    color="#10b981"
+                  />
+                  <StandardStatCard 
+                    name="Absent" 
+                    icon={X} 
+                    value={stats.absent.toString()} 
+                    color="#ef4444"
+                  />
+                  <StandardStatCard 
+                    name="Attendance Rate" 
+                    icon={Check} 
+                    value={`${stats.percentage}%`} 
+                    color="#f59e0b"
+                  />
+                </div>
+              )}
 
-                {activeClass ? (
-                  <div className="bg-white rounded-lg shadow-md p-6 animate-fadeIn">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center">
-                        <button
-                          onClick={() => setActiveClass(null)}
-                          className="mr-4 text-violet-600 hover:text-violet-800 transition-colors bg-violet-50 p-2 rounded-full"
-                        >
-                          <FaChevronLeft />
-                        </button>
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-800">
-                            {
-                              classes.find((c) => c.id === activeClass)
-                                ?.name
-                            }
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            Teacher:{" "}
-                            {
-                              classes.find((c) => c.id === activeClass)
-                                ?.subject
-                            }
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center text-sm">
-                          <FaCalendarAlt className="mr-1 text-gray-600" />
-                          <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-600"
-                          />
-                        </div>
-                        <div className="flex items-center text-sm">
-                          <FaRegClock className="mr-1 text-gray-600" />
-                          <span>
-                            {new Date().toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                      {(() => {
-                        const stats = calculateAttendanceStats(activeClass);
-                        return (
-                          <>
-                            <div className="bg-violet-50 p-4 rounded-lg border border-violet-100 shadow-sm">
-                              <p className="text-sm text-gray-600 mb-1">
-                                Total Students
-                              </p>
-                              <p className="text-2xl font-bold text-violet-600">
-                                {stats.total}
-                              </p>
-                            </div>
-                            <div className="bg-green-50 p-4 rounded-lg border border-green-100 shadow-sm">
-                              <p className="text-sm text-gray-600 mb-1">
-                                Present
-                              </p>
-                              <p className="text-2xl font-bold text-green-600">
-                                {stats.present}
-                              </p>
-                            </div>
-                            <div className="bg-red-50 p-4 rounded-lg border border-red-100 shadow-sm">
-                              <p className="text-sm text-gray-600 mb-1">
-                                Absent
-                              </p>
-                              <p className="text-2xl font-bold text-red-600">
-                                {stats.absent}
-                              </p>
-                            </div>
-                            <div className="bg-violet-50 p-4 rounded-lg border border-violet-100 shadow-sm">
-                              <p className="text-sm text-gray-600 mb-1">
-                                Attendance Rate
-                              </p>
-                              <p className="text-2xl font-bold text-violet-700">
-                                {stats.percentage}%
-                              </p>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-
-                    <div className="flex justify-between mb-6">
+              {/* Combined Card: Header, Date/Time, Buttons, and Table */}
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                {/* Header Section */}
+                <div className="p-4 sm:p-6 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
                       <button
-                        onClick={() => handleAllPresent(activeClass)}
-                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition-colors shadow-sm flex items-center"
+                        onClick={() => setActiveClass(null)}
+                        className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
                       >
-                        <FaCheck className="mr-2" />
-                        Mark All Present
+                        <ChevronLeft size={20} />
                       </button>
-                      <button 
-                        onClick={handleSaveAttendance}
-                        disabled={isSaving}
-                        className="bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-colors shadow-sm"
-                      >
-                        {isSaving ? 'Saving...' : 'Save Attendance'}
-                      </button>
+                      <div>
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                          {selectedClass?.name}
+                        </h2>
+                        <p className="text-sm text-gray-600">
+                          Teacher: {selectedClass?.subject}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                      <div className="grid grid-cols-12 bg-gray-50 p-3 border-b border-gray-200 font-medium text-gray-700">
-                        <div className="col-span-1">No.</div>
-                        <div className="col-span-3">Roll No</div>
-                        <div className="col-span-6">Student Name</div>
-                        <div className="col-span-2 text-center">Status</div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <Calendar size={16} />
+                        <input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
+                          className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+                        />
                       </div>
-                      <div className="max-h-[300px] overflow-y-auto">
-                        {isLoadingStudents ? (
-                          <div className="flex justify-center items-center py-10">
-                            <p className="text-gray-600">Loading students...</p>
-                          </div>
-                        ) : attendanceData[activeClass]?.length === 0 ? (
-                          <div className="flex justify-center items-center py-10">
-                            <p className="text-gray-600">No students found in this class</p>
-                          </div>
-                        ) : (
-                          attendanceData[activeClass]?.map((student, index) => (
-                          <div
-                            key={student.id}
-                            className={`grid grid-cols-12 p-3 ${
-                              index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                            } hover:bg-violet-50 transition-colors border-b border-gray-100`}
-                          >
-                            <div className="col-span-1">{index + 1}</div>
-                            <div className="col-span-3">{student.rollNo}</div>
-                            <div className="col-span-6 font-medium">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <Clock size={16} />
+                        <span>
+                          {new Date().toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons Section */}
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex flex-col sm:flex-row justify-between gap-3">
+                    <button
+                      onClick={() => handleAllPresent(activeClass)}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base"
+                    >
+                      <Check size={18} />
+                      Mark All Present
+                    </button>
+                    <button 
+                      onClick={handleSaveAttendance}
+                      disabled={isSaving}
+                      className={`px-6 py-2.5 rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base ${
+                        isSaving 
+                          ? 'bg-gray-400 text-white cursor-not-allowed' 
+                          : 'bg-violet-600 hover:bg-violet-700 text-white'
+                      }`}
+                    >
+                      {isSaving ? 'Saving...' : 'Save Attendance'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Students Table Section */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                          No.
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                          Roll No
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                          Student Name
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {isLoadingStudents ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                            Loading students...
+                          </td>
+                        </tr>
+                      ) : attendanceData[activeClass]?.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                            No students found in this class
+                          </td>
+                        </tr>
+                      ) : (
+                        attendanceData[activeClass]?.map((student, index) => (
+                          <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {index + 1}
+                            </td>
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {student.rollNo || '-'}
+                            </td>
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {student.name}
-                            </div>
-                            <div className="col-span-2 flex justify-center">
-                              <div className="flex items-center space-x-2">
+                            </td>
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex items-center justify-center gap-2">
                                 <button
                                   onClick={() =>
                                     handleAttendanceChange(
@@ -357,13 +343,14 @@ const ClassWiseAttendance = () => {
                                       true
                                     )
                                   }
-                                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                                     student.present
                                       ? "bg-green-500 text-white ring-2 ring-green-300"
                                       : "bg-gray-100 text-gray-400 hover:bg-gray-200"
                                   }`}
+                                  title="Mark Present"
                                 >
-                                  <FaCheck />
+                                  <Check size={16} />
                                 </button>
                                 <button
                                   onClick={() =>
@@ -373,125 +360,85 @@ const ClassWiseAttendance = () => {
                                       false
                                     )
                                   }
-                                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                                     !student.present
                                       ? "bg-red-500 text-white ring-2 ring-red-300"
                                       : "bg-gray-100 text-gray-400 hover:bg-gray-200"
                                   }`}
+                                  title="Mark Absent"
                                 >
-                                  <FaTimes />
+                                  <X size={16} />
                                 </button>
                               </div>
-                            </div>
-                          </div>
+                            </td>
+                          </tr>
                         ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    {isLoading ? (
-                      <div className="flex justify-center items-center py-10">
-                        <p className="text-gray-600">Loading classes...</p>
-                      </div>
-                    ) : classes.length === 0 ? (
-                      <div className="flex justify-center items-center py-10">
-                        <p className="text-gray-600">No classes found</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {classes.map((classItem) => (
-                      <div
-                        key={classItem.id}
-                        className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200 hover:border-violet-300 cursor-pointer transform hover:-translate-y-1 transition-transform"
-                        onClick={() => handleClassClick(classItem.id)}
-                      >
-                        <div className="bg-gradient-to-r from-violet-600 to-violet-500 p-4">
-                          <h3 className="text-white text-lg font-semibold">
-                            {classItem.name}
-                          </h3>
-                          <p className="text-violet-100 text-sm mt-1">
-                            Teacher: {classItem.subject}
-                          </p>
-                          {classItem.roomNo && (
-                            <p className="text-violet-100 text-xs mt-1">
-                              Room: {classItem.roomNo}
-                            </p>
-                          )}
-                        </div>
-                        <div className="p-5">
-                          <div className="flex items-center mb-4">
-                            <FaChalkboardTeacher className="text-violet-600 mr-2" />
-                            <span className="text-gray-700">
-                              Take Attendance
-                            </span>
-                          </div>
-                          <div className="flex items-center mb-4">
-                            <FaUsers className="text-violet-600 mr-2" />
-                            <span className="text-gray-700">
-                              {classItem.capacity ? `${classItem.capacity} capacity` : 'Students'}
-                            </span>
-                          </div>
-                          <div className="bg-violet-50 p-3 rounded-lg mt-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Last Attendance
-                                </p>
-                                <p className="text-sm font-medium">
-                                  90% Present
-                                </p>
-                              </div>
-                              <div className="text-green-500 bg-green-100 p-2 rounded-full">
-                                <FaCheckCircle />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-gray-50 px-5 py-3 flex justify-end">
-                          <button className="text-violet-600 hover:text-violet-800 text-sm font-medium flex items-center">
-                            Take Attendance
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 ml-1"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeMenu !== "Attendance" && (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="text-6xl text-gray-300 mb-4">
-                    <FaChalkboardTeacher className="inline-block" />
-                  </div>
-                  <h3 className="text-2xl font-semibold text-gray-600 mb-2">
-                    {activeMenu} Module
-                  </h3>
-                  <p className="text-gray-500">
-                    Click on Attendance in the sidebar to mark student
-                    attendance
-                  </p>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            // Class Selection View
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                  Attendance Management
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Select a class to mark attendance
+                </p>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-gray-600">Loading classes...</div>
+                </div>
+              ) : classes.length === 0 ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-gray-600">No classes found</div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {classes.map((classItem) => (
+                    <div
+                      key={classItem.id}
+                      className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                      onClick={() => handleClassClick(classItem.id)}
+                    >
+                      <div className="bg-gradient-to-r from-violet-600 to-violet-700 p-4">
+                        <h3 className="text-white text-base sm:text-lg font-semibold">
+                          {classItem.name}
+                        </h3>
+                        <p className="text-violet-100 text-xs sm:text-sm mt-1">
+                          Teacher: {classItem.subject}
+                        </p>
+                        {classItem.roomNo && (
+                          <p className="text-violet-100 text-xs mt-1">
+                            Room: {classItem.roomNo}
+                          </p>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Users size={16} className="text-violet-600" />
+                          <span className="text-sm text-gray-700">
+                            {classItem.capacity ? `${classItem.capacity} capacity` : 'Students'}
+                          </span>
+                        </div>
+                        <div className="bg-violet-50 rounded-lg p-3">
+                          <p className="text-xs text-gray-600 mb-1">
+                            Click to mark attendance
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </main>
         <ToastContainer position="top-right" autoClose={3000} />
       </div>
@@ -500,4 +447,3 @@ const ClassWiseAttendance = () => {
 };
 
 export default ClassWiseAttendance;
-

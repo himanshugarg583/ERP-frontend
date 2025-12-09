@@ -268,7 +268,7 @@ const Header = ({ title }) => {
   return (
     <>
     <header
-      className="bg-slate-800 border-b border-slate-700 shadow-lg flex flex-wrap items-center justify-between px-4 py-1"
+      className="bg-slate-800 border-b border-slate-700 shadow-lg flex flex-wrap items-center justify-between px-4 py-1 z-0"
       style={{ flexDirection: "row" }}
     >
       {/* w-screen */}

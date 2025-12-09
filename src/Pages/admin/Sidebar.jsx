@@ -238,7 +238,7 @@ const Sidebar = () => {
       )}
 
       <motion.aside
-        className={`relative z-40 transition-all duration-300 ease-in-out ${
+        className={`relative transition-all duration-300 ease-in-out ${
           isMobile ? "fixed left-0 top-0 h-full" : "h-screen"
         } ${isSidebarOpen ? "w-72" : "w-20"}`}
         animate={{ width: isSidebarOpen ? 288 : 80 }}
@@ -393,7 +393,7 @@ const Sidebar = () => {
         whileTap={{ scale: 0.95 }}
         onClick={() => { const next = !isSidebarOpen; setIsSidebarOpen(next); localStorage.setItem('sidebar:isOpen', JSON.stringify(next)); }}
         aria-label="Toggle sidebar"
-        className={`absolute top-12 -right-3 z-50 w-10 h-10 rounded-full border border-white/20 shadow-xl bg-violet-600 text-white flex items-center justify-center cursor-pointer ${
+        className={`absolute top-12 -right-3 z-[9999] w-10 h-10 rounded-full border border-white/20 shadow-xl bg-violet-600 text-white flex items-center justify-center cursor-pointer ${
           isMobile ? 'md:flex' : 'flex'
         }`}
       >
@@ -406,7 +406,7 @@ const Sidebar = () => {
       {/* Fixed tooltip for collapsed mode */}
       {tooltip.visible && !isSidebarOpen && (
         <div
-          className="pointer-events-none fixed z-[9999] bg-white text-slate-800 text-sm rounded-lg px-3 py-1 shadow-xl border border-slate-200"
+          className="pointer-events-none fixed  bg-white text-slate-800 text-sm rounded-lg px-3 py-1 shadow-xl border border-slate-200"
           style={{ top: tooltip.top, left: tooltip.left, transform: 'translateY(-50%)' }}
         >
           {tooltip.text}

@@ -143,19 +143,17 @@ const ReusableTable = ({
     };
 
     return (
-      <div className="space-y-4">
-        {/* Colorful Header */}
-        <div className="bg-gradient-to-r from-violet-600 to-violet-500 rounded-lg p-3 text-center">
-          <h4 className="text-white text-lg font-bold mb-1">Add New {title}</h4>
-          <p className="text-violet-100 text-xs">Fill in the details below to create a new {title.toLowerCase()}</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Form Fields in 3-column grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {columns.map((column, index) => (
-              <div key={index} className="space-y-1">
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Form Fields - Responsive Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          {columns.map((column, index) => {
+            // Determine column span based on field type
+            const isFullWidth = column.type === 'textarea' || column.key === 'description' || column.key === 'address';
+            const colSpan = isFullWidth ? 'md:col-span-2' : '';
+            
+            return (
+              <div key={index} className={`space-y-2 ${colSpan}`}>
+                <label className="block text-sm font-semibold text-gray-700">
                   {column.header} {column.required && <span className="text-red-500">*</span>}
                 </label>
                 {column.type === 'select' ? (
@@ -163,7 +161,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
                     required={column.required}
                   >
                     <option value="">Select {column.header}</option>
@@ -178,10 +176,10 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 resize-vertical"
                     placeholder={column.placeholder || `Enter ${column.header}`}
                     required={column.required}
-                    rows={3}
+                    rows={4}
                   />
                 ) : (
                   <input
@@ -189,7 +187,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
                     placeholder={column.placeholder || `Enter ${column.header}`}
                     required={column.required}
                     min={column.min}
@@ -197,32 +195,32 @@ const ReusableTable = ({
                   />
                 )}
               </div>
-            ))}
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-3 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border-2 border-violet-300 rounded-lg text-violet-700 hover:bg-violet-50 transition-colors duration-200 font-medium text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={formLoading}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-colors duration-200 text-sm ${
-                formLoading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-700 hover:to-violet-600'
-              }`}
-            >
-              {formLoading ? 'Adding...' : `Add ${title}`}
-            </button>
-          </div>
-        </form>
-      </div>
+            );
+          })}
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200 font-medium text-sm cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={formLoading}
+            className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm cursor-pointer ${
+              formLoading 
+                ? 'bg-gray-400 text-white cursor-not-allowed' 
+                : 'bg-violet-600 text-white hover:bg-violet-700'
+            }`}
+          >
+            {formLoading ? 'Adding...' : `Add ${title}`}
+          </button>
+        </div>
+      </form>
     );
   };
 
@@ -267,19 +265,17 @@ const ReusableTable = ({
     };
 
     return (
-      <div className="space-y-4">
-        {/* Colorful Header */}
-        <div className="bg-gradient-to-r from-violet-600 to-violet-500 rounded-lg p-3 text-center">
-          <h4 className="text-white text-lg font-bold mb-1">Edit {title}</h4>
-          <p className="text-violet-100 text-xs">Update the details below to modify this {title.toLowerCase()}</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Form Fields in 3-column grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {columns.map((column, index) => (
-              <div key={index} className="space-y-1">
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Form Fields - Responsive Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          {columns.map((column, index) => {
+            // Determine column span based on field type
+            const isFullWidth = column.type === 'textarea' || column.key === 'description' || column.key === 'address';
+            const colSpan = isFullWidth ? 'md:col-span-2' : '';
+            
+            return (
+              <div key={index} className={`space-y-2 ${colSpan}`}>
+                <label className="block text-sm font-semibold text-gray-700">
                   {column.header} {column.required && <span className="text-red-500">*</span>}
                 </label>
                 {column.type === 'select' ? (
@@ -287,7 +283,7 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
                     required={column.required}
                   >
                     <option value="">Select {column.header}</option>
@@ -302,9 +298,10 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 resize-vertical"
                     required={column.required}
-                    rows={3}
+                    rows={4}
+                    placeholder={column.placeholder || `Enter ${column.header}`}
                   />
                 ) : (
                   <input
@@ -312,42 +309,43 @@ const ReusableTable = ({
                     name={column.key}
                     value={formData[column.key] || ''}
                     onChange={handleInputChange}
-                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-violet-500 focus:outline-none transition-colors duration-200"
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                    placeholder={column.placeholder || `Enter ${column.header}`}
                     required={column.required}
                     min={column.min}
                     max={column.max}
                   />
                 )}
               </div>
-            ))}
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-3 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => {
-                setEditingItem(null); // Clear editing item
-                onClose();
-              }}
-              className="px-4 py-2 border-2 border-violet-300 rounded-lg text-violet-700 hover:bg-violet-50 transition-colors duration-200 font-medium text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={formLoading}
-              className={`px-4 py-2 text-white rounded-lg font-medium transition-colors duration-200 text-sm ${
-                formLoading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-700 hover:to-violet-600'
-              }`}
-            >
-              {formLoading ? 'Updating...' : `Update ${title}`}
-            </button>
-          </div>
-        </form>
-      </div>
+            );
+          })}
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingItem(null);
+              onClose();
+            }}
+            className="px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200 font-medium text-sm cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={formLoading}
+            className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm cursor-pointer ${
+              formLoading 
+                ? 'bg-gray-400 text-white cursor-not-allowed' 
+                : 'bg-violet-600 text-white hover:bg-violet-700'
+            }`}
+          >
+            {formLoading ? 'Updating...' : `Update ${title}`}
+          </button>
+        </div>
+      </form>
     );
   };
 
