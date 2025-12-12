@@ -20,7 +20,7 @@ const StudentReports = () => {
       >
         <Header />
 
-        <main className="p-6">
+        <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
           <AttendanceReport/>
         </main>
       </div>

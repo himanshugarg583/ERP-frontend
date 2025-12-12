@@ -258,8 +258,8 @@ const AddExpensePage = () => {
                         <StandardStatCard name="Total Amount" icon={TrendingDown} value={`₹${stats.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`} color="#f59e0b" />
                         <StandardStatCard name="This Month" icon={Package} value={`₹${stats.thisMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`} color="#ef4444" />
                         <StandardStatCard name="Last Month" icon={AlertCircle} value={`₹${stats.lastMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`} color="#7c3aed" />
-                    </div>
-                    
+        </div>
+
                     <ReusableTable
                         title="Expense Management"
                         initialData={expenseData}
@@ -279,10 +279,10 @@ const AddExpensePage = () => {
                             view: true
                         }}
                     />
-                </main>
-            </div>
-        </div>
-    )
+      </main>
+    </div>
+    </div>
+  )
 }
 
 export default AddExpensePage

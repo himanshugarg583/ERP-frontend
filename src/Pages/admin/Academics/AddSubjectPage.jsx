@@ -1,35 +1,47 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
-import CommonTable from '../../../components/tables/CommonTable';
-import CommonFilter from '../../../components/tables/CommonFilter';
-import AddSubjectForm from '../../../components/academics/AddSubjectForm';
-import { toast } from 'react-toastify';
+import StandardStatCard from '../../../components/comman_components/StandardStatCard';
+import ReusableTable from '../../../components/comman_components/ReusableTable';
+import { toast, ToastContainer } from 'react-toastify';
+import { BookOpen, GraduationCap, Users, FileText } from 'lucide-react';
 import {
   getAllSubjectsClass,
   updateSubjectClass,
   deleteSubjectClass,
+  addSubjects,
   fetchClassDropdown,
   fetchTeacherDropdown
 } from '../../../helper/requests-method/apiMethods';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AddSubjectPage = () => {
   const [subjects, setSubjects] = useState([]);
-  const [filteredSubjects, setFilteredSubjects] = useState([]);
-  const [tableLoading, setTableLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [classOptions, setClassOptions] = useState([]);
   const [teacherOptions, setTeacherOptions] = useState([]);
-  const itemsPerPage = 10;
+  const [stats, setStats] = useState({
+    totalSubjects: 0,
+    uniqueSubjects: 0,
+    assignedClasses: 0,
+    assignedTeachers: 0,
+  });
 
-  const fetchSubjects = useCallback(async () => {
-    setTableLoading(true);
+  useEffect(() => {
+    fetchSubjects();
+    loadDropdownData();
+  }, []);
+
+  const fetchSubjects = async () => {
     try {
+      setLoading(true);
       const response = await getAllSubjectsClass();
       const payload = Array.isArray(response?.subjects)
         ? response.subjects
         : Array.isArray(response?.data)
           ? response.data
           : [];
+      
       const normalizedSubjects = payload.map((subject) => {
         const classSection = subject.class_section || subject.classSection || {};
         const teacher = subject.teacher || subject.teacherDetails || {};
@@ -63,16 +75,28 @@ const AddSubjectPage = () => {
       });
 
       setSubjects(normalizedSubjects);
-      setFilteredSubjects(normalizedSubjects);
+      
+      // Calculate stats
+      const totalSubjects = normalizedSubjects.length;
+      const uniqueSubjectNames = new Set(normalizedSubjects.map(s => s.subject_name)).size;
+      const assignedClasses = new Set(normalizedSubjects.map(s => s.class_section_id).filter(Boolean)).size;
+      const assignedTeachers = new Set(normalizedSubjects.map(s => s.teacher_id).filter(Boolean)).size;
+      
+      setStats({
+        totalSubjects,
+        uniqueSubjects: uniqueSubjectNames,
+        assignedClasses,
+        assignedTeachers,
+      });
     } catch (error) {
-      console.error('Error fetching subjects:', error);
       toast.error(error?.response?.data?.message || 'Failed to load subjects');
+      setSubjects([]);
     } finally {
-      setTableLoading(false);
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const loadDropdownData = useCallback(async () => {
+  const loadDropdownData = async () => {
     try {
       const classResponse = await fetchClassDropdown();
       if (classResponse?.success && Array.isArray(classResponse.data)) {
@@ -81,7 +105,6 @@ const AddSubjectPage = () => {
         setClassOptions([]);
       }
     } catch (error) {
-      console.error('Error fetching classes:', error);
       toast.error('Failed to load classes');
       setClassOptions([]);
     }
@@ -97,16 +120,10 @@ const AddSubjectPage = () => {
         setTeacherOptions([]);
       }
     } catch (error) {
-      console.error('Error fetching teachers:', error);
       toast.error('Failed to load teachers');
       setTeacherOptions([]);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchSubjects();
-    loadDropdownData();
-  }, [fetchSubjects, loadDropdownData]);
+  };
 
   const classSelectOptions = useMemo(
     () =>
@@ -130,6 +147,7 @@ const AddSubjectPage = () => {
     [teacherOptions]
   );
 
+  // Define columns for subject management
   const subjectColumns = useMemo(
     () => [
       {
@@ -137,14 +155,16 @@ const AddSubjectPage = () => {
         header: 'Subject Name',
         type: 'text',
         required: true,
-        placeholder: 'e.g. Mathematics'
+        placeholder: 'e.g. Mathematics',
+        render: (value) => value || 'N/A'
       },
       {
         key: 'subject_code',
         header: 'Subject Code',
         type: 'text',
         required: true,
-        placeholder: 'e.g. MATH101'
+        placeholder: 'e.g. MATH101',
+        render: (value) => value || 'N/A'
       },
       {
         key: 'class_section_id',
@@ -180,129 +200,173 @@ const AddSubjectPage = () => {
     [classSelectOptions, teacherSelectOptions]
   );
 
-  const filterFields = useMemo(
-    () => [
-      { key: 'subject_name', label: 'Subject Name', type: 'text', placeholder: 'Search by subject name' },
-      { key: 'class_section_id', label: 'Class & Section', type: 'select', options: classSelectOptions },
-      { key: 'teacher_id', label: 'Teacher', type: 'select', options: teacherSelectOptions }
-    ],
-    [classSelectOptions, teacherSelectOptions]
-  );
+  // Filter columns for table display
+  const displayColumns = subjectColumns.filter(col => !col.hideInTable);
 
-  const handleUpdateSubject = useCallback(
-    async (id, data) => {
+  // Handle create subject
+  const handleCreateSubject = async (subjectData) => {
+    try {
+      setLoading(true);
       const payload = {
-        subject_name: data.subject_name?.trim(),
-        subject_code: data.subject_code?.trim(),
-        class_section_id: data.class_section_id ? Number(data.class_section_id) : null,
-        teacher_id: data.teacher_id ? Number(data.teacher_id) : null
+        subject_name: subjectData.subject_name?.trim(),
+        subject_code: subjectData.subject_code?.trim(),
+        class_section_id: subjectData.class_section_id ? Number(subjectData.class_section_id) : null,
+        teacher_id: subjectData.teacher_id ? Number(subjectData.teacher_id) : null
       };
 
-      try {
-        const response = await updateSubjectClass(id, payload);
-        if (response?.success) {
-          await fetchSubjects();
-        }
-        return response;
-      } catch (error) {
-        console.error('Error updating subject:', error);
-        throw error;
+      const response = await addSubjects(payload);
+      
+      if (response.success || response.message) {
+        await fetchSubjects();
+        return { 
+          success: true, 
+          message: response.message || 'Subject created successfully!' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: response.message || 'Failed to create subject' 
+        };
       }
-    },
-    [fetchSubjects]
-  );
-
-  const handleDeleteSubject = useCallback(async (id) => {
-    try {
-      const response = await deleteSubjectClass(id);
-      if (response?.success) {
-        setSubjects((prev) => prev.filter((subject) => subject.id !== id));
-        setFilteredSubjects((prev) => prev.filter((subject) => subject.id !== id));
-      }
-      return response;
     } catch (error) {
-      console.error('Error deleting subject:', error);
-      throw error;
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to create subject' 
+      };
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  // Handle filter changes
-  const handleFilterChange = (filters) => {
-    let filtered = [...subjects];
+  // Handle update subject
+  const handleUpdateSubject = async (id, subjectData) => {
+    try {
+      setLoading(true);
+      const payload = {
+        subject_name: subjectData.subject_name?.trim(),
+        subject_code: subjectData.subject_code?.trim(),
+        class_section_id: subjectData.class_section_id ? Number(subjectData.class_section_id) : null,
+        teacher_id: subjectData.teacher_id ? Number(subjectData.teacher_id) : null
+      };
 
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) {
-        filtered = filtered.filter(item => {
-          if (key === 'subject_name') {
-            return item.subject_name && item.subject_name.toLowerCase().includes(filters[key].toLowerCase());
-          }
-          if (key === 'class_section_id' || key === 'teacher_id') {
-            return item[key]?.toString() === filters[key]?.toString();
-          }
-          return false;
-        });
+      const response = await updateSubjectClass(id, payload);
+      
+      if (response.success || response.message) {
+        await fetchSubjects();
+        return { 
+          success: true, 
+          message: response.message || 'Subject updated successfully!' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: response.message || 'Failed to update subject' 
+        };
       }
-    });
-
-    setFilteredSubjects(filtered);
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to update subject' 
+      };
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle clear filters
-  const handleClearFilters = () => {
-    setFilteredSubjects(subjects);
-  };
-
-  // Handle subject addition from form component
-  const handleSubjectAdded = () => {
-    fetchSubjects();
+  // Handle delete subject
+  const handleDeleteSubject = async (id) => {
+    try {
+      setLoading(true);
+      const response = await deleteSubjectClass(id);
+      
+      if (response.success || response.message) {
+        await fetchSubjects();
+        return { 
+          success: true, 
+          message: response.message || 'Subject deleted successfully!' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: response.message || 'Failed to delete subject' 
+        };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to delete subject' 
+      };
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className='bg-slate-200 flex AddStudent'>
+    <div className="bg-slate-200 flex h-screen overflow-hidden">
       <Sidebar />
-      
-      <div className='overflow-auto relative z-1 flex-col' style={{
-        height: '95vh',
-        width: '100vw',
-        gap: '10px',
-        display: 'flex',
-        transition: 'margin-left 0.3s ease'
-      }}>
+
+      <div
+        className="overflow-auto relative z-1 flex-col"
+        style={{
+          height: "100vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
         <Header />
-        
-        <div className="flex-1 p-4 md:p-6">
-          {/* Add Subject Form Component */}
-          <AddSubjectForm onSubjectAdded={handleSubjectAdded} />
 
-          {/* Filter Component */}
-          <CommonFilter
-            filterFields={filterFields}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-            title="Subject Filters"
-          />
+        <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StandardStatCard 
+              name="Total Subjects" 
+              icon={BookOpen} 
+              value={stats.totalSubjects.toLocaleString()} 
+              color="#7c3aed"
+            />
+            <StandardStatCard 
+              name="Unique Subjects" 
+              icon={FileText} 
+              value={stats.uniqueSubjects.toLocaleString()} 
+              color="#10b981"
+            />
+            <StandardStatCard 
+              name="Assigned Classes" 
+              icon={GraduationCap} 
+              value={stats.assignedClasses.toLocaleString()} 
+              color="#3b82f6"
+            />
+            <StandardStatCard 
+              name="Assigned Teachers" 
+              icon={Users} 
+              value={stats.assignedTeachers.toLocaleString()} 
+              color="#f59e0b"
+            />
+          </div>
 
-          {/* Table Component */}
-          <CommonTable
+          <ReusableTable
             title="Subject Management"
+            initialData={subjects}
             columns={subjectColumns}
-            data={filteredSubjects}
-            createApi={null}
-            updateApi={handleUpdateSubject}
-            deleteApi={handleDeleteSubject}
-            searchPlaceholder="Search subjects..."
-            addButtonText="Add Subject"
+            displayColumns={displayColumns}
+            apiFunction={handleCreateSubject}
+            updateApiFunction={handleUpdateSubject}
+            deleteApiFunction={handleDeleteSubject}
+            searchPlaceholder="Search by subject name, code, class, teacher"
+            addButtonText="Add New Subject"
             exportFileName="subjects"
-            itemsPerPage={itemsPerPage}
-            enableSearch={true}
-            enablePagination={true}
-            enableAdd={false}
-            enableEdit={true}
-            enableDelete={true}
-            enableView={true}
-            loading={tableLoading}
+            loading={loading}
+            showActions={{
+              add: true,
+              edit: true,
+              delete: true,
+              view: true
+            }}
           />
-        </div>
+        </main>
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </div>
   );

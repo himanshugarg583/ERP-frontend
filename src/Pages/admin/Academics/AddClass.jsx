@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
-import CreateClass from '../../../components/academics/CreateClass';
-import CommonTable from '../../../components/tables/CommonTable';
-import CommonFilter from '../../../components/tables/CommonFilter';
-import ClassDetailView from '../../../components/academics/ClassDetailView';
-import { getAllClassSections, updateClassSection, deleteClassSection, fetchTeacherDropdown } from '../../../helper/requests-method/apiMethods';
+import StandardStatCard from '../../../components/comman_components/StandardStatCard';
+import ReusableTable from '../../../components/comman_components/ReusableTable';
+import { getAllClassSections, updateClassSection, deleteClassSection, createClass, fetchTeacherDropdown } from '../../../helper/requests-method/apiMethods';
 import { toast, ToastContainer } from 'react-toastify';
+import { Users, Building2, UserCheck, GraduationCap } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
 
 const AddClass = () => {
   const [classes, setClasses] = useState([]);
-  const [filteredClasses, setFilteredClasses] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedClass, setSelectedClass] = useState(null);
-  const [editClass, setEditClass] = useState(null);
-  const [deleteClass, setDeleteClass] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [teacherOptions, setTeacherOptions] = useState([]);
-  const itemsPerPage = 10;
+  const [stats, setStats] = useState({
+    totalClasses: 0,
+    totalCapacity: 0,
+    assignedTeachers: 0,
+    totalSections: 0,
+  });
 
-  // Fetch classes on mount
+  // Fetch classes and teachers on mount
   useEffect(() => {
     fetchClasses();
     fetchTeachers();
@@ -32,33 +28,41 @@ const AddClass = () => {
   // Fetch all classes
   const fetchClasses = async () => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const response = await getAllClassSections();
       if (response.success && response.data) {
-        // Map the response data
         const mappedClasses = response.data.map(cls => ({
           id: cls.id,
           class_name: cls.class_name || '-',
           section_name: cls.section_name || '-',
           room_No: cls.room_No || '-',
           capacity: cls.capacity || '-',
-          teacher_id: cls.teacher_id || null,
+          teacher_id: cls.teacher_id ? cls.teacher_id.toString() : '',
           teacher_name: cls.teacher_name || '-',
         }));
         setClasses(mappedClasses);
-        setFilteredClasses(mappedClasses);
+        
+        // Calculate stats
+        const totalClasses = mappedClasses.length;
+        const totalCapacity = mappedClasses.reduce((sum, cls) => sum + (parseInt(cls.capacity) || 0), 0);
+        const assignedTeachers = mappedClasses.filter(cls => cls.teacher_id).length;
+        const uniqueSections = new Set(mappedClasses.map(cls => cls.section_name)).size;
+        
+        setStats({
+          totalClasses,
+          totalCapacity,
+          assignedTeachers,
+          totalSections: uniqueSections,
+        });
       } else {
         toast.error('Failed to fetch classes');
         setClasses([]);
-        setFilteredClasses([]);
       }
     } catch (error) {
-      console.error('Error fetching classes:', error);
       toast.error(error.response?.data?.message || 'Error fetching classes');
       setClasses([]);
-      setFilteredClasses([]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -73,326 +77,236 @@ const AddClass = () => {
         setTeacherOptions(validTeachers);
       }
     } catch (error) {
-      console.error('Error fetching teachers:', error);
+      toast.error('Error fetching teachers');
     }
   };
 
-  // Define columns for class management
+  // Define columns for class management with dynamic teacher options
   const classColumns = [
-    {
-      key: 'count',
-      header: 'S.No',
+    { 
+      key: 'class_name', 
+      header: 'Class Name', 
+      required: true,
       type: 'text',
-      render: (value, item, index) => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return startIndex + index + 1;
-      },
-      required: false
+      placeholder: 'e.g. Class 7',
+      render: (value) => value || 'N/A'
     },
-    { key: 'class_name', header: 'Class Name', type: 'text', required: true, placeholder: 'e.g. Class 7' },
-    { key: 'section_name', header: 'Section', type: 'text', required: true, placeholder: 'e.g. A' },
-    { key: 'room_No', header: 'Room No', type: 'text', required: false, placeholder: 'e.g. 101' },
-    { key: 'capacity', header: 'Capacity', type: 'number', required: false, placeholder: 'e.g. 30', min: 1 },
-    { key: 'teacher_name', header: 'Teacher Name', type: 'text', required: false, placeholder: 'e.g. Rahul Sharma' },
+    { 
+      key: 'section_name', 
+      header: 'Section', 
+      required: true,
+      type: 'text',
+      placeholder: 'e.g. A',
+      render: (value) => value || 'N/A'
+    },
+    { 
+      key: 'room_No', 
+      header: 'Room No', 
+      required: false,
+      type: 'text',
+      placeholder: 'e.g. 101',
+      render: (value) => value || 'N/A'
+    },
+    { 
+      key: 'capacity', 
+      header: 'Capacity', 
+      required: false,
+      type: 'number',
+      placeholder: 'e.g. 30',
+      min: 1,
+      render: (value) => value ? `${value} students` : 'N/A'
+    },
+    { 
+      key: 'teacher_id', 
+      header: 'Teacher', 
+      required: false,
+      type: 'select',
+      placeholder: 'Select Teacher',
+      options: teacherOptions.map(teacher => ({
+        value: teacher.teacherDetails.id.toString(),
+        label: teacher.name
+      })),
+      hideInTable: true
+    },
+    { 
+      key: 'teacher_name', 
+      header: 'Teacher Name', 
+      required: false,
+      type: 'text',
+      placeholder: 'Teacher Name',
+      render: (value) => value || 'Not Assigned'
+    },
   ];
 
-  // Filter fields for class
-  const filterFields = [
-    { key: 'class_name', label: 'Class Name', type: 'text', placeholder: 'Search by class name' },
-    { key: 'section_name', label: 'Section', type: 'select', options: [
-      { value: 'A', label: 'A' },
-      { value: 'B', label: 'B' },
-      { value: 'C', label: 'C' },
-      { value: 'D', label: 'D' }
-    ]},
-    { key: 'status', label: 'Status', type: 'select', options: [
-      { value: 'active', label: 'Active' },
-      { value: 'inactive', label: 'Inactive' }
-    ]}
-  ];
+  // Filter columns for table display
+  const displayColumns = classColumns.filter(col => !col.hideInTable);
 
-  // Handle filter changes
-  const handleFilterChange = (filters) => {
-    let filtered = [...classes];
+  // Handle create class
+  const handleCreateClass = async (classData) => {
+    try {
+      setLoading(true);
+      const payload = {
+        class_name: classData.class_name,
+        section_name: classData.section_name,
+        room_no: classData.room_No || '',
+        capacity: classData.capacity ? classData.capacity.toString() : '',
+        teacher_id: classData.teacher_id || null,
+      };
 
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) {
-        filtered = filtered.filter(item => {
-          if (key === 'class_name') {
-            return item.class_name && item.class_name.toLowerCase().includes(filters[key].toLowerCase());
-          }
-          return item[key] === filters[key];
-        });
+      const response = await createClass(payload);
+      
+      if (response.success || response.message) {
+        await fetchClasses();
+        return { 
+          success: true, 
+          message: response.message || 'Class created successfully!' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: response.message || 'Failed to create class' 
+        };
       }
-    });
-
-    setFilteredClasses(filtered);
-    setCurrentPage(1);
-  };
-
-  // Handle clear filters
-  const handleClearFilters = () => {
-    setFilteredClasses(classes);
-    setCurrentPage(1);
-  };
-
-  // Handle page change
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  // Handle view class details
-  const handleViewClass = (classItem) => {
-    setSelectedClass(classItem);
-    setIsViewModalOpen(true);
-  };
-
-  // Handle close view modal
-  const handleCloseViewModal = () => {
-    setIsViewModalOpen(false);
-    setSelectedClass(null);
-  };
-
-  // Handle edit class
-  const handleEditClass = (classItem) => {
-    setEditClass({ ...classItem });
-    setIsEditModalOpen(true);
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to create class' 
+      };
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle update class
-  const handleUpdateClass = async () => {
-    if (!editClass) return;
-
+  const handleUpdateClass = async (id, classData) => {
     try {
-      // Prepare payload - only include fields that are being updated
+      setLoading(true);
       const payload = {};
-      if (editClass.class_name) payload.class_name = editClass.class_name;
-      if (editClass.section_name) payload.section_name = editClass.section_name;
-      if (editClass.teacher_id) payload.teacher_id = parseInt(editClass.teacher_id);
+      if (classData.class_name) payload.class_name = classData.class_name;
+      if (classData.section_name) payload.section_name = classData.section_name;
+      if (classData.room_No) payload.room_no = classData.room_No;
+      if (classData.capacity) payload.capacity = classData.capacity.toString();
+      if (classData.teacher_id) payload.teacher_id = parseInt(classData.teacher_id);
 
-      if (Object.keys(payload).length === 0) {
-        toast.error('Please update at least one field');
-        return;
-      }
-
-      const response = await updateClassSection(editClass.id, payload);
+      const response = await updateClassSection(id, payload);
       
       if (response.success || response.message) {
-        toast.success(response.message || 'Class updated successfully');
-        setIsEditModalOpen(false);
-        setEditClass(null);
-        fetchClasses(); // Refresh classes list
+        await fetchClasses();
+        return { 
+          success: true, 
+          message: response.message || 'Class updated successfully!' 
+        };
       } else {
-        toast.error('Failed to update class');
+        return { 
+          success: false, 
+          message: response.message || 'Failed to update class' 
+        };
       }
     } catch (error) {
-      console.error('Error updating class:', error);
-      toast.error(error.response?.data?.message || 'Error updating class');
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to update class' 
+      };
+    } finally {
+      setLoading(false);
     }
   };
 
   // Handle delete class
-  const handleDeleteClass = (classItem) => {
-    setDeleteClass(classItem);
-    setIsDeleteModalOpen(true);
-  };
-
-  // Handle confirm delete
-  const handleConfirmDelete = async () => {
-    if (!deleteClass) return;
-
+  const handleDeleteClass = async (id) => {
     try {
-      const response = await deleteClassSection(deleteClass.id);
+      setLoading(true);
+      const response = await deleteClassSection(id);
       
       if (response.success || response.message) {
-        toast.success(response.message || 'Class deleted successfully');
-        setIsDeleteModalOpen(false);
-        setDeleteClass(null);
-        fetchClasses(); // Refresh classes list
+        await fetchClasses();
+        return { 
+          success: true, 
+          message: response.message || 'Class deleted successfully!' 
+        };
       } else {
-        toast.error('Failed to delete class');
+        return { 
+          success: false, 
+          message: response.message || 'Failed to delete class' 
+        };
       }
     } catch (error) {
-      console.error('Error deleting class:', error);
-      toast.error(error.response?.data?.message || 'Error deleting class');
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to delete class' 
+      };
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle class added (refresh list)
-  const handleClassAdded = () => {
-    fetchClasses();
-  };
 
   return (
-    <div className='bg-slate-200 flex AddStudent'>
+    <div className="bg-slate-200 flex h-screen overflow-hidden">
       <Sidebar />
-      
-      <div className='overflow-auto relative z-1 flex-col' style={{
-        height: '95vh',
-        width: '100vw',
-        gap: '10px',
-        display: 'flex',
-        transition: 'margin-left 0.3s ease'
-      }}>
+
+      <div
+        className="overflow-auto relative z-1 flex-col"
+        style={{
+          height: "100vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
         <Header />
-        
-        <div className="flex-1 p-4 md:p-6">
-          <ToastContainer position="top-right" autoClose={3000} />
-          <CreateClass onClassAdded={handleClassAdded} />
-          
-          {/* Filter Component */}
-          <CommonFilter
-            filterFields={filterFields}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-            title="Class Filters"
-          />
 
-          {/* Table Component */}
-          {isLoading ? (
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <p className="text-gray-600">Loading classes...</p>
-            </div>
-          ) : (
-            <CommonTable
-              title="Class Management"
-              columns={classColumns}
-              data={filteredClasses}
-              createApi={null}
-              updateApi={null}
-              deleteApi={null}
-              searchPlaceholder="Search classes..."
-              addButtonText="Add Class"
-              exportFileName="classes"
-              itemsPerPage={itemsPerPage}
-              enableSearch={true}
-              enablePagination={true}
-              enableAdd={false}
-              enableEdit={true}
-              enableDelete={true}
-              enableView={true}
-              onEdit={handleEditClass}
-              onDelete={handleDeleteClass}
-              onView={handleViewClass}
-              onPageChange={handlePageChange}
-              loading={isLoading}
+        <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StandardStatCard 
+              name="Total Classes" 
+              icon={GraduationCap} 
+              value={stats.totalClasses.toLocaleString()} 
+              color="#7c3aed"
             />
-          )}
-        </div>
-
-        {/* Class Detail View Modal */}
-        <ClassDetailView
-          isOpen={isViewModalOpen}
-          onClose={handleCloseViewModal}
-          classData={selectedClass}
-        />
-
-        {/* Edit Class Modal */}
-        {isEditModalOpen && editClass && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-              <h2 className="text-2xl font-semibold mb-4">Edit Class</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-gray-700 mb-1">Class Name</label>
-                  <input
-                    type="text"
-                    value={editClass.class_name || ''}
-                    onChange={(e) => setEditClass({ ...editClass, class_name: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    placeholder="e.g. Class 6"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-1">Section Name</label>
-                  <input
-                    type="text"
-                    value={editClass.section_name || ''}
-                    onChange={(e) => setEditClass({ ...editClass, section_name: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    placeholder="e.g. A"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-1">Teacher</label>
-                  <select
-                    value={editClass.teacher_id || ''}
-                    onChange={(e) => setEditClass({ ...editClass, teacher_id: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                  >
-                    <option value="">Select Teacher (Optional)</option>
-                    {teacherOptions.map((teacher) => (
-                      <option key={teacher.teacherDetails.id} value={teacher.teacherDetails.id}>
-                        {teacher.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  onClick={() => {
-                    setIsEditModalOpen(false);
-                    setEditClass(null);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdateClass}
-                  className="px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700"
-                >
-                  Update
-                </button>
-              </div>
-            </div>
+            <StandardStatCard 
+              name="Total Capacity" 
+              icon={Users} 
+              value={stats.totalCapacity.toLocaleString()} 
+              color="#10b981"
+            />
+            <StandardStatCard 
+              name="Assigned Teachers" 
+              icon={UserCheck} 
+              value={stats.assignedTeachers.toLocaleString()} 
+              color="#3b82f6"
+            />
+            <StandardStatCard 
+              name="Total Sections" 
+              icon={Building2} 
+              value={stats.totalSections.toLocaleString()} 
+              color="#f59e0b"
+            />
           </div>
-        )}
 
-        {/* Delete Confirmation Modal */}
-        {isDeleteModalOpen && deleteClass && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-              <h2 className="text-2xl font-semibold mb-4 text-red-600">Delete Class</h2>
-              
-              <p className="text-gray-700 mb-4">
-                Are you sure you want to delete this class?
-              </p>
-              
-              <div className="bg-gray-50 p-3 rounded mb-4">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Class:</span> {deleteClass.class_name} - {deleteClass.section_name}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Room:</span> {deleteClass.room_No || '-'}
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setIsDeleteModalOpen(false);
-                    setDeleteClass(null);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+          <ReusableTable
+            title="Class Management"
+            initialData={classes}
+            columns={classColumns}
+            displayColumns={displayColumns}
+            apiFunction={handleCreateClass}
+            updateApiFunction={handleUpdateClass}
+            deleteApiFunction={handleDeleteClass}
+            searchPlaceholder="Search by class name, section, room number"
+            addButtonText="Add New Class"
+            exportFileName="classes"
+            loading={loading}
+            showActions={{
+              add: true,
+              edit: true,
+              delete: true,
+              view: true
+            }}
+          />
+        </main>
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </div>
   );

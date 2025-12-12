@@ -383,7 +383,7 @@ const DataTable = ({
                   </button>
                 )}
               </div>
-            </div>
+                  </div>
 
             {/* Add Button - Second with name and icon */}
             {onAdd && (
@@ -405,43 +405,43 @@ const DataTable = ({
           <div className="inline-block min-w-full align-middle">
             <table className='min-w-full divide-y divide-gray-200'>
               <thead className="bg-gray-50">
-                <tr>
-                  {columns.map((column, index) => (
+              <tr>
+                {columns.map((column, index) => (
                     <th key={index} className='px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider'>
-                      {column.header}
-                    </th>
-                  ))}
+                    {column.header}
+                  </th>
+                ))}
                   <th className='px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider'>Action</th>
-                </tr>
-              </thead>
+              </tr>
+            </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
                 {getCurrentPageData().length > 0 ? (
                   getCurrentPageData().map((item, index) => (
                     <tr key={item.id || index} className="hover:bg-gray-50 transition-colors">
-                      {columns.map((column, colIndex) => (
+                  {columns.map((column, colIndex) => (
                         <td key={colIndex} className='px-3 sm:px-6 py-4 whitespace-nowrap'>
-                          {column.render ? column.render(item[column.key], item) : (
+                      {column.render ? column.render(item[column.key], item) : (
                             <div className='text-xs sm:text-sm text-gray-900'>{item[column.key] || 'N/A'}</div>
-                          )}
-                        </td>
-                      ))}
+                      )}
+                    </td>
+                  ))}
                       <td className='px-3 sm:px-6 py-4 whitespace-nowrap'>
                         <div className="flex items-center gap-2">
-                          {onView && (
+                    {onView && (
                             <button onClick={() => handleViewClick(item)} className='text-violet-600 hover:text-violet-700 cursor-pointer p-1.5 rounded hover:bg-violet-50 transition-colors' title="View">
                               <Eye size={16} />
-                            </button>
-                          )}
-                          {onEdit && (
+                      </button>
+                    )}
+                    {onEdit && (
                             <button className='text-violet-600 hover:text-violet-700 cursor-pointer p-1.5 rounded hover:bg-violet-50 transition-colors' onClick={() => handleEditClick(item)} title="Edit">
                               <Edit size={16} />
-                            </button>
-                          )}
-                          {onDelete && (
+                      </button>
+                    )}
+                    {onDelete && (
                             <button className='text-red-500 hover:text-red-600 cursor-pointer p-1.5 rounded hover:bg-red-50 transition-colors' onClick={() => handleDeleteClick(item)} title="Delete">
                               <Trash2 size={16} />
-                            </button>
-                          )}
+                      </button>
+                    )}
                         </div>
                       </td>
                     </tr>
@@ -450,11 +450,11 @@ const DataTable = ({
                   <tr>
                     <td colSpan={columns.length + 1} className="px-6 py-8 text-center text-gray-500">
                       No data available
-                    </td>
+                  </td>
                   </tr>
                 )}
-              </tbody>
-            </table>
+            </tbody>
+          </table>
           </div>
         </div>
 
@@ -491,165 +491,165 @@ const DataTable = ({
           <div className='text-sm font-medium text-gray-700'>
             Total Items: {filteredData.length}
           </div>
+          </div>
         </div>
-      </div>
 
       {/* Full Page Modals */}
-      {/* Add Modal */}
-      {isAddModalOpen && onAdd && (
+        {/* Add Modal */}
+        {isAddModalOpen && onAdd && (
         <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
-                  <UserPlus className="w-5 h-5 text-violet-600" />
-                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-violet-600" />
+                  </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900">Add New {title}</h3>
-              </div>
-              <button 
-                onClick={() => setAddModalOpen(false)} 
+                </div>
+                <button 
+                  onClick={() => setAddModalOpen(false)} 
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6">
-              {onAdd({ onClose: () => setAddModalOpen(false) })}
-            </div>
+                {onAdd({ onClose: () => setAddModalOpen(false) })}
+              </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Edit Modal */}
-      {isEditModalOpen && editItem && onEdit && (
+        {/* Edit Modal */}
+        {isEditModalOpen && editItem && onEdit && (
         <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
-                  <Edit className="w-5 h-5 text-violet-600" />
-                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <Edit className="w-5 h-5 text-violet-600" />
+                  </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900">Edit {title}</h3>
-              </div>
-              <button 
-                onClick={() => setEditModalOpen(false)} 
+                </div>
+                <button 
+                  onClick={() => setEditModalOpen(false)} 
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6">
-              {onEdit({ item: editItem, onClose: () => setEditModalOpen(false) })}
-            </div>
+                {onEdit({ item: editItem, onClose: () => setEditModalOpen(false) })}
+              </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* View Modal */}
-      {isViewModalOpen && selectedItem && (
+        {/* View Modal */}
+        {isViewModalOpen && selectedItem && (
         <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" ref={printRef}>
-            {/* Modal Header */}
+              {/* Modal Header */}
             <div className="flex-shrink-0 bg-gradient-to-r from-violet-600 to-violet-700 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                   <Eye className="w-5 h-5 text-white" />
-                </div>
-                <div>
+                    </div>
+                    <div>
                   <h3 className="text-lg sm:text-xl font-bold text-white">{title} Details</h3>
                   <p className="text-violet-100 text-xs sm:text-sm">ID: {selectedItem.id}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={handleDownloadViewPDF}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200 text-white cursor-pointer"
-                  title="Download PDF"
-                >
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={handleDownloadViewPDF}
+                      className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200 text-white cursor-pointer"
+                      title="Download PDF"
+                    >
                   <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                <button 
-                  onClick={handlePrintView}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200 text-white cursor-pointer"
-                  title="Print"
-                >
+                    </button>
+                    <button 
+                      onClick={handlePrintView}
+                      className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200 text-white cursor-pointer"
+                      title="Print"
+                    >
                   <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                <button 
-                  onClick={() => setViewModalOpen(false)} 
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200 cursor-pointer"
-                >
+                    </button>
+                    <button 
+                      onClick={() => setViewModalOpen(false)} 
+                      className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200 cursor-pointer"
+                    >
                   <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </button>
-              </div>
-            </div>
+                    </button>
+                  </div>
+                </div>
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6 bg-white">
               <div className="space-y-4">
-                {(allColumns || columns).map((column, index) => (
+                        {(allColumns || columns).map((column, index) => (
                   <div key={index} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="md:col-span-1">
                         <label className="block text-sm font-semibold text-gray-700">
-                          {column.header}
-                        </label>
+                                {column.header}
+                              </label>
                       </div>
                       <div className="md:col-span-2">
                         <div className="text-sm text-gray-900">
-                          {column.render && selectedItem[column.key] ? 
+                                {column.render && selectedItem[column.key] ? 
                             (typeof column.render(selectedItem[column.key], selectedItem) === 'string' ? 
                               column.render(selectedItem[column.key], selectedItem) : 
                               String(selectedItem[column.key])
                             ) : 
                             (selectedItem[column.key] || 'N/A')
-                          }
+                                }
                         </div>
-                      </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && deleteItem && (
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen && deleteItem && (
         <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-md p-6 sm:p-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-8 h-8 text-red-600" />
-              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="w-8 h-8 text-red-600" />
+                </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Delete {title}</h3>
               <p className="text-gray-600 mb-6 text-sm sm:text-base">
-                Are you sure you want to delete this {title.toLowerCase()}? This action cannot be undone.
-              </p>
+                  Are you sure you want to delete this {title.toLowerCase()}? This action cannot be undone.
+                </p>
               <div className="flex flex-col sm:flex-row justify-center gap-3">
-                <button
-                  onClick={() => setDeleteModalOpen(false)}
+                  <button
+                    onClick={() => setDeleteModalOpen(false)}
                   className="px-6 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium cursor-pointer text-sm sm:text-base"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
                   className="px-6 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors duration-200 cursor-pointer text-sm sm:text-base"
-                >
-                  Delete
-                </button>
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
     </>
   );
 };
 
-export default DataTable;
+export default DataTable; 

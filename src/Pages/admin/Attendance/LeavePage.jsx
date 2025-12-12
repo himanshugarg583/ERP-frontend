@@ -3,7 +3,7 @@ import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import StandardStatCard from "../../../components/comman_components/StandardStatCard";
 import ReusableTable from "../../../components/comman_components/ReusableTable";
-import { Users, Clock, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { Users, Clock, CheckCircle, XCircle, Plus, X } from 'lucide-react';
 import { getAllLeaves, updateLeaveStatus, applyLeave, getAllClassesDropdown, getAllStudentsByClass } from "../../../helper/requests-method/apiMethods";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -441,188 +441,218 @@ const LeavePage = () => {
             />
           </div>
 
-          {/* Apply Leave Form */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
-            <div className="p-4 sm:p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                  Apply for Student Leave
-                </h2>
-                <button
-                  onClick={() => setIsFormOpen(!isFormOpen)}
-                  className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base"
-                >
-                  <Plus size={18} />
-                  {isFormOpen ? 'Hide Form' : 'Apply Leave'}
-                </button>
+          {/* Apply Leave Button */}
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base"
+            >
+              <Plus size={18} />
+              Apply Leave
+            </button>
+          </div>
+
+          {/* Apply Leave Modal */}
+          {isFormOpen && (
+            <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+                {/* Modal Header */}
+                <div className="flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-violet-600" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900">Apply for Student Leave</h3>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setIsFormOpen(false);
+                      setFormData({
+                        student_id: '',
+                        class_id: '',
+                        start_date: '',
+                        end_date: '',
+                        leave_type: '',
+                        reason: '',
+                      });
+                      setSelectedClassId('');
+                      setStudents([]);
+                      setAttachmentFile(null);
+                      const fileInput = document.getElementById('attachment');
+                      if (fileInput) fileInput.value = '';
+                    }} 
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  <form onSubmit={handleLeaveSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Class <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          name="class_id"
+                          value={selectedClassId}
+                          onChange={handleClassChange}
+                          className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
+                          required
+                        >
+                          <option value="">Select Class</option>
+                          {classes.map((cls) => (
+                            <option key={cls.id} value={cls.id}>
+                              {cls.class_name} - {cls.section_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Student Name <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          name="student_id"
+                          value={formData.student_id}
+                          onChange={handleFormInputChange}
+                          className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          disabled={!selectedClassId || isLoadingStudents}
+                          required
+                        >
+                          <option value="">
+                            {isLoadingStudents ? 'Loading students...' : selectedClassId ? 'Select Student' : 'Please select class first'}
+                          </option>
+                          {students.map((student) => (
+                            <option key={student.id} value={student.id}>
+                              {student.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Leave Type <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          name="leave_type"
+                          value={formData.leave_type}
+                          onChange={handleFormInputChange}
+                          className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
+                          required
+                        >
+                          <option value="">Select Leave Type</option>
+                          <option value="sick">Sick</option>
+                          <option value="casual">Casual</option>
+                          <option value="emergency">Emergency</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Start Date <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          name="start_date"
+                          value={formData.start_date}
+                          onChange={handleFormInputChange}
+                          className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          End Date <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          name="end_date"
+                          value={formData.end_date}
+                          onChange={handleFormInputChange}
+                          className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Reason for Leave <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          name="reason"
+                          value={formData.reason}
+                          onChange={handleFormInputChange}
+                          className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 resize-y"
+                          placeholder="Explain the reason for leave request"
+                          rows={4}
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Attachment (Optional)
+                        </label>
+                        <input
+                          type="file"
+                          id="attachment"
+                          onChange={handleFileChange}
+                          className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                          accept="image/*,.pdf,.doc,.docx"
+                        />
+                        {attachmentFile && (
+                          <p className="text-sm text-gray-600 mt-1">Selected: {attachmentFile.name}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsFormOpen(false);
+                          setFormData({
+                            student_id: '',
+                            class_id: '',
+                            start_date: '',
+                            end_date: '',
+                            leave_type: '',
+                            reason: '',
+                          });
+                          setSelectedClassId('');
+                          setStudents([]);
+                          setAttachmentFile(null);
+                          const fileInput = document.getElementById('attachment');
+                          if (fileInput) fileInput.value = '';
+                        }}
+                        className="px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200 font-medium text-sm cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm cursor-pointer ${
+                          isSubmitting
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-violet-600 text-white hover:bg-violet-700'
+                        }`}
+                      >
+                        {isSubmitting ? 'Submitting...' : 'Submit Leave Application'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-
-            {isFormOpen && (
-              <div className="p-4 sm:p-6">
-                <form onSubmit={handleLeaveSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Class <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="class_id"
-                        value={selectedClassId}
-                        onChange={handleClassChange}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
-                        required
-                      >
-                        <option value="">Select Class</option>
-                        {classes.map((cls) => (
-                          <option key={cls.id} value={cls.id}>
-                            {cls.class_name} - {cls.section_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Student Name <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="student_id"
-                        value={formData.student_id}
-                        onChange={handleFormInputChange}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        disabled={!selectedClassId || isLoadingStudents}
-                        required
-                      >
-                        <option value="">
-                          {isLoadingStudents ? 'Loading students...' : selectedClassId ? 'Select Student' : 'Please select class first'}
-                        </option>
-                        {students.map((student) => (
-                          <option key={student.id} value={student.id}>
-                            {student.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Leave Type <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="leave_type"
-                        value={formData.leave_type}
-                        onChange={handleFormInputChange}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
-                        required
-                      >
-                        <option value="">Select Leave Type</option>
-                        <option value="sick">Sick</option>
-                        <option value="casual">Casual</option>
-                        <option value="emergency">Emergency</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Start Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        name="start_date"
-                        value={formData.start_date}
-                        onChange={handleFormInputChange}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        End Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        name="end_date"
-                        value={formData.end_date}
-                        onChange={handleFormInputChange}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
-                        required
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Reason for Leave <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        name="reason"
-                        value={formData.reason}
-                        onChange={handleFormInputChange}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 resize-y"
-                        placeholder="Explain the reason for leave request"
-                        rows={4}
-                        required
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Attachment (Optional)
-                      </label>
-                      <input
-                        type="file"
-                        id="attachment"
-                        onChange={handleFileChange}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
-                        accept="image/*,.pdf,.doc,.docx"
-                      />
-                      {attachmentFile && (
-                        <p className="text-sm text-gray-600 mt-1">Selected: {attachmentFile.name}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsFormOpen(false);
-                        setFormData({
-                          student_id: '',
-                          class_id: '',
-                          start_date: '',
-                          end_date: '',
-                          leave_type: '',
-                          reason: '',
-                        });
-                        setSelectedClassId('');
-                        setStudents([]);
-                        setAttachmentFile(null);
-                        const fileInput = document.getElementById('attachment');
-                        if (fileInput) fileInput.value = '';
-                      }}
-                      className="px-6 py-2.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200 font-medium text-sm cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm cursor-pointer ${
-                        isSubmitting
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : 'bg-violet-600 text-white hover:bg-violet-700'
-                      }`}
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Submit Leave Application'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
+          )}
 
           <ReusableTable
             title="Leave Management"

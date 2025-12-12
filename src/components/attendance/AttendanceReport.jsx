@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getStudentReportByDate, getStudentReportByMonth, getClassWiseSummary, getAllClassesDropdown } from '../../helper/requests-method/apiMethods';
 import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
+import StandardStatCard from '../comman_components/StandardStatCard';
+import { Users, Calendar, FileText, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
 
 const AttendanceReport = () => {
@@ -46,7 +48,7 @@ const AttendanceReport = () => {
         setClasses(response.data);
       }
     } catch (error) {
-      console.error('Error fetching classes:', error);
+      toast.error('Error fetching classes');
     }
   };
 
@@ -115,7 +117,6 @@ const AttendanceReport = () => {
         toast.error('Failed to fetch report');
       }
     } catch (error) {
-      console.error('Error fetching date report:', error);
       toast.error(error.response?.data?.message || 'Error fetching report');
     } finally {
       setIsLoading(false);
@@ -146,7 +147,6 @@ const AttendanceReport = () => {
         toast.error('Failed to fetch report');
       }
     } catch (error) {
-      console.error('Error fetching month report:', error);
       toast.error(error.response?.data?.message || 'Error fetching report');
     } finally {
       setIsLoading(false);
@@ -172,7 +172,6 @@ const AttendanceReport = () => {
         toast.error('Failed to fetch report');
       }
     } catch (error) {
-      console.error('Error fetching class wise report:', error);
       toast.error(error.response?.data?.message || 'Error fetching report');
     } finally {
       setIsLoading(false);
@@ -197,131 +196,228 @@ const AttendanceReport = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
+  // Calculate stats for date report
+  const getDateReportStats = () => {
+    if (!dateReportData || !dateReportData.student_reports) return null;
+    const reports = dateReportData.student_reports;
+    return {
+      total: reports.length,
+      present: reports.filter(s => s.status === 'present').length,
+      absent: reports.filter(s => s.status === 'absent').length,
+      late: reports.filter(s => s.status === 'late').length,
+    };
+  };
+
+  // Calculate stats for month report
+  const getMonthReportStats = () => {
+    if (!monthReportData || !monthReportData.student_reports) return null;
+    const reports = monthReportData.student_reports;
+    const totalPresent = reports.reduce((sum, s) => sum + (s.attendance_summary?.present || 0), 0);
+    const totalAbsent = reports.reduce((sum, s) => sum + (s.attendance_summary?.absent || 0), 0);
+    const totalLate = reports.reduce((sum, s) => sum + (s.attendance_summary?.late || 0), 0);
+    return {
+      total: reports.length,
+      present: totalPresent,
+      absent: totalAbsent,
+      late: totalLate,
+      avgPercentage: monthReportData.class_summary?.average_attendance_percentage || '0.00',
+    };
+  };
+
+  // Calculate stats for class wise report
+  const getClassWiseStats = () => {
+    if (!classWiseReportData || !classWiseReportData.overall_summary) return null;
+    return {
+      totalClasses: classWiseReportData.total_classes || 0,
+      totalStudents: classWiseReportData.overall_summary.total_students || 0,
+      present: classWiseReportData.overall_summary.present || 0,
+      absent: classWiseReportData.overall_summary.absent || 0,
+      late: classWiseReportData.overall_summary.late || 0,
+      notMarked: classWiseReportData.overall_summary.not_marked || 0,
+      avgPercentage: classWiseReportData.overall_summary.attendance_percentage || '0.00',
+    };
+  };
+
+  const dateStats = getDateReportStats();
+  const monthStats = getMonthReportStats();
+  const classWiseStats = getClassWiseStats();
+
   return (
-    <div className="bg-slate-200 min-h-screen p-6">
+    <div className="w-full mx-auto">
       <ToastContainer position="top-right" autoClose={3000} />
-      <div className="w-full mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Attendance Reports</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-6 text-gray-900">Attendance Reports</h1>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-md mb-6">
-          <div className="flex border-b">
-            <button
-              onClick={() => setActiveTab('byDate')}
-              className={`px-6 py-3 font-medium ${
-                activeTab === 'byDate'
-                  ? 'border-b-2 border-violet-600 text-violet-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Report by Date
-            </button>
-            <button
-              onClick={() => setActiveTab('byMonth')}
-              className={`px-6 py-3 font-medium ${
-                activeTab === 'byMonth'
-                  ? 'border-b-2 border-violet-600 text-violet-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Report by Month
-            </button>
-            <button
-              onClick={() => setActiveTab('classWise')}
-              className={`px-6 py-3 font-medium ${
-                activeTab === 'classWise'
-                  ? 'border-b-2 border-violet-600 text-violet-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Class Wise Report
-            </button>
-          </div>
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+        <div className="flex flex-wrap border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('byDate')}
+            className={`px-4 sm:px-6 py-3 font-medium text-sm sm:text-base transition-colors duration-200 ${
+              activeTab === 'byDate'
+                ? 'border-b-2 border-violet-600 text-violet-600 bg-violet-50'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Report by Date
+          </button>
+          <button
+            onClick={() => setActiveTab('byMonth')}
+            className={`px-4 sm:px-6 py-3 font-medium text-sm sm:text-base transition-colors duration-200 ${
+              activeTab === 'byMonth'
+                ? 'border-b-2 border-violet-600 text-violet-600 bg-violet-50'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Report by Month
+          </button>
+          <button
+            onClick={() => setActiveTab('classWise')}
+            className={`px-4 sm:px-6 py-3 font-medium text-sm sm:text-base transition-colors duration-200 ${
+              activeTab === 'classWise'
+                ? 'border-b-2 border-violet-600 text-violet-600 bg-violet-50'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Class Wise Report
+          </button>
         </div>
+      </div>
 
-        {/* Report by Date */}
-        {activeTab === 'byDate' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Attendance Report by Date</h2>
-            <form onSubmit={handleDateReport} className="mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 mb-1">Class & Section *</label>
-                  <select
-                    value={dateReport.class_id}
-                    onChange={handleDateClassChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
+      {/* Report by Date */}
+      {activeTab === 'byDate' && (
+        <div className="space-y-6">
+            {/* Form Card */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Attendance Report by Date</h2>
+              <form onSubmit={handleDateReport} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Class & Section <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={dateReport.class_id}
+                      onChange={handleDateClassChange}
+                      className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
+                      required
+                    >
+                      <option value="">Select Class & Section</option>
+                      {classes.map((cls) => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.class_name} - {cls.section_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={dateReport.date}
+                      onChange={(e) => setDateReport({ ...dateReport, date: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm cursor-pointer ${
+                      isLoading
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-violet-600 text-white hover:bg-violet-700'
+                    }`}
                   >
-                    <option value="">Select Class & Section</option>
-                    {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.class_name} - {cls.section_name}
-                      </option>
-                    ))}
-                  </select>
+                    {isLoading ? 'Loading...' : 'Generate Report'}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-gray-700 mb-1">Date *</label>
-                  <input
-                    type="date"
-                    value={dateReport.date}
-                    onChange={(e) => setDateReport({ ...dateReport, date: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="mt-4 bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 disabled:cursor-not-allowed text-white px-6 py-2 rounded"
-              >
-                {isLoading ? 'Loading...' : 'Generate Report'}
-              </button>
-            </form>
+              </form>
+            </div>
 
+            {/* Stats Cards */}
+            {dateStats && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StandardStatCard 
+                  name="Total Students" 
+                  icon={Users} 
+                  value={dateStats.total.toLocaleString()} 
+                  color="#7c3aed"
+                />
+                <StandardStatCard 
+                  name="Present" 
+                  icon={CheckCircle} 
+                  value={dateStats.present.toLocaleString()} 
+                  color="#10b981"
+                />
+                <StandardStatCard 
+                  name="Absent" 
+                  icon={XCircle} 
+                  value={dateStats.absent.toLocaleString()} 
+                  color="#ef4444"
+                />
+                <StandardStatCard 
+                  name="Late" 
+                  icon={Clock} 
+                  value={dateStats.late.toLocaleString()} 
+                  color="#f59e0b"
+                />
+              </div>
+            )}
+
+            {/* Report Results */}
             {dateReportData && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-4">Report Results</h3>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Report Results</h3>
                 {dateReportData.report_info && (
-                  <div className="bg-gray-50 p-4 rounded mb-4">
-                    <h4 className="font-semibold mb-2">Report Information</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <h4 className="font-semibold text-gray-900 mb-3">Report Information</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <span className="font-medium">Class:</span> {dateReportData.report_info.class_name}
+                        <span className="font-medium text-gray-700">Class:</span>
+                        <span className="ml-2 text-gray-900">{dateReportData.report_info.class_name}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Section:</span> {dateReportData.report_info.section_name}
+                        <span className="font-medium text-gray-700">Section:</span>
+                        <span className="ml-2 text-gray-900">{dateReportData.report_info.section_name}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Room No:</span> {dateReportData.report_info.room_No || '-'}
+                        <span className="font-medium text-gray-700">Room No:</span>
+                        <span className="ml-2 text-gray-900">{dateReportData.report_info.room_No || '-'}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Date:</span> {dateReportData.report_info.date || dateReport.date}
+                        <span className="font-medium text-gray-700">Date:</span>
+                        <span className="ml-2 text-gray-900">
+                          {dateReportData.report_info.date 
+                            ? new Date(dateReportData.report_info.date).toLocaleDateString('en-GB')
+                            : dateReport.date ? new Date(dateReport.date).toLocaleDateString('en-GB') : '-'}
+                        </span>
                       </div>
                     </div>
                   </div>
                 )}
                 {dateReportData.student_reports && dateReportData.student_reports.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300">
+                    <table className="w-full border-collapse">
                       <thead>
-                        <tr className="bg-gray-100">
-                          <th className="border border-gray-300 px-4 py-2 text-left">Student ID</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left">Student Name</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left">Roll Number</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student ID</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student Name</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Roll Number</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="bg-white divide-y divide-gray-200">
                         {dateReportData.student_reports.map((student, index) => (
-                          <tr key={index}>
-                            <td className="border border-gray-300 px-4 py-2">{student.student_id || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2">{student.student_name || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2">{student.roll_number || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          <tr key={index} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.student_id || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.student_name || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.roll_number || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-center">
+                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                                 student.status === 'present' ? 'bg-green-100 text-green-800' :
                                 student.status === 'absent' ? 'bg-red-100 text-red-800' :
                                 student.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
@@ -335,106 +431,169 @@ const AttendanceReport = () => {
                       </tbody>
                     </table>
                   </div>
-                ) : (
-                  <p className="text-gray-600">No data available</p>
+                ) : dateReportData && (
+                  <p className="text-gray-600 text-center py-8">No data available</p>
                 )}
               </div>
             )}
           </div>
         )}
 
-        {/* Report by Month */}
-        {activeTab === 'byMonth' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Attendance Report by Month</h2>
-            <form onSubmit={handleMonthReport} className="mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-gray-700 mb-1">Class & Section *</label>
-                  <select
-                    value={monthReport.class_id}
-                    onChange={handleMonthClassChange}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
-                  >
-                    <option value="">Select Class & Section</option>
-                    {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.class_name} - {cls.section_name}
-                      </option>
-                    ))}
-                  </select>
+      {/* Report by Month */}
+      {activeTab === 'byMonth' && (
+        <div className="space-y-6">
+            {/* Form Card */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Attendance Report by Month</h2>
+              <form onSubmit={handleMonthReport} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Class & Section <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={monthReport.class_id}
+                      onChange={handleMonthClassChange}
+                      className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
+                      required
+                    >
+                      <option value="">Select Class & Section</option>
+                      {classes.map((cls) => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.class_name} - {cls.section_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Month <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={monthReport.month}
+                      onChange={(e) => setMonthReport({ ...monthReport, month: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
+                      required
+                    >
+                      <option value="">Select Month</option>
+                      {months.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Year <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={monthReport.year}
+                      onChange={(e) => setMonthReport({ ...monthReport, year: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200 cursor-pointer"
+                      required
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-gray-700 mb-1">Month *</label>
-                  <select
-                    value={monthReport.month}
-                    onChange={(e) => setMonthReport({ ...monthReport, month: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm cursor-pointer ${
+                      isLoading
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-violet-600 text-white hover:bg-violet-700'
+                    }`}
                   >
-                    <option value="">Select Month</option>
-                    {months.map((month) => (
-                      <option key={month.value} value={month.value}>
-                        {month.label}
-                      </option>
-                    ))}
-                  </select>
+                    {isLoading ? 'Loading...' : 'Generate Report'}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-gray-700 mb-1">Year *</label>
-                  <select
-                    value={monthReport.year}
-                    onChange={(e) => setMonthReport({ ...monthReport, year: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
-                  >
-                    {years.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="mt-4 bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 disabled:cursor-not-allowed text-white px-6 py-2 rounded"
-              >
-                {isLoading ? 'Loading...' : 'Generate Report'}
-              </button>
-            </form>
+              </form>
+            </div>
 
+            {/* Stats Cards */}
+            {monthStats && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <StandardStatCard 
+                  name="Total Students" 
+                  icon={Users} 
+                  value={monthStats.total.toLocaleString()} 
+                  color="#7c3aed"
+                />
+                <StandardStatCard 
+                  name="Present" 
+                  icon={CheckCircle} 
+                  value={monthStats.present.toLocaleString()} 
+                  color="#10b981"
+                />
+                <StandardStatCard 
+                  name="Absent" 
+                  icon={XCircle} 
+                  value={monthStats.absent.toLocaleString()} 
+                  color="#ef4444"
+                />
+                <StandardStatCard 
+                  name="Late" 
+                  icon={Clock} 
+                  value={monthStats.late.toLocaleString()} 
+                  color="#f59e0b"
+                />
+                <StandardStatCard 
+                  name="Avg Attendance" 
+                  icon={TrendingUp} 
+                  value={`${monthStats.avgPercentage}%`} 
+                  color="#3b82f6"
+                />
+              </div>
+            )}
+
+            {/* Report Results */}
             {monthReportData && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-4">Report Results</h3>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Report Results</h3>
                 {monthReportData.report_info && (
-                  <div className="bg-gray-50 p-4 rounded mb-4">
-                    <h4 className="font-semibold mb-2">Report Information</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <h4 className="font-semibold text-gray-900 mb-3">Report Information</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <span className="font-medium">Class:</span> {monthReportData.report_info.class_name}
+                        <span className="font-medium text-gray-700">Class:</span>
+                        <span className="ml-2 text-gray-900">{monthReportData.report_info.class_name}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Section:</span> {monthReportData.report_info.section_name}
+                        <span className="font-medium text-gray-700">Section:</span>
+                        <span className="ml-2 text-gray-900">{monthReportData.report_info.section_name}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Room No:</span> {monthReportData.report_info.room_No || '-'}
+                        <span className="font-medium text-gray-700">Room No:</span>
+                        <span className="ml-2 text-gray-900">{monthReportData.report_info.room_No || '-'}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Month:</span> {monthReportData.report_info.month}
+                        <span className="font-medium text-gray-700">Month:</span>
+                        <span className="ml-2 text-gray-900">{monthReportData.report_info.month}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Year:</span> {monthReportData.report_info.year}
+                        <span className="font-medium text-gray-700">Year:</span>
+                        <span className="ml-2 text-gray-900">{monthReportData.report_info.year}</span>
                       </div>
                       {monthReportData.report_info.date_range && (
                         <>
                           <div>
-                            <span className="font-medium">From:</span> {new Date(monthReportData.report_info.date_range.from).toLocaleDateString()}
+                            <span className="font-medium text-gray-700">From:</span>
+                            <span className="ml-2 text-gray-900">
+                              {new Date(monthReportData.report_info.date_range.from).toLocaleDateString('en-GB')}
+                            </span>
                           </div>
                           <div>
-                            <span className="font-medium">To:</span> {new Date(monthReportData.report_info.date_range.to).toLocaleDateString()}
+                            <span className="font-medium text-gray-700">To:</span>
+                            <span className="ml-2 text-gray-900">
+                              {new Date(monthReportData.report_info.date_range.to).toLocaleDateString('en-GB')}
+                            </span>
                           </div>
                         </>
                       )}
@@ -442,58 +601,62 @@ const AttendanceReport = () => {
                   </div>
                 )}
                 {monthReportData.class_summary && (
-                  <div className="bg-blue-50 p-4 rounded mb-4">
-                    <h4 className="font-semibold mb-2">Class Summary</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h4 className="font-semibold text-gray-900 mb-3">Class Summary</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-medium">Total Students:</span> {monthReportData.class_summary.total_students || 0}
+                        <span className="font-medium text-gray-700">Total Students:</span>
+                        <span className="ml-2 text-gray-900">{monthReportData.class_summary.total_students || 0}</span>
                       </div>
                       <div>
-                        <span className="font-medium">Average Attendance:</span> {monthReportData.class_summary.average_attendance_percentage || '0.00'}%
+                        <span className="font-medium text-gray-700">Average Attendance:</span>
+                        <span className="ml-2 font-semibold text-blue-600">
+                          {monthReportData.class_summary.average_attendance_percentage || '0.00'}%
+                        </span>
                       </div>
                     </div>
                   </div>
                 )}
                 {monthReportData.student_reports && monthReportData.student_reports.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300">
+                    <table className="w-full border-collapse">
                       <thead>
-                        <tr className="bg-gray-100">
-                          <th className="border border-gray-300 px-4 py-2 text-left">Student ID</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left">Student Name</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left">Roll Number</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Total Days</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Present</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Absent</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Late</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Attendance %</th>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student ID</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student Name</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Roll Number</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Days</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Present</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Absent</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Late</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Attendance %</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="bg-white divide-y divide-gray-200">
                         {monthReportData.student_reports.map((student, index) => (
-                          <tr key={index}>
-                            <td className="border border-gray-300 px-4 py-2">{student.student_id || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2">{student.student_name || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2">{student.roll_number || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                          <tr key={index} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.student_id || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.student_name || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.roll_number || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
                               {student.attendance_summary?.total_days_marked || 0}
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-green-600 font-medium">
                                 {student.attendance_summary?.present || 0}
                               </span>
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-red-600 font-medium">
                                 {student.attendance_summary?.absent || 0}
                               </span>
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-yellow-600 font-medium">
                                 {student.attendance_summary?.late || 0}
                               </span>
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center font-semibold text-gray-900">
                               {student.attendance_summary?.attendance_percentage || '0.00'}%
                             </td>
                           </tr>
@@ -501,119 +664,192 @@ const AttendanceReport = () => {
                       </tbody>
                     </table>
                   </div>
-                ) : (
-                  <p className="text-gray-600">No data available</p>
+                ) : monthReportData && (
+                  <p className="text-gray-600 text-center py-8">No data available</p>
                 )}
               </div>
             )}
           </div>
         )}
 
-        {/* Class Wise Report */}
-        {activeTab === 'classWise' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Class Wise Attendance Report</h2>
-            <form onSubmit={handleClassWiseReport} className="mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-gray-700 mb-1">Date *</label>
-                  <input
-                    type="date"
-                    value={classWiseReport.date}
-                    onChange={(e) => setClassWiseReport({ ...classWiseReport, date: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    required
-                  />
+      {/* Class Wise Report */}
+      {activeTab === 'classWise' && (
+        <div className="space-y-6">
+            {/* Form Card */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Class Wise Attendance Report</h2>
+              <form onSubmit={handleClassWiseReport} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={classWiseReport.date}
+                      onChange={(e) => setClassWiseReport({ ...classWiseReport, date: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="mt-4 bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 disabled:cursor-not-allowed text-white px-6 py-2 rounded"
-              >
-                {isLoading ? 'Loading...' : 'Generate Report'}
-              </button>
-            </form>
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`px-6 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm cursor-pointer ${
+                      isLoading
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-violet-600 text-white hover:bg-violet-700'
+                    }`}
+                  >
+                    {isLoading ? 'Loading...' : 'Generate Report'}
+                  </button>
+                </div>
+              </form>
+            </div>
 
+            {/* Stats Cards */}
+            {classWiseStats && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                <StandardStatCard 
+                  name="Total Classes" 
+                  icon={FileText} 
+                  value={classWiseStats.totalClasses.toLocaleString()} 
+                  color="#7c3aed"
+                />
+                <StandardStatCard 
+                  name="Total Students" 
+                  icon={Users} 
+                  value={classWiseStats.totalStudents.toLocaleString()} 
+                  color="#6366f1"
+                />
+                <StandardStatCard 
+                  name="Present" 
+                  icon={CheckCircle} 
+                  value={classWiseStats.present.toLocaleString()} 
+                  color="#10b981"
+                />
+                <StandardStatCard 
+                  name="Absent" 
+                  icon={XCircle} 
+                  value={classWiseStats.absent.toLocaleString()} 
+                  color="#ef4444"
+                />
+                <StandardStatCard 
+                  name="Late" 
+                  icon={Clock} 
+                  value={classWiseStats.late.toLocaleString()} 
+                  color="#f59e0b"
+                />
+                <StandardStatCard 
+                  name="Avg Attendance" 
+                  icon={TrendingUp} 
+                  value={`${classWiseStats.avgPercentage}%`} 
+                  color="#3b82f6"
+                />
+              </div>
+            )}
+
+            {/* Report Results */}
             {classWiseReportData && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-4">Report Results</h3>
-                <div className="bg-gray-50 p-4 rounded mb-4">
-                  <h4 className="font-semibold mb-2">Overall Summary</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Report Results</h3>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Overall Summary</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 text-sm mb-4">
                     <div>
-                      <span className="font-medium">Date:</span> {classWiseReportData.date ? new Date(classWiseReportData.date).toLocaleDateString() : '-'}
+                      <span className="font-medium text-gray-700">Date:</span>
+                      <span className="ml-2 text-gray-900">
+                        {classWiseReportData.date 
+                          ? new Date(classWiseReportData.date).toLocaleDateString('en-GB')
+                          : '-'}
+                      </span>
                     </div>
                     <div>
-                      <span className="font-medium">Total Students:</span> {classWiseReportData.overall_summary?.total_students || 0}
+                      <span className="font-medium text-gray-700">Total Classes:</span>
+                      <span className="ml-2 text-gray-900">{classWiseReportData.total_classes || 0}</span>
                     </div>
                     <div>
-                      <span className="font-medium">Present:</span> <span className="text-green-600">{classWiseReportData.overall_summary?.present || 0}</span>
+                      <span className="font-medium text-gray-700">Total Students:</span>
+                      <span className="ml-2 text-gray-900">{classWiseReportData.overall_summary?.total_students || 0}</span>
                     </div>
                     <div>
-                      <span className="font-medium">Absent:</span> <span className="text-red-600">{classWiseReportData.overall_summary?.absent || 0}</span>
+                      <span className="font-medium text-gray-700">Present:</span>
+                      <span className="ml-2 text-green-600 font-medium">
+                        {classWiseReportData.overall_summary?.present || 0}
+                      </span>
                     </div>
                     <div>
-                      <span className="font-medium">Late:</span> <span className="text-yellow-600">{classWiseReportData.overall_summary?.late || 0}</span>
+                      <span className="font-medium text-gray-700">Absent:</span>
+                      <span className="ml-2 text-red-600 font-medium">
+                        {classWiseReportData.overall_summary?.absent || 0}
+                      </span>
                     </div>
                     <div>
-                      <span className="font-medium">Not Marked:</span> {classWiseReportData.overall_summary?.not_marked || 0}
+                      <span className="font-medium text-gray-700">Late:</span>
+                      <span className="ml-2 text-yellow-600 font-medium">
+                        {classWiseReportData.overall_summary?.late || 0}
+                      </span>
                     </div>
-                    <div className="md:col-span-6">
-                      <span className="font-medium">Overall Attendance Percentage:</span> 
-                      <span className="ml-2 font-semibold text-violet-600">
-                        {classWiseReportData.overall_summary?.attendance_percentage || '0.00'}%
+                    <div>
+                      <span className="font-medium text-gray-700">Not Marked:</span>
+                      <span className="ml-2 text-gray-900">
+                        {classWiseReportData.overall_summary?.not_marked || 0}
                       </span>
                     </div>
                   </div>
-                </div>
-                <div className="mb-2">
-                  <span className="font-medium">Total Classes:</span> {classWiseReportData.total_classes || 0}
+                  <div className="pt-3 border-t border-gray-200">
+                    <span className="font-medium text-gray-700">Overall Attendance Percentage:</span>
+                    <span className="ml-2 font-semibold text-violet-600 text-base">
+                      {classWiseReportData.overall_summary?.attendance_percentage || '0.00'}%
+                    </span>
+                  </div>
                 </div>
                 {classWiseReportData.class_wise_reports && classWiseReportData.class_wise_reports.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300">
+                    <table className="w-full border-collapse">
                       <thead>
-                        <tr className="bg-gray-100">
-                          <th className="border border-gray-300 px-4 py-2 text-left">Class Name</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left">Section</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left">Room No</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Total Students</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Present</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Absent</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Late</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Not Marked</th>
-                          <th className="border border-gray-300 px-4 py-2 text-center">Attendance %</th>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Class Name</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Section</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Room No</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Students</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Present</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Absent</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Late</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Not Marked</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Attendance %</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="bg-white divide-y divide-gray-200">
                         {classWiseReportData.class_wise_reports.map((classReport, index) => (
-                          <tr key={index}>
-                            <td className="border border-gray-300 px-4 py-2">{classReport.class_name || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2">{classReport.section_name || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2">{classReport.room_No || '-'}</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                          <tr key={index} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{classReport.class_name || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{classReport.section_name || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{classReport.room_No || '-'}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
                               {classReport.summary?.total_students || 0}
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-green-600 font-medium">
                                 {classReport.summary?.present || 0}
                               </span>
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-red-600 font-medium">
                                 {classReport.summary?.absent || 0}
                               </span>
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-yellow-600 font-medium">
                                 {classReport.summary?.late || 0}
                               </span>
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
                               {classReport.summary?.not_marked || 0}
                             </td>
-                            <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center font-semibold text-gray-900">
                               {classReport.summary?.attendance_percentage || '0.00'}%
                             </td>
                           </tr>
@@ -621,14 +857,13 @@ const AttendanceReport = () => {
                       </tbody>
                     </table>
                   </div>
-                ) : (
-                  <p className="text-gray-600">No data available</p>
+                ) : classWiseReportData && (
+                  <p className="text-gray-600 text-center py-8">No data available</p>
                 )}
               </div>
             )}
           </div>
         )}
-      </div>
     </div>
   );
 };

@@ -47,6 +47,13 @@ export const API_ENDPOINTS = {
   APPLY_LEAVE: '/admin/studentLeave/applyLeave',
   GET_LEAVE_BY_ID: (id) => `/admin/studentLeave/getLeave/${id}`,
   UPDATE_LEAVE: (id) => `/admin/studentLeave/updateLeaveStatus/${id}`,
+
+  // Certificate endpoints
+  GENERATE_ID_CARD: '/admin/certificate/generateIdCard',
+  GENERATE_ID_CARDS: '/admin/certificate/generateMultipleIdCards',
+  GENERATE_SATFF_ID_CARD: '/admin/certificate/generateStaffIdCard',
+  GENERATE_SATFF_ID_CARDS: '/admin/certificate/generateMultipleStaffIdCards',
+
   // student report endpoints
   GET_STUDENT_REPORT_BY_DATE: (className, sectionName, date) => `admin/studentsAttendance/attendanceReportByDate?class_name=${className}&section_name=${sectionName}&date=${date}`,
   GET_STUDENT_REPORT_BY_MONTH: (className, sectionName, month, year) => `admin/studentsAttendance/monthlyAttendanceReport?class_name=${className}&section_name=${sectionName}&month=${month}&year=${year}`,
@@ -772,4 +779,21 @@ export const updateTeacherNote = async (id, noteData) => {
 
 export const deleteTeacherNote = async (id) => {
   return authorizedDelete(API_ENDPOINTS.DELETE_TEACHER_NOTE(id));
+};
+
+// Certificate endpoints
+export const generateIdCard = async (user_id) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_ID_CARD, { user_id });
+};
+
+export const generateMultipleIdCards = async (user_ids) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_ID_CARDS, { user_ids });
+};
+
+export const generateStaffIdCard = async (user_id) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
+};
+
+export const generateMultipleStaffIdCards = async (user_ids) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
 };

@@ -79,12 +79,19 @@ const ReusableTable = ({
   };
 
   const handleInputChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value, type, files } = e.target;
     console.log('Input change:', { name, value, type }); // Debug log
-    setFormData({ 
-      ...formData, 
-      [name]: type === 'number' ? parseInt(value) || '' : value 
-    });
+    if (type === 'file') {
+      setFormData({ 
+        ...formData, 
+        [name]: files 
+      });
+    } else {
+      setFormData({ 
+        ...formData, 
+        [name]: type === 'number' ? parseInt(value) || '' : value 
+      });
+    }
   };
 
   const resetForm = () => {
@@ -180,6 +187,15 @@ const ReusableTable = ({
                     placeholder={column.placeholder || `Enter ${column.header}`}
                     required={column.required}
                     rows={4}
+                  />
+                ) : column.type === 'file' ? (
+                  <input
+                    type="file"
+                    name={column.key}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                    accept={column.accept || "image/*"}
+                    required={column.required}
                   />
                 ) : (
                   <input
@@ -302,6 +318,15 @@ const ReusableTable = ({
                     required={column.required}
                     rows={4}
                     placeholder={column.placeholder || `Enter ${column.header}`}
+                  />
+                ) : column.type === 'file' ? (
+                  <input
+                    type="file"
+                    name={column.key}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
+                    accept={column.accept || "image/*"}
+                    required={column.required}
                   />
                 ) : (
                   <input

@@ -105,8 +105,8 @@ const EnquiryPage = () => {
                 }
             }
         },
-        { 
-            key: 'status', 
+                { 
+                    key: 'status', 
             header: 'Status',
             required: true,
             type: 'select',

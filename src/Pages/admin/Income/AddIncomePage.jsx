@@ -279,10 +279,10 @@ const AddIncomePage = () => {
                             view: true
                         }}
                     />
-                </main>
-            </div>
-        </div>
-    )
+      </main>
+    </div>
+    </div>
+  )
 }
 
 export default AddIncomePage

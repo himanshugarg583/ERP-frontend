@@ -269,18 +269,18 @@ const TermListPage = () => {
   };
 
   return (
-    <div className='bg-slate-200 flex AddStudent'>
+        <div className='bg-slate-200 flex AddStudent'>
       <Sidebar />
-      
+    
       <div className='overflow-auto relative z-1 flex-col' style={{
-        height: '95vh',
-        width: '100vw',
+    height: '95vh',
+    width: '100vw',
         gap: '10px',
-        display: 'flex',
-        transition: 'margin-left 0.3s ease'
-      }}>
-        <Header />
-        
+    display: 'flex',
+    transition: 'margin-left 0.3s ease'
+    }}>
+      <Header />
+    
         <div className="flex-1 p-4 md:p-6">
           {/* Add Exam Term Form Component */}
           <ExamTermForm onTermAdded={handleTermAdded} />
@@ -428,13 +428,13 @@ const TermListPage = () => {
                 Close
               </button>
             </div>
-          </div>
+    </div>
         ) : null}
       </Modal>
-
+    
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
-  );
+    );
 };
 
 export default TermListPage;
