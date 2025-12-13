@@ -114,7 +114,6 @@ import ReportCardPage from "./Pages/admin/examination/ReportCardPage.jsx";
 import TermListPage from "./Pages/admin/examination/TermListPage.jsx";
 import ExamListPage from "./Pages/admin/examination/ExamListPage.jsx";
 import ExamReportPage from "./Pages/admin/examination/ExamReportPage.jsx";
-import EventPage from "./Pages/admin/Announcement/EventPage.jsx";
 import TeacherManagement from "./Pages/admin/HR/TeacherManagement.jsx";
 import TeacherCredentials from "./Pages/admin/HR/TeacherCredentials.jsx";
 import HRReports from "./Pages/admin/HR/HRReports.jsx";
@@ -262,7 +261,6 @@ const routes = {
     { path: "/admin/term-list-page", element: <TermListPage/> },
     { path: "/admin/exam-list-page", element: <ExamListPage/> },
     { path: "/admin/exam-report-page", element: <ExamReportPage/> },
-    { path: "/admin/event-page", element: <EventPage/> },
     { path: "/admin/notes", element: <AdminNotes/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },
     { path: "/admin/teacher-credentials", element: <TeacherCredentials/> },
