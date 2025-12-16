@@ -133,7 +133,6 @@ const SIDEBAR_ITEMS = [
     icon: Users,
     subItems: [
       { name: "Teacher Management", href: "/admin/teacher-management" },
-      { name: "Teacher Credentials", href: "/admin/teacher-credentials" },
       { name: "HR Reports", href: "/admin/hr-reports" },
       // { name: "Payroll", href: "/admin/payroll" },
     ],

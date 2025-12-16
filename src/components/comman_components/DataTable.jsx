@@ -411,7 +411,9 @@ const DataTable = ({
                     {column.header}
                   </th>
                 ))}
+                {(onView || onEdit || onDelete) && (
                   <th className='px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider'>Action</th>
+                )}
               </tr>
             </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
@@ -425,30 +427,32 @@ const DataTable = ({
                       )}
                     </td>
                   ))}
-                      <td className='px-3 sm:px-6 py-4 whitespace-nowrap'>
-                        <div className="flex items-center gap-2">
-                    {onView && (
-                            <button onClick={() => handleViewClick(item)} className='text-violet-600 hover:text-violet-700 cursor-pointer p-1.5 rounded hover:bg-violet-50 transition-colors' title="View">
-                              <Eye size={16} />
-                      </button>
-                    )}
-                    {onEdit && (
-                            <button className='text-violet-600 hover:text-violet-700 cursor-pointer p-1.5 rounded hover:bg-violet-50 transition-colors' onClick={() => handleEditClick(item)} title="Edit">
-                              <Edit size={16} />
-                      </button>
-                    )}
-                    {onDelete && (
-                            <button className='text-red-500 hover:text-red-600 cursor-pointer p-1.5 rounded hover:bg-red-50 transition-colors' onClick={() => handleDeleteClick(item)} title="Delete">
-                              <Trash2 size={16} />
-                      </button>
-                    )}
-                        </div>
-                      </td>
+                      {(onView || onEdit || onDelete) && (
+                        <td className='px-3 sm:px-6 py-4 whitespace-nowrap'>
+                          <div className="flex items-center gap-2">
+                            {onView && (
+                              <button onClick={() => handleViewClick(item)} className='text-violet-600 hover:text-violet-700 cursor-pointer p-1.5 rounded hover:bg-violet-50 transition-colors' title="View">
+                                <Eye size={16} />
+                              </button>
+                            )}
+                            {onEdit && (
+                              <button className='text-violet-600 hover:text-violet-700 cursor-pointer p-1.5 rounded hover:bg-violet-50 transition-colors' onClick={() => handleEditClick(item)} title="Edit">
+                                <Edit size={16} />
+                              </button>
+                            )}
+                            {onDelete && (
+                              <button className='text-red-500 hover:text-red-600 cursor-pointer p-1.5 rounded hover:bg-red-50 transition-colors' onClick={() => handleDeleteClick(item)} title="Delete">
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={columns.length + 1} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={columns.length + ((onView || onEdit || onDelete) ? 1 : 0)} className="px-6 py-8 text-center text-gray-500">
                       No data available
                   </td>
                   </tr>

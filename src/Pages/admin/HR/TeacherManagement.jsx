@@ -20,7 +20,6 @@ import jsPDF from "jspdf";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import CommonTable from "../../../components/tables/CommonTable";
-import CommonFilter from "../../../components/tables/CommonFilter";
 import {
   getAllTeachers,
   getTeacherById,
@@ -31,7 +30,6 @@ import {
 
 const TeacherManagement = () => {
   const [teachers, setTeachers] = useState([]);
-  const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -90,7 +88,6 @@ const TeacherManagement = () => {
           _originalData: teacher,
         }));
         setTeachers(mappedTeachers);
-        setFilteredTeachers(mappedTeachers);
       }
     } catch (error) {
       console.error("Failed to fetch teachers:", error);
@@ -507,79 +504,6 @@ const TeacherManagement = () => {
     },
   ];
 
-  // Filter fields for teachers
-  const filterFields = [
-    {
-      key: "name",
-      label: "Teacher Name",
-      type: "text",
-      placeholder: "Search by teacher name",
-    },
-    {
-      key: "teacher_id",
-      label: "Teacher ID",
-      type: "text",
-      placeholder: "Search by teacher ID",
-    },
-    {
-      key: "subject",
-      label: "Subject",
-      type: "select",
-      options: [
-        { value: "Mathematics", label: "Mathematics" },
-        { value: "English", label: "English" },
-        { value: "Science", label: "Science" },
-        { value: "Hindi", label: "Hindi" },
-        { value: "Social Studies", label: "Social Studies" },
-        { value: "Physics", label: "Physics" },
-        { value: "Chemistry", label: "Chemistry" },
-        { value: "Biology", label: "Biology" },
-        { value: "History", label: "History" },
-        { value: "Geography", label: "Geography" },
-      ],
-    },
-    {
-      key: "qualification",
-      label: "Qualification",
-      type: "select",
-      options: [
-        { value: "M.Sc, B.Ed", label: "M.Sc, B.Ed" },
-        { value: "M.A, B.Ed", label: "M.A, B.Ed" },
-        { value: "B.Sc, B.Ed", label: "B.Sc, B.Ed" },
-        { value: "B.A, B.Ed", label: "B.A, B.Ed" },
-        { value: "M.Tech", label: "M.Tech" },
-        { value: "Ph.D", label: "Ph.D" },
-      ],
-    },
-  ];
-
-  // Handle filter changes
-  const handleFilterChange = (filters) => {
-    let filtered = [...teachers];
-
-    Object.keys(filters).forEach((key) => {
-      if (filters[key]) {
-        filtered = filtered.filter((item) => {
-          if (key === "name" || key === "teacher_id") {
-            return (
-              item[key] &&
-              item[key].toLowerCase().includes(filters[key].toLowerCase())
-            );
-          }
-          return item[key] === filters[key];
-        });
-      }
-    });
-
-    setFilteredTeachers(filtered);
-    setCurrentPage(1);
-  };
-
-  // Handle clear filters
-  const handleClearFilters = () => {
-    setFilteredTeachers(teachers);
-    setCurrentPage(1);
-  };
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
@@ -651,26 +575,29 @@ const TeacherManagement = () => {
       >
         <Header />
 
-        <div className="flex-1 p-6">
-          {/* Page Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Teacher Management
-              </h1>
-              <p className="text-gray-600">
-                Manage teacher information, view details, and track performance
-              </p>
+        <main className="w-full py-4 md:py-6 px-4 md:px-6">
+          <div className="space-y-4 md:space-y-6">
+            {/* Page Header */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-xl md:text-2xl font-semibold text-slate-800 mb-2">
+                    Teacher Management
+                  </h1>
+                  <p className="text-sm text-slate-600">
+                    Manage teacher information, view details, and track performance
+                  </p>
+                </div>
+                {/* Add Teacher Button */}
+                <button
+                  onClick={handleAddTeacher}
+                  className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm w-full sm:w-auto justify-center"
+                >
+                  <Plus size={20} />
+                  <span>Add Teacher</span>
+                </button>
+              </div>
             </div>
-            {/* Add Teacher Button */}
-            <button
-              onClick={handleAddTeacher}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
-            >
-              <Plus size={20} />
-              <span>Add Teacher</span>
-            </button>
-          </div>
 
           {/* Add Teacher Modal */}
           {isAddModalOpen && (
@@ -1016,46 +943,38 @@ const TeacherManagement = () => {
             </motion.div>
           )}
 
-          {/* Filter Component */}
-          <CommonFilter
-            filterFields={filterFields}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-            title="Teacher Filters"
-          />
+            {/* Table Component */}
+            {isLoading ? (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+                <div className="text-center py-8 text-slate-500">Loading teachers...</div>
+              </div>
+            ) : (
+              <CommonTable
+                title="Teacher Information"
+                columns={teacherColumns}
+                data={teachers}
+                createApi={null}
+                updateApi={handleUpdateTeacher}
+                deleteApi={null}
+                searchPlaceholder="Search teachers..."
+                addButtonText="Add Teacher"
+                exportFileName="teachers"
+                itemsPerPage={itemsPerPage}
+                enableSearch={true}
+                enablePagination={true}
+                enableAdd={false}
+                enableEdit={true}
+                enableDelete={true}
+                enableView={true}
+                onPageChange={handlePageChange}
+                onAdd={handleAddTeacher}
+                onView={handleViewTeacher}
+                onDelete={handleDeleteTeacher}
+              />
+            )}
 
-          {/* Table Component */}
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="text-gray-600">Loading teachers...</div>
-            </div>
-          ) : (
-            <CommonTable
-              title="Teacher Information"
-              columns={teacherColumns}
-              data={filteredTeachers}
-              createApi={null}
-              updateApi={handleUpdateTeacher}
-              deleteApi={null}
-              searchPlaceholder="Search teachers..."
-              addButtonText="Add Teacher"
-              exportFileName="teachers"
-              itemsPerPage={itemsPerPage}
-              enableSearch={true}
-              enablePagination={true}
-              enableAdd={false}
-              enableEdit={true}
-              enableDelete={true}
-              enableView={true}
-              onPageChange={handlePageChange}
-              onAdd={handleAddTeacher}
-              onView={handleViewTeacher}
-              onDelete={handleDeleteTeacher}
-            />
-          )}
-
-          {/* Delete Confirmation Modal */}
-          {isDeleteModalOpen && teacherToDelete && (
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && teacherToDelete && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1328,7 +1247,8 @@ const TeacherManagement = () => {
               </motion.div>
             </motion.div>
           )}
-        </div>
+          </div>
+        </main>
         <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </div>

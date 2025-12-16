@@ -9,7 +9,6 @@ import {
     getAllStudents, 
     getStudentStats,
     updateStudent,
-    deleteStudent,
     fetchClassDropdown
 } from '../../../helper/requests-method/apiMethods';
 
@@ -130,20 +129,6 @@ const StudentsDetails = () => {
         } else {
             toast.error(response.message || 'Failed to update student');
             throw new Error(response.message || 'Failed to update student');
-        }
-    };
-
-    // Handle delete student - wrapper for ReusableTable
-    const handleDeleteStudent = async (id) => {
-        const response = await deleteStudent(id);
-        if (response.success) {
-            toast.success(response.message || 'Student deleted successfully');
-            setRefreshKey(prev => prev + 1);
-            fetchStats();
-            return response;
-        } else {
-            toast.error(response.message || 'Failed to delete student');
-            throw new Error(response.message || 'Failed to delete student');
         }
     };
 
@@ -290,12 +275,11 @@ const StudentsDetails = () => {
                                     displayColumns={displayColumns}
                                     apiFunction={null}
                                     updateApiFunction={handleUpdateStudent}
-                                    deleteApiFunction={handleDeleteStudent}
                                     initialData={studentsData}
                                     searchPlaceholder="Search students by name, roll number, email..."
                                     addButtonText="Add Student"
                                     exportFileName="students_details"
-                                    showActions={{ add: false, edit: true, delete: true, view: true }}
+                                    showActions={{ add: false, edit: true, delete: false, view: true }}
                                 />
                         
                                 {/* Pagination */}

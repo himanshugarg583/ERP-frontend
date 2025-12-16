@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
 import CommonTable from '../../../components/tables/CommonTable';
-import CommonFilter from '../../../components/tables/CommonFilter';
 import ExamTermForm from '../../../components/examanitaion/ExamTermForm';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,8 +16,8 @@ import Modal from '../../../components/comman_components/Modal';
 
 const TermListPage = () => {
   const [terms, setTerms] = useState([]);
-  const [filteredTerms, setFilteredTerms] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [termToDelete, setTermToDelete] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -48,7 +48,6 @@ const TermListPage = () => {
       }));
 
       setTerms(normalizedTerms);
-      setFilteredTerms(normalizedTerms);
     } catch (error) {
       console.error('Error fetching exam terms:', error);
       toast.error(error?.response?.data?.message || 'Failed to load exam terms');
@@ -138,23 +137,6 @@ const TermListPage = () => {
     []
   );
 
-  const filterFields = useMemo(
-    () => [
-      { key: 'term_name', label: 'Term Name', type: 'text', placeholder: 'Search by term name' },
-      { key: 'academic_year', label: 'Academic Year', type: 'text', placeholder: 'Search by academic year' },
-      {
-        key: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { value: 'active', label: 'Active' },
-          { value: 'inactive', label: 'Inactive' },
-          { value: 'completed', label: 'Completed' }
-        ]
-      }
-    ],
-    []
-  );
 
   const handleUpdateTerm = useCallback(
     async (id, data) => {
@@ -205,7 +187,6 @@ const TermListPage = () => {
       if (response?.success) {
         toast.success(response.message || 'Exam term deleted successfully');
         setTerms((prev) => prev.filter((term) => term.id !== termToDelete.id));
-        setFilteredTerms((prev) => prev.filter((term) => term.id !== termToDelete.id));
         setDeleteModalOpen(false);
         setTermToDelete(null);
       } else {
@@ -237,86 +218,81 @@ const TermListPage = () => {
     }
   }, []);
 
-  // Handle filter changes
-  const handleFilterChange = (filters) => {
-    let filtered = [...terms];
-
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) {
-        filtered = filtered.filter(item => {
-          if (key === 'term_name' || key === 'academic_year') {
-            return item[key] && item[key].toLowerCase().includes(filters[key].toLowerCase());
-          }
-          if (key === 'status') {
-            return item[key]?.toString() === filters[key]?.toString();
-          }
-          return false;
-        });
-      }
-    });
-
-    setFilteredTerms(filtered);
-  };
-
-  // Handle clear filters
-  const handleClearFilters = () => {
-    setFilteredTerms(terms);
-  };
 
   // Handle term addition from form component
   const handleTermAdded = () => {
     fetchTerms();
+    setAddModalOpen(false);
   };
 
   return (
-        <div className='bg-slate-200 flex AddStudent'>
+    <div className='bg-slate-200 flex AddStudent'>
       <Sidebar />
-    
       <div className='overflow-auto relative z-1 flex-col' style={{
-    height: '95vh',
-    width: '100vw',
+        height: '95vh',
+        width: '100vw',
         gap: '10px',
-    display: 'flex',
-    transition: 'margin-left 0.3s ease'
-    }}>
-      <Header />
-    
-        <div className="flex-1 p-4 md:p-6">
-          {/* Add Exam Term Form Component */}
-          <ExamTermForm onTermAdded={handleTermAdded} />
+        display: 'flex',
+        transition: 'margin-left 0.3s ease'
+      }}>
+        <Header />
+        <main className="w-full py-4 md:py-6 px-4 md:px-6">
+          <div className="space-y-4 md:space-y-6">
+            {/* Page Header */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-xl md:text-2xl font-semibold text-slate-800 mb-2">Exam Term Management</h1>
+                  <p className="text-sm text-slate-600">Manage exam terms, academic years, and term status</p>
+                </div>
+                <button
+                  onClick={() => setAddModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm w-full sm:w-auto justify-center"
+                >
+                  <Plus size={20} />
+                  <span>Add Exam Term</span>
+                </button>
+              </div>
+            </div>
 
-          {/* Filter Component */}
-          <CommonFilter
-            filterFields={filterFields}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-            title="Exam Term Filters"
-          />
-
-          {/* Table Component */}
-          <CommonTable
-            title="Exam Term Management"
-            columns={termColumns}
-            data={filteredTerms}
-            createApi={null}
-            updateApi={handleUpdateTerm}
-            deleteApi={null}
-            searchPlaceholder="Search exam terms..."
-            addButtonText="Add Exam Term"
-            exportFileName="exam_terms"
-            itemsPerPage={itemsPerPage}
-            enableSearch={true}
-            enablePagination={true}
-            enableAdd={false}
-            enableEdit={true}
-            enableDelete={true}
-            enableView={true}
-            loading={tableLoading}
-            onDelete={handleDeleteClick}
-            onView={handleViewClick}
-          />
-        </div>
+            {/* Table Component */}
+            <CommonTable
+              title="Exam Terms"
+              columns={termColumns}
+              data={terms}
+              createApi={null}
+              updateApi={handleUpdateTerm}
+              deleteApi={null}
+              searchPlaceholder="Search exam terms..."
+              addButtonText="Add Exam Term"
+              exportFileName="exam_terms"
+              itemsPerPage={itemsPerPage}
+              enableSearch={true}
+              enablePagination={true}
+              enableAdd={false}
+              enableEdit={true}
+              enableDelete={true}
+              enableView={true}
+              loading={tableLoading}
+              onDelete={handleDeleteClick}
+              onView={handleViewClick}
+            />
+          </div>
+        </main>
       </div>
+
+      {/* Add Exam Term Modal */}
+      <Modal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        title="Add New Exam Term"
+      >
+        <ExamTermForm 
+          onTermAdded={handleTermAdded} 
+          inModal={true} 
+          onCancel={() => setAddModalOpen(false)}
+        />
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal

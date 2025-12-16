@@ -115,8 +115,9 @@ import TermListPage from "./Pages/admin/examination/TermListPage.jsx";
 import ExamListPage from "./Pages/admin/examination/ExamListPage.jsx";
 import ExamReportPage from "./Pages/admin/examination/ExamReportPage.jsx";
 import TeacherManagement from "./Pages/admin/HR/TeacherManagement.jsx";
-import TeacherCredentials from "./Pages/admin/HR/TeacherCredentials.jsx";
 import HRReports from "./Pages/admin/HR/HRReports.jsx";
+import TeacherCredentialsPage from "./Pages/admin/HR/TeacherCredentialsPage.jsx";
+import TeacherSalaryPage from "./Pages/admin/HR/TeacherSalaryPage.jsx";
 import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
 import StudyMaterial from "./Pages/admin/DownloadCenter/StudyMaterial.jsx";
 // Certificates
@@ -264,8 +265,9 @@ const routes = {
     { path: "/admin/exam-report-page", element: <ExamReportPage/> },
     { path: "/admin/notes", element: <AdminNotes/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },
-    { path: "/admin/teacher-credentials", element: <TeacherCredentials/> },
     { path: "/admin/hr-reports", element: <HRReports/> },
+    { path: "/admin/hr/teacher-credentials", element: <TeacherCredentialsPage/> },
+    { path: "/admin/hr/teacher-salary", element: <TeacherSalaryPage/> },
     { path: "/admin/upload-content", element: <UploadContent /> },
     { path: "/admin/study-material", element: <StudyMaterial /> },
     // Certificates

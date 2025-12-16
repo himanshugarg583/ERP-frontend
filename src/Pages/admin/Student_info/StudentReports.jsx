@@ -9,7 +9,7 @@ import {
   getClassWiseStudentStats
 } from "../../../helper/requests-method/apiMethods";
 import { toast, ToastContainer } from 'react-toastify';
-import { FileText, Users, Key, GraduationCap, ArrowLeft } from 'lucide-react';
+import { FileText, Users, Key, GraduationCap, ArrowLeft, UserCheck, UserX } from 'lucide-react';
 import StandardStatCard from '../../../components/comman_components/StandardStatCard';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -296,20 +296,35 @@ const StudentReports = () => {
   const renderStudentCredentials = () => {
     if (!reportData || !reportData.students) return null;
 
+    // Find the stats for the selected class
+    const selectedClassStat = classStats.find(
+      (stat) => stat.class_name === reportData.class_info?.class_name && 
+                 stat.section_name === reportData.class_info?.section_name
+    );
+
     return (
       <div className="space-y-4 md:space-y-6">
-        {/* Class Stats */}
-        {classStats.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {classStats.map((stat) => (
-              <StandardStatCard
-                key={stat.class_section_id}
-                name={`${stat.class_name}${stat.section_name ? ` - ${stat.section_name}` : ''}`}
-                icon={Users}
-                value={`Total: ${stat.total} (M: ${stat.male}, F: ${stat.female})`}
-                color="#6366f1"
-              />
-            ))}
+        {/* Class Stats - Show stats for selected class only */}
+        {selectedClassStat && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StandardStatCard
+              name="Total Students"
+              icon={Users}
+              value={selectedClassStat.total || 0}
+              color="#6366f1"
+            />
+            <StandardStatCard
+              name="Male Students"
+              icon={UserCheck}
+              value={selectedClassStat.male || 0}
+              color="#3b82f6"
+            />
+            <StandardStatCard
+              name="Female Students"
+              icon={UserX}
+              value={selectedClassStat.female || 0}
+              color="#ec4899"
+            />
           </div>
         )}
 
@@ -414,62 +429,61 @@ const StudentReports = () => {
               </div>
             ) : (
               <div className="space-y-4 md:space-y-6">
-                {/* Back Button */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-                  <button
-                    onClick={handleBackToReports}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Reports
-                  </button>
-                </div>
-
                 {/* Class Selection */}
                 {!selectedClass ? (
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-                    <h2 className="text-lg md:text-xl font-semibold text-slate-800 mb-4">Select a Class</h2>
-                    {loadingClasses ? (
-                      <div className="text-center py-8 text-slate-500">Loading classes...</div>
-                    ) : classes.length === 0 ? (
-                      <div className="text-center py-8 text-slate-500">No classes found</div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-                        {classes.map((cls) => (
-                          <button
-                            key={cls.id}
-                            onClick={() => setSelectedClass(cls)}
-                            className="p-4 bg-slate-50 hover:bg-violet-50 border-2 border-slate-200 hover:border-violet-400 rounded-lg transition-all cursor-pointer text-center group"
-                          >
-                            <GraduationCap className="w-8 h-8 mx-auto mb-2 text-slate-600 group-hover:text-violet-600" />
-                            <div className="text-sm font-medium text-slate-800 group-hover:text-violet-700">
-                              {cls.display_name}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <>
+                    {/* Back Button - Only show when selecting classes */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
+                      <button
+                        onClick={handleBackToReports}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Reports
+                      </button>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
+                      <h2 className="text-lg md:text-xl font-semibold text-slate-800 mb-4">Select a Class</h2>
+                      {loadingClasses ? (
+                        <div className="text-center py-8 text-slate-500">Loading classes...</div>
+                      ) : classes.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500">No classes found</div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                          {classes.map((cls) => (
+                            <button
+                              key={cls.id}
+                              onClick={() => setSelectedClass(cls)}
+                              className="p-4 bg-slate-50 hover:bg-violet-50 border-2 border-slate-200 hover:border-violet-400 rounded-lg transition-all cursor-pointer text-center group"
+                            >
+                              <GraduationCap className="w-8 h-8 mx-auto mb-2 text-slate-600 group-hover:text-violet-600" />
+                              <div className="text-sm font-medium text-slate-800 group-hover:text-violet-700">
+                                {cls.display_name}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 ) : (
                   <div className="space-y-4 md:space-y-6">
-                    {/* Back to Classes Button */}
+                    {/* Back to Classes Button and Class Info */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={handleBackToClasses}
-                            className="px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
-                          >
-                            ← Back to Classes
-                          </button>
-                          <div>
-                            <h2 className="text-lg md:text-xl font-semibold text-slate-800">{selectedClass.display_name}</h2>
-                            <p className="text-sm text-slate-600">
-                              {selectedReportType === 'student-report' && 'Student Report'}
-                              {selectedReportType === 'parent-report' && 'Parent Report'}
-                              {selectedReportType === 'student-credentials' && 'Student Credentials'}
-                            </p>
-                          </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handleBackToClasses}
+                          className="px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
+                        >
+                          ← Back to Classes
+                        </button>
+                        <div>
+                          <h2 className="text-lg md:text-xl font-semibold text-slate-800">{selectedClass.display_name}</h2>
+                          <p className="text-sm text-slate-600">
+                            {selectedReportType === 'student-report' && 'Student Report'}
+                            {selectedReportType === 'parent-report' && 'Parent Report'}
+                            {selectedReportType === 'student-credentials' && 'Student Credentials'}
+                          </p>
                         </div>
                       </div>
                     </div>
