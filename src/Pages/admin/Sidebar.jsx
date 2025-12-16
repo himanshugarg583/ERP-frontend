@@ -38,7 +38,7 @@ const SIDEBAR_ITEMS = [
     icon: Users,
     subItems: [
       { name: "Student Admission", href: "/admin/add-students" },
-      { name: "Student Crediential", href: "/admin/student-credential" },
+      { name: "Students Details", href: "/admin/students-details" },
       { name: "Student Reports", href: "/admin/student-reports" },
     ],
   },

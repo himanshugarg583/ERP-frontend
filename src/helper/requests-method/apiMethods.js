@@ -48,11 +48,23 @@ export const API_ENDPOINTS = {
   GET_LEAVE_BY_ID: (id) => `/admin/studentLeave/getLeave/${id}`,
   UPDATE_LEAVE: (id) => `/admin/studentLeave/updateLeaveStatus/${id}`,
 
+  // student information endpoints
+  GET_ALL_STUDENTS: '/admin/studentInfo/getAllStudents',
+  GET_STUDENT_STATES: '/admin/studentInfo/getStudentStats',
+  UPDATE_STUDENT: (id) => `/api/admin/updateStudent/${id}`,
+  DELETE_STUDENT: (id) => `/api/admin/softDeleteStudent/${id}`,
+  GET_STUDENT_REPORT: (classId) => `/admin/studentInfo/getStudentReport/${classId}`,
+  GET_PARENT_REPORT: (classId) => `/admin/studentInfo/getParentReport/${classId}`,
+  GET_STUDENT_CREDENTIALS: (classId) => `/admin/studentInfo/getStudentCredentials?class_id=${classId}`,
+  GET_CLASS_STATES: () => `/admin/studentInfo/getClassWiseStudentStats`,
+
+
   // Certificate endpoints
   GENERATE_ID_CARD: '/admin/certificate/generateIdCard',
   GENERATE_ID_CARDS: '/admin/certificate/generateMultipleIdCards',
   GENERATE_SATFF_ID_CARD: '/admin/certificate/generateStaffIdCard',
   GENERATE_SATFF_ID_CARDS: '/admin/certificate/generateMultipleStaffIdCards',
+
 
   // student report endpoints
   GET_STUDENT_REPORT_BY_DATE: (className, sectionName, date) => `admin/studentsAttendance/attendanceReportByDate?class_name=${className}&section_name=${sectionName}&date=${date}`,
@@ -326,6 +338,46 @@ export const addStudent = async (studentData, files = {}) => {
   if (files.sign) formData.append('sign', files.sign);
   
   return authorizedPostFormData(API_ENDPOINTS.ADD_STUDENT, formData);
+};
+
+// Get all students with pagination
+export const getAllStudents = async (page = 1, limit = 10) => {
+  return authorizedGet(`${API_ENDPOINTS.GET_ALL_STUDENTS}?page=${page}&limit=${limit}`);
+};
+
+// Get student statistics
+export const getStudentStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_STATES);
+};
+
+// Update student
+export const updateStudent = async (id, studentData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_STUDENT(id), studentData);
+};
+
+// Delete student (soft delete)
+export const deleteStudent = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_STUDENT(id));
+};
+
+// Get student report by class
+export const getStudentReport = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_REPORT(classId));
+};
+
+// Get parent report by class
+export const getParentReport = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_PARENT_REPORT(classId));
+};
+
+// Get student credentials by class
+export const getStudentCredentials = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_CREDENTIALS(classId));
+};
+
+// Get class-wise student stats
+export const getClassWiseStudentStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_STATES());
 };
 
 // Create new class

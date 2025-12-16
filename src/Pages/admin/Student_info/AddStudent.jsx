@@ -1,62 +1,43 @@
-import React, { useState } from "react";
-// import Formsec from '../../../components/FormSection/Formsec';
-import PageHeader from "../../../components/comman_components/PageHeader";
-// import Question from '../../../components/FormSection/Question';
+import React from "react";
 import Sidebar from "../Sidebar";
-import { div } from "framer-motion/client";
 import { FaDownload } from "react-icons/fa";
-import "../Admin.css";
-import pdffile from "../../../assets/sample.pdf";
 import CombinedForm from "../../../components/FormSection/Forms";
 import Header from "../../../components/comman_components/Header";
+import pdffile from "../../../assets/sample.pdf";
 
 const AddStudent = () => {
-  function downloadPdf() {
+  const downloadPdf = () => {
     const link = document.createElement("a");
-    link.href = pdffile; // Path to your PDF in the `public` folder
-    link.download = "AdmissionForm.pdf"; // Name of the downloaded file
+    link.href = pdffile;
+    link.download = "AdmissionForm.pdf";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // C:\Users\dell\Desktop\School_fronend\src\assets\sample.pdf
-  }
+  };
 
   return (
     <div className="bg-slate-200 flex AddStudent">
       <Sidebar />
-
-      <div
-        className=" overflow-auto relative z-1 flex-col"
-        style={{
-          height: "95vh",
-          width: "100vw",
-          gap: "10px",
-          display: "flex",
-          transition: "margin-left 0.3s ease",
-        }}
-      >
+      <div className="overflow-auto relative z-1 flex-col" style={{ height: '95vh', width: '100vw', gap: '10px', display: 'flex', transition: 'margin-left 0.3s ease' }}>
         <Header />
-
-        <div class="bg-whitse shadow-sm border border-slate-200 rounded-xl w-full p-6 md:p-8 flex-1 overflow-auto relative z-1 text-black">
-          {/* <PageHeader pageheading ="Student Info" Subheading="Student Admission" className="m-auto "/>  */}
-
-          <div class="flex justify-between items-center border-b border-slate-200 pb-4 mb-4">
-            <h1 class="text-2xl font-semibold flex items-center">
-              <i class="fas fa-file-alt mr-2"></i> Student Admission Form
-            </h1>
-
-            <button
-              class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-md mr-2 flex justify-center gap-1"
-              style={{ alignItems: "center" }}
-              onClick={downloadPdf}
-            >
-              <FaDownload size={15} color="white" />
-              <p>Download Form </p>
-            </button>
+        <main className="w-full py-4 md:py-6 px-4 md:px-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4 mb-6">
+              <h1 className="text-xl md:text-2xl font-semibold text-slate-800 flex items-center gap-2">
+                <i className="fas fa-file-alt"></i>
+                <span>Student Admission Form</span>
+              </h1>
+              <button
+                onClick={downloadPdf}
+                className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm md:text-base"
+              >
+                <FaDownload size={16} />
+                <span>Download Form</span>
+              </button>
+            </div>
+            <CombinedForm />
           </div>
-
-          <CombinedForm />
-        </div>
+        </main>
       </div>
     </div>
   );

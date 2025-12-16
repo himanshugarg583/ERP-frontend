@@ -93,7 +93,7 @@ import FeeReports from "./Pages/admin/fees_collection/FeeReports";
 import PaymentRecipt from "./Pages/admin/fees_collection/PaymentRecipt";
 import AddIncomePage from "./Pages/admin/Income/AddIncomePage";
 import IncomeHead from "./Pages/admin/Income/IncomeHead";
-import Student_Crediential from "./Pages/admin/Student_info/Student_Crediential";
+import StudentsDetails from "./Pages/admin/Student_info/StudentsDetails";
 import AddExpensePage from "./Pages/admin/Expense/AddExpensePage";
 import ExpenseHead from "./Pages/admin/Expense/ExpenseHead";
 import ClassWiseAttendance from "./Pages/admin/Attendance/ClassWiseAttendance";
@@ -231,7 +231,8 @@ const routes = {
     { path: "/admin/profile", element: <AdminProfile /> },
     { path: "/admin/admission-enquiry", element: <EnquiryPage /> },
     { path: "/admin/add-students", element: <AddStudent /> },
-    { path: "/admin/student-credential", element: <Student_Crediential /> },
+    { path: "/admin/student-credential", element: <StudentsDetails /> },
+    { path: "/admin/students-details", element: <StudentsDetails /> },
     { path: "/admin/payment-receipt", element: <PaymentRecipt /> },
     { path: "/admin/demand-notice", element: <DemandNotice /> },
     { path: "/admin/student-reports", element: <StudentReports /> },
