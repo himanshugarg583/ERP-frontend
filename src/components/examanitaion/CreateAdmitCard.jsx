@@ -1,423 +1,570 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { Edit, Search, Trash2, X, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, X, Loader, AlertCircle, Eye, Download } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {faEye, faPrint,faCoffee,faUser,faLanguage,faFileExcel,faFilePdf,faFileText} from '@fortawesome/free-solid-svg-icons';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+import { faPrint } from '@fortawesome/free-solid-svg-icons';
 import ReactModal from "react-modal";
-import AdmitCard from './Admit';
+import Admit from './Admit';
+import { 
+  getAllClassesDropdown,
+  getAllStudentsByClass,
+  getAllExamTermsForAdmitCard,
+  getExamByTerm,
+  getStudentAdmitCard
+} from '../../helper/requests-method/apiMethods';
 
+const CreateAdmitCard = () => {
+  // State Management
+  const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [examTerms, setExamTerms] = useState([]);
+  const [exams, setExams] = useState([]);
+  
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState('');
+  const [selectedExamTerm, setSelectedExamTerm] = useState('');
+  const [selectedExam, setSelectedExam] = useState('');
+  
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState({});
+  const [selectAll, setSelectAll] = useState(false);
+  
+  const [admitCardData, setAdmitCardData] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
 
-const Receipt = ({ isOpen, onClose, receiptData }) => {
-    return (
-      <ReactModal
-        
-      isOpen={isOpen}
-        onRequestClose={onClose}
-        contentLabel="Receipt"
-        
-
-        style={{
-            overlay: {
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              zIndex: 1000, // Ensure the overlay is on top
-            },
-            content: {
-              width: "55vw",
-              margin: "auto",
-              padding: "20px",
-              border: "1px solid #ccc",
-              zIndex: 1001, // Ensure the modal content is on top of the overlay
-            },
-          }}
-        
-      >
-        {/* <div class="bg-white border border-gray-300 rounded-lg p-4 w-full max-w-md">
-        <div class="text-center bg-green-100 py-2 rounded-t-lg">
-            <h1 class="text-lg font-bold">Fee Receipt - 2024-25 (Office Copy)</h1>
-<button onClick={onClose} className='text-black px-4 py-2 rounded-md'>
-                                <X size={22} />
-                            </button>
-        </div>
-        <button         onClick={() => window.print()} className='text-black px-4 py-2 rounded-md'>
-                                print
-                            </button>
-
-
-
-        <div class="border-t border-gray-300 mt-2"></div>
-        <div class="flex justify-between mt-2">
-            <div>
-                <p class="text-sm"><span class="font-medium">Receipt No.:</span> 685</p>
-            </div>
-            <div>
-                <p class="text-sm"><span class="font-medium">Receipt Date:</span> 11-02-2025</p>
-            </div>
-        </div>
-        <div class="mt-2">
-            <p class="text-sm"><span class="font-medium">Student's Name:</span> Test 1002 SJ User</p>
-            <p class="text-sm"><span class="font-medium">Father Name:</span> Test2 Father</p>
-            <p class="text-sm"><span class="font-medium">Class:</span> BCA / A</p>
-            <p class="text-sm"><span class="font-medium">Admission No.:</span> 1002</p>
-            <p class="text-sm"><span class="font-medium">Roll No.:</span> 1</p>
-            <p class="text-sm"><span class="font-medium">Mob No.:</span> 1234567890</p>
-            <p class="text-sm"><span class="font-medium">Month:</span> July (2024) - August (2024)</p>
-            <p class="text-sm"><span class="font-medium">Pay Mode:</span> Online</p>
-            <p class="text-sm"><span class="font-medium">Bank Name:</span></p>
-            <p class="text-sm"><span class="font-medium">Txn No.:</span></p>
-            <p class="text-sm"><span class="font-medium">Collected By:</span> Super Admin</p>
-        </div>
-        <div class="border-t border-gray-300 mt-2"></div>
-        <div class="mt-2">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr>
-                        <th class="text-left py-1">Fee Type</th>
-                        <th class="text-right py-1">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="py-1">Tuition Fee (Previous Due)</td>
-                        <td class="text-right py-1">INR 3000/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1">Registration Fees (Jul)</td>
-                        <td class="text-right py-1">INR 1000/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1">Tuition Fee (Aug)</td>
-                        <td class="text-right py-1">INR 10000/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1 font-medium">Total</td>
-                        <td class="text-right py-1 font-medium">INR 15000/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1">Fine (+)</td>
-                        <td class="text-right py-1">INR 200/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1 font-medium">Net Amount</td>
-                        <td class="text-right py-1 font-medium">INR 12817/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1">GST (18%)</td>
-                        <td class="text-right py-1">INR 2315/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1 font-medium">Paid</td>
-                        <td class="text-right py-1 font-medium">INR 12200/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1 text-xs italic">(Twelve Thousand Two Hundred)</td>
-                        <td class="text-right py-1"></td>
-                    </tr>
-                    <tr>
-                        <td class="py-1 font-medium">Balance Due</td>
-                        <td class="text-right py-1 font-medium">INR 3000/-</td>
-                    </tr>
-                    <tr>
-                        <td class="py-1 font-medium">Total Due for 2024-25</td>
-                        <td class="text-right py-1 font-medium">INR 66000/-</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="border-t border-gray-300 mt-2"></div>
-        <div class="flex justify-between mt-2">
-            <p class="text-sm">test1</p>
-            <p class="text-sm">Auth. Signature</p>
-        </div>
-    </div> */}
-
-<AdmitCard
-
-        studentName="John Smith"
-        rollNumber="2025001"
-        className="Grade X-A"
-        examDate="March 15, 2025"
-        examTime="09:00 AM - 12:00 PM"
-        examVenue="Main Examination Hall, Block A"
-        // examSchedule={examSchedule}
-      />
-
-
-
-
-
-
-
-      </ReactModal>
-    );
-  };
-
-
-
-const CreateAdmitCard = ({tabletitle,Product_Data,title1,title2,title3,title4,title5,title6}) => {
-    const [searchTerm1, setSearchTerm1] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filteredProducts, setFilteredProducts] = useState(Product_Data);
-    const [isEditModalOpen, setEditModalOpen] = useState(false);
-    const [isAddModalOpen, setAddModalOpen] = useState(false);
-    const [editProduct, setEditProduct] = useState(null);
-    const [editDate, setEditDate] = useState(null);
-
-    const [newProduct, setNewProduct] = useState({name: "", class: "", date: "", amount: "", sales: "" });
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
-
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-
-    const [searchTerm2, setSearchTerm2] = useState("");
-    const [searchTerm3, setSearchTerm3] = useState("");
-    const [searchTerm4, setSearchTerm4] = useState("");
-     const [isModalOpen, setIsModalOpen] = useState(false);
-        const [selectedReceipt, setSelectedReceipt] = useState(null);
-
-
-    const SearchHandler2 = (e) => {
-        const term1 = e.target.value.toLowerCase();
-        setSearchTerm2(term1);
+  // Fetch Classes on Mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await getAllClassesDropdown();
+        if (response.success && response.data) {
+          setClasses(response.data);
+        } else {
+          setError('Failed to load classes');
+        }
+      } catch (err) {
+        setError('Error loading classes. Please try again.');
+        console.error('Error fetching classes:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const SearchHandler3 = (e) => {
-        const term1 = e.target.value.toLowerCase();
-        setSearchTerm3(term1);
+    fetchClasses();
+  }, []);
+
+  // Fetch Exam Terms on Mount
+  useEffect(() => {
+    const fetchExamTerms = async () => {
+      try {
+        const response = await getAllExamTermsForAdmitCard();
+        if (response.success && response.data) {
+          setExamTerms(response.data);
+        }
+      } catch (err) {
+        console.error('Error fetching exam terms:', err);
+      }
     };
 
-    const SearchHandler4 = (e) => {
-        const term1 = e.target.value.toLowerCase();
-        setSearchTerm4(term1);
+    fetchExamTerms();
+  }, []);
+
+  // Fetch Students when Class is Selected
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (!selectedClass) {
+        setStudents([]);
+        return;
+      }
+
+      try {
+        const response = await getAllStudentsByClass(selectedClass);
+        if (response.success && response.data) {
+          setStudents(response.data);
+        } else {
+          setStudents([]);
+        }
+      } catch (err) {
+        console.error('Error fetching students:', err);
+        setStudents([]);
+      }
     };
 
-    const Search3=({SearchHandler2,SearchHandler3,SearchHandler4})=>{
-        const term2 = searchTerm2;
-        const term3 = searchTerm3;
-        const term4 = searchTerm4;
-        
-        const filtered = Product_Data.filter(product =>
-            product.name.toLowerCase().includes(term2) 
-            && product.class.toLowerCase().includes(term3)
-            // && product.sales.toLowerCase().includes(term4)
-        );
+    fetchStudents();
+  }, [selectedClass]);
 
-        setFilteredProducts(filtered);
-        setCurrentPage(1);
+  // Fetch Exams when Exam Term is Selected
+  useEffect(() => {
+    const fetchExams = async () => {
+      if (!selectedExamTerm) {
+        setExams([]);
+        return;
+      }
+
+      try {
+        const response = await getExamByTerm(selectedExamTerm);
+        if (response.success && response.data) {
+          setExams(response.data);
+        } else {
+          setExams([]);
+        }
+      } catch (err) {
+        console.error('Error fetching exams:', err);
+        setExams([]);
+      }
+    };
+
+    fetchExams();
+  }, [selectedExamTerm]);
+
+  // Handle Search Button
+  const handleSearch = async () => {
+    if (!selectedClass || !selectedStudent || !selectedExamTerm || !selectedExam) {
+      setError('Please select all filters');
+      return;
     }
 
-    
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Call the admit card API to get dynamic data
+      const response = await getStudentAdmitCard(selectedStudent, selectedExamTerm);
+      
+      if (response.success && response.data) {
+        // Prepare search results with the admit card data
+        const studentData = students.find(s => s.id === parseInt(selectedStudent));
+        const admitCardData = response.data;
+        
+        // Create result object combining student info and admit card data
+        const resultData = {
+          id: studentData.id,
+          name: studentData.name,
+          roll_number: studentData.roll_number,
+          gender: studentData.gender,
+          phone_no: studentData.phone_no,
+          studentInfo: admitCardData.student_info,
+          examInfo: admitCardData.exam_info,
+          examSchedule: admitCardData.exam_schedule,
+          instructions: admitCardData.instructions
+        };
+        
+        setSearchResults([resultData]);
+        setSelectedStudents({});
+        setSelectAll(false);
+        setHasSearched(true);
+      } else {
+        setError('Failed to fetch admit card data');
+        setSearchResults([]);
+      }
+    } catch (err) {
+      setError('Error searching. Please try again.');
+      console.error('Error searching:', err);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleEdit = (product) => {
-        setEditProduct(product);
-        setEditModalOpen(true);
-        console.log("i am edit");
-    };
+  // Handle Select/Deselect Student
+  const handleSelectStudent = (studentId) => {
+    setSelectedStudents(prev => ({
+      ...prev,
+      [studentId]: !prev[studentId]
+    }));
+  };
 
-    const handleDelete = (productId) => {
-        const updatedProducts = filteredProducts.filter(product => product.id !== productId);
-        setFilteredProducts(updatedProducts);
-    };
+  // Handle Select All
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedStudents({});
+      setSelectAll(false);
+    } else {
+      const allSelected = {};
+      searchResults.forEach(student => {
+        allSelected[student.id] = true;
+      });
+      setSelectedStudents(allSelected);
+      setSelectAll(true);
+    }
+  };
 
-    const handleAdd = () => {
-        const newId = filteredProducts.length > 0 ? Math.max(...filteredProducts.map(product => product.id)) + 1 : 1;
-        const productToAdd = { ...newProduct, id: newId, date: parseFloat(newProduct.date), amount: parseInt(newProduct.amount), sales: parseInt(newProduct.sales) };
-        setFilteredProducts([productToAdd, ...filteredProducts]);
-        setAddModalOpen(false);
-        setNewProduct({ name: "", class: "", date: "", amount: "", sales: "" });
-    };
-
-    const handleSave = () => {
-        const updatedProducts = filteredProducts.map(product =>
-            product.id === editProduct.id ? editProduct : product
-        );
-        setFilteredProducts(updatedProducts);
-        setEditModalOpen(false);
-    };
-
-    const paginate = (pageNumber) => setCurrentPage(pageNumber);
-    const getCurrentPageProducts = () => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredProducts.slice(start, start + itemsPerPage);
-    };
-
-    const generatePDF = () => {
-        const doc = new jsPDF();
-        doc.text('User Information Table', 14, 10);
-        const tableColumn = ['Name', 'Age', 'Country'];
-        const tableRows = Product_Data.map(item => [item.name, item.email, item.role]);
-        doc.autoTable({
-          head: [tableColumn],
-          body: tableRows,
+  // Fetch and Display Admit Card
+  const handleViewAdmitCard = async (studentId) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Get the student data from searchResults which already has the admit card data
+      const studentData = searchResults.find(s => s.id === studentId);
+      
+      if (studentData && studentData.studentInfo) {
+        setAdmitCardData({
+          student_info: studentData.studentInfo,
+          exam_info: studentData.examInfo,
+          exam_schedule: studentData.examSchedule,
+          instructions: studentData.instructions
         });
-        doc.save('table.pdf');
-    };
-
-    const exportToExcel = () => {
-        const worksheet = XLSX.utils.json_to_sheet(Product_Data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-        const excelBuffer = XLSX.write(workbook, {
-          bookType: 'xlsx',
-          type: 'array',
-        });
-        const blob = new Blob([excelBuffer], {
-          type: 'application/octet-stream',
-        });
-        saveAs(blob, 'data.xlsx');
-    };
-
-    const downloadCSV = () => {
-        const headers = ['Name', 'Email', 'Role','Status'];
-        const rows = Product_Data.map(row => [row.name, row.email, row.role, row.status]);
-        const csvContent = [
-          headers.join(','),
-          ...rows.map(row => row.join(','))
-        ].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'data.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    // view handle click
-    const handleViewClick = (data) => {
-        setSelectedReceipt(data);
         setIsModalOpen(true);
-        console.log(data)
-      };
+      } else {
+        setError('Admit card data not found');
+      }
+    } catch (err) {
+      setError('Error fetching admit card. Please try again.');
+      console.error('Error fetching admit card:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-       <div className='w-full p-4'>
-         <motion.div
-            className='bg-white  shadow-lg backdrop-blur-md rounded-xl p-5   mb-6 relative z-1'
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: 0.2 }}
-        >
- <div class="bg-gray-100 flex items-center justify-center w-full">
- {/* max-w-4xl */}
-            <div class="bg-white shadow-md rounded-lg p-6 w-full ">
-        
-        <div class="border-b pb-4 mb-4">
-            <h2 class="text-lg font-semibold text-gray-700 flex items-center">
-                <i class="fas fa-search text-violet-600 mr-2"></i> Select Criteria
-            </h2>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-gray-700">Exam Name</label>
-                <input type="text" class="text-black mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent" placeholder="Enter Name" onChange={SearchHandler2}/>
-            </div>
-            <div>
-                <label class="block text-gray-700">Class<i class="fas fa-calendar-alt text-violet-600"></i></label>
-                {/* <input type="text" class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500" placeholder="Enter Start Date" onChange={SearchHandler3}/> */}
-                <select class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500" placeholder="Enter Start Date" onChange={SearchHandler3}>
-                <option>select</option>
-                    <option>5th</option>
-                    <option>6th</option>
-                    <option>7th</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-gray-700">Section<i class="fas fa-calendar-alt text-violet-600"></i></label>
-                
-                <select class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500" placeholder="Enter Start Date" >
-                <option>select</option>
-                    <option>5th</option>
-                    <option>6th</option>
-                    <option>7th</option>
-                </select>
-            </div>
-            
+  // Handle Generate (Print multiple)
+  const handleGenerate = () => {
+    const selectedCount = Object.values(selectedStudents).filter(Boolean).length;
+    if (selectedCount === 0) {
+      setError('Please select at least one student');
+      return;
+    }
+
+    // For multiple students, we'll print each one
+    // In a real scenario, you might want to generate a bulk PDF or print each separately
+    window.print();
+  };
+
+  // Handle Print
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const selectedCount = Object.values(selectedStudents).filter(Boolean).length;
+  const isAllSelected = selectedCount === searchResults.length && searchResults.length > 0;
+
+  return (
+    <div className='w-full p-2 sm:p-4'>
+      <div className='bg-white shadow-lg rounded-xl p-4 sm:p-6 mb-6'>
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Generate Admit Card</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Select filters and search for students</p>
         </div>
 
-        <div class="mt-6 flex justify-end">
-            <button class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-md flex items-center" onClick={Search3}>
-                <i class="fas fa-search mr-2"></i> Search
-            </button>
-        </div>
-    </div>
-    
-    </div>
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-3 sm:p-4 bg-red-100 border border-red-400 text-red-700 rounded flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span className="text-sm sm:text-base">{error}</span>
+          </div>
+        )}
 
-            <div className='overflow-x-auto'>
-                <table className='min-w-full divide-y divide-gray-400'>
-                    <thead>
-                        <tr>
-                            <th className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>{title1}</th>
-                            <th className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>{title2}</th>
-                            <th className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>{title3}</th>
-                            <th className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>{title4}</th>
-                            <th className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>{title5}</th>
-                            <th className='px-6 py-3 text-left text-sm font-medium text-black uppercase tracking-wider'>{title6}</th>
-                        </tr>
-                    </thead>
-                    <tbody className='divide-y divide-gray-500'>
-                        {filteredProducts.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className='text-center text-black'>NO Data Found</td>
-                            </tr>
-                        ) : (
-                            getCurrentPageProducts().map((product) => (
-                                <motion.tr
-                                    key={product.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 1.1, delay: 0.2 }}
-                                >
-                                    <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-black flex gap-2 items-center'>
-                                        {/* <img src="https://images.unsplash.com/photo-1627989580309-bfaf3e58af6f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8d2lyZWxlc3MlMjBlYXJidWRzfGVufDB8fDB8fHww" alt="Product_Image"
-                                            className='rounded-full size-10'
-                                        /> */}
-                                        {product.name}
-                                    </td>
-                                    <td className='px-6 py-4 whitespace-nowrap text-sm text-black'>{product.class}</td>
-                                    <td className='px-6 py-4 whitespace-nowrap text-sm text-black'>{product.date}</td>
-                                    <td className='px-6 py-4 whitespace-nowrap text-sm text-black'>{product.amount}</td>
-                                    {/* <td className='px-6 py-4 whitespace-nowrap text-sm text-black'>{product.sales}</td> */}
-                                    <td className='px-6 py-4 whitespace-nowrap text-sm font-medium h-full'>
-                                        <div className='flex items-center gap-4 h-full'>
-                                            <button onClick={() => handleViewClick(product)} className='text-green-500 hover:text-green-600'>
-                                                                                <FontAwesomeIcon icon={faEye} />
-                                                                                </button> 
-                                            {/* <button onClick={() => handleEdit(product)} className='text-blue-500 hover:text-blue-700'>
-                                                <Edit size={18} />
-                                            </button> */}
-                                            <button onClick={() => handleDelete(product.id)} className='text-red-500 hover:text-red-700'>
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </motion.tr>
-                            ))
-                        )}
-                    </tbody>
+        {/* Selection Form */}
+        <div className="bg-gradient-to-r from-violet-50 to-blue-50 rounded-lg p-4 sm:p-6 border border-violet-100 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <Search className="w-5 h-5 text-violet-600" />
+            Filter Options
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Class Selection */}
+            <div>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                Class <span className="text-red-500">*</span>
+              </label>
+              <select 
+                value={selectedClass}
+                onChange={(e) => {
+                  setSelectedClass(e.target.value);
+                  setSelectedStudent('');
+                  setSearchResults([]);
+                  setHasSearched(false);
+                  setError('');
+                }}
+                className="w-full border-2 border-gray-300 rounded-lg p-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent text-sm"
+              >
+                <option value="">-- Select Class --</option>
+                {classes.map((classItem) => (
+                  <option key={classItem.id} value={classItem.id}>
+                    {classItem.class_name} - {classItem.section_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Student Selection */}
+            <div>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                Student <span className="text-red-500">*</span>
+              </label>
+              <select 
+                value={selectedStudent}
+                onChange={(e) => {
+                  setSelectedStudent(e.target.value);
+                  setSearchResults([]);
+                  setHasSearched(false);
+                  setError('');
+                }}
+                disabled={!selectedClass || loading}
+                className="w-full border-2 border-gray-300 rounded-lg p-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+              >
+                <option value="">-- Select Student --</option>
+                {students.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.name} ({student.roll_number || 'N/A'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Exam Term Selection */}
+            <div>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                Exam Term <span className="text-red-500">*</span>
+              </label>
+              <select 
+                value={selectedExamTerm}
+                onChange={(e) => {
+                  setSelectedExamTerm(e.target.value);
+                  setSelectedExam('');
+                  setSearchResults([]);
+                  setHasSearched(false);
+                  setError('');
+                }}
+                className="w-full border-2 border-gray-300 rounded-lg p-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent text-sm"
+              >
+                <option value="">-- Select Exam Term --</option>
+                {examTerms.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {term.term_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Exam Selection */}
+            <div>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                Exam <span className="text-red-500">*</span>
+              </label>
+              <select 
+                value={selectedExam}
+                onChange={(e) => {
+                  setSelectedExam(e.target.value);
+                  setSearchResults([]);
+                  setHasSearched(false);
+                  setError('');
+                }}
+                disabled={!selectedExamTerm || loading}
+                className="w-full border-2 border-gray-300 rounded-lg p-2.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+              >
+                <option value="">-- Select Exam --</option>
+                {exams.map((exam) => (
+                  <option key={exam.id} value={exam.id}>
+                    {exam.exam_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Search Button */}
+            <div className="flex items-end">
+              <button 
+                onClick={handleSearch}
+                disabled={!selectedClass || !selectedStudent || !selectedExamTerm || !selectedExam || loading}
+                className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg transition font-bold text-base h-full whitespace-nowrap"
+              >
+                <Search size={20} />
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-8 sm:py-12">
+            <div className="text-center">
+              <Loader className="animate-spin text-violet-600 w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2" />
+              <p className="text-gray-600 text-sm sm:text-base">Loading...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Search Results Table */}
+        {!loading && hasSearched && (
+          <div>
+            <div className="mb-4 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Student Results ({selectedCount} selected of {searchResults.length})
+              </h3>
+              <button
+                onClick={handleSelectAll}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
+                  isAllSelected
+                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                }`}
+              >
+                {isAllSelected ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+
+            {searchResults.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm sm:text-base">No results found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className='w-full divide-y divide-gray-200'>
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className='px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700'>
+                        <input 
+                          type="checkbox" 
+                          checked={isAllSelected}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                      </th>
+                      <th className='px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700'>Student Name</th>
+                      <th className='hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700'>Roll No</th>
+                      <th className='hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700'>Exam</th>
+                      <th className='hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700'>Total Marks</th>
+                      <th className='hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700'>Passing Marks</th>
+                      <th className='px-4 sm:px-6 py-3 text-center text-xs sm:text-sm font-semibold text-gray-700'>View</th>
+                    </tr>
+                  </thead>
+                  <tbody className='divide-y divide-gray-200 bg-white'>
+                    {searchResults.map((student) => (
+                      <tr
+                        key={student.id}
+                        className="hover:bg-gray-50"
+                      >
+                        <td className='px-4 py-3'>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedStudents[student.id] || false}
+                            onChange={() => handleSelectStudent(student.id)}
+                            className="w-4 h-4 cursor-pointer"
+                          />
+                        </td>
+                        <td className='px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900'>
+                          {student.name || 'N/A'}
+                        </td>
+                        <td className='hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700'>
+                          {student.roll_number || 'N/A'}
+                        </td>
+                        <td className='hidden md:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700'>
+                          {student.examInfo?.exam_name || 'N/A'}
+                        </td>
+                        <td className='hidden lg:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700'>
+                          {student.examInfo?.total_marks || 'N/A'}
+                        </td>
+                        <td className='hidden lg:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700'>
+                          {student.examInfo?.passing_marks || 'N/A'}
+                        </td>
+                        <td className='px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium'>
+                          <button 
+                            onClick={() => handleViewAdmitCard(student.id)}
+                            className='text-green-500 hover:text-green-700 p-2 rounded hover:bg-green-50 transition inline-flex items-center gap-1'
+                            title="View Admit Card"
+                          >
+                            <Eye size={16} />
+                            <span className="hidden sm:inline text-xs">View</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
-            </div>
+              </div>
+            )}
 
+            {/* Generate Button */}
+            {searchResults.length > 0 && (
+              <div className="mt-6 flex justify-center">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={selectedCount === 0}
+                  className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-white transition ${
+                    selectedCount === 0
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  <Download size={20} />
+                  Generate Admit Card ({selectedCount} selected)
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-            <Receipt
+        {!hasSearched && !loading && (
+          <div className="text-center py-12">
+            <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm sm:text-base">Select filters and click Search to view students</p>
+          </div>
+        )}
+      </div>
+
+      {/* Modal for Admit Card */}
+      <ReactModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        receiptData={selectedReceipt || { name: "", class: "" }}
-                    />
+        onRequestClose={() => setIsModalOpen(false)}
+        contentLabel="Admit Card"
+        style={{
+          overlay: {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1000,
+          },
+          content: {
+            width: "90vw",
+            maxWidth: "1100px",
+            maxHeight: "90vh",
+            margin: "auto",
+            padding: "20px",
+            border: "1px solid #ccc",
+            zIndex: 1001,
+            borderRadius: "8px",
+            overflow: "auto"
+          },
+        }}
+      >
+        <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-2 border-b pb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Admit Card</h2>
+          <button 
+            onClick={() => setIsModalOpen(false)} 
+            className='text-gray-600 hover:text-black p-2 rounded hover:bg-gray-100 transition'
+          >
+            <X size={24} />
+          </button>
+        </div>
 
+        <div className="mb-4 flex gap-2 flex-wrap">
+          <button 
+            onClick={handlePrint}
+            className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition text-sm sm:text-base font-semibold'
+          >
+            <FontAwesomeIcon icon={faPrint} size="lg" />
+            Print Admit Card
+          </button>
+        </div>
 
-
-        </motion.div>
-       </div>
-    );
+        {admitCardData && (
+          <div className="print:p-0">
+            <Admit 
+              studentInfo={admitCardData.student_info}
+              examInfo={admitCardData.exam_info}
+              examSchedule={admitCardData.exam_schedule}
+              instructions={admitCardData.instructions}
+            />
+          </div>
+        )}
+      </ReactModal>
+    </div>
+  );
 };
 
 export default CreateAdmitCard;

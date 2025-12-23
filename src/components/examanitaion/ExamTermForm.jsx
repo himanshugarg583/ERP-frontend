@@ -155,8 +155,8 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
   // If in modal, don't show the card wrapper and header
   if (inModal) {
     return (
-      <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Term Name */}
             <div>
               <label htmlFor="term_name" className="block text-sm font-medium text-gray-700 mb-2">

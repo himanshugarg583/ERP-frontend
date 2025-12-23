@@ -2,14 +2,14 @@ import React from "react";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import CreateAdmitCard from "../../../components/examanitaion/CreateAdmitCard";
-import { Payment_Data } from "../../../data";
+
 const AdmitCardPage = () => {
   return (
     <div className="bg-slate-200 flex AddStudent">
       <Sidebar />
 
       <div
-        className=" overflow-auto relative z-1 flex-col"
+        className="overflow-auto relative z-1 flex-col"
         style={{
           height: "95vh",
           width: "100vw",
@@ -21,16 +21,14 @@ const AdmitCardPage = () => {
         <Header />
 
         <main className="">
-          {/* CreateAdmitCard */}
           <CreateAdmitCard
-            tabletitle="Student Leave List TableWithSearch"
-            Product_Data={Payment_Data}
-            title1="student name"
-            title2="class"
-            title3="phone"
-            title4="roll no"
+            tabletitle="Admit Card Management"
+            title1="Student Name"
+            title2="Admission #"
+            title3="Roll No"
+            title4="Class"
             title5="Actions"
-          ></CreateAdmitCard>
+          />
         </main>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
 import CommonTable from '../../../components/tables/CommonTable';
-import CommonFilter from '../../../components/tables/CommonFilter';
 import ExamForm from '../../../components/examanitaion/ExamForm';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,8 +15,8 @@ import Modal from '../../../components/comman_components/Modal';
 
 const ExamListPage = () => {
   const [exams, setExams] = useState([]);
-  const [filteredExams, setFilteredExams] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [examToDelete, setExamToDelete] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -35,7 +35,7 @@ const ExamListPage = () => {
           : Array.isArray(response)
             ? response
             : [];
-      
+
       const normalizedExams = payload.map((exam) => ({
         id: exam.id,
         term_id: exam.term_id || null,
@@ -49,7 +49,6 @@ const ExamListPage = () => {
       }));
 
       setExams(normalizedExams);
-      setFilteredExams(normalizedExams);
     } catch (error) {
       console.error('Error fetching exams:', error);
       toast.error(error?.response?.data?.message || 'Failed to load exams');
@@ -60,14 +59,14 @@ const ExamListPage = () => {
 
   useEffect(() => {
     fetchExams();
-    
+
     // Listen for exam added event
     const handleExamAdded = () => {
       fetchExams();
     };
-    
+
     window.addEventListener('examAdded', handleExamAdded);
-    
+
     return () => {
       window.removeEventListener('examAdded', handleExamAdded);
     };
@@ -227,7 +226,6 @@ const ExamListPage = () => {
       if (response?.success) {
         toast.success(response.message || 'Exam deleted successfully');
         setExams((prev) => prev.filter((exam) => exam.id !== examToDelete.id));
-        setFilteredExams((prev) => prev.filter((exam) => exam.id !== examToDelete.id));
         setDeleteModalOpen(false);
         setExamToDelete(null);
       } else {
@@ -244,41 +242,16 @@ const ExamListPage = () => {
     setViewModalOpen(true);
   }, []);
 
-  // Handle filter changes
-  const handleFilterChange = (filters) => {
-    let filtered = [...exams];
-
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) {
-        filtered = filtered.filter(item => {
-          if (key === 'exam_name' || key === 'term_name') {
-            return item[key] && item[key].toLowerCase().includes(filters[key].toLowerCase());
-          }
-          if (key === 'status') {
-            return item[key]?.toString() === filters[key]?.toString();
-          }
-          return false;
-        });
-      }
-    });
-
-    setFilteredExams(filtered);
-  };
-
-  // Handle clear filters
-  const handleClearFilters = () => {
-    setFilteredExams(exams);
-  };
-
   // Handle exam addition from form component
   const handleExamAdded = () => {
     fetchExams();
+    setAddModalOpen(false);
   };
 
   return (
     <div className='bg-slate-200 flex AddStudent'>
       <Sidebar />
-      
+
       <div className='overflow-auto relative z-1 flex-col' style={{
         height: '95vh',
         width: '100vw',
@@ -287,24 +260,30 @@ const ExamListPage = () => {
         transition: 'margin-left 0.3s ease'
       }}>
         <Header />
-        
-        <div className="flex-1 p-4 md:p-6">
-          {/* Add Exam Form Component */}
-          <ExamForm onExamAdded={handleExamAdded} />
 
-          {/* Filter Component */}
-          <CommonFilter
-            filterFields={filterFields}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-            title="Exam Filters"
-          />
+        <div className="flex-1 p-4 md:p-6">
+          {/* Page Header */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6 mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-xl md:text-2xl font-semibold text-slate-800 mb-2">Exam Management</h1>
+                <p className="text-sm text-slate-600">Manage exams, schedules, and term mapping</p>
+              </div>
+              <button
+                onClick={() => setAddModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm w-full sm:w-auto justify-center"
+              >
+                <Plus size={20} />
+                <span>Add Exam</span>
+              </button>
+            </div>
+          </div>
 
           {/* Table Component */}
           <CommonTable
             title="Exam Management"
             columns={examColumns}
-            data={filteredExams}
+            data={exams}
             createApi={null}
             updateApi={handleUpdateExam}
             deleteApi={null}
@@ -324,6 +303,17 @@ const ExamListPage = () => {
           />
         </div>
       </div>
+
+      {/* Add Exam Modal */}
+      <Modal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        title="Add New Exam"
+        subtitle="Define exam details and link to an academic term"
+        size="lg"
+      >
+        <ExamForm onExamAdded={handleExamAdded} inModal={true} onCancel={() => setAddModalOpen(false)} />
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -386,7 +376,7 @@ const ExamListPage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Term</label>
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {examToView.term_name && examToView.academic_year 
+                  {examToView.term_name && examToView.academic_year
                     ? `${examToView.term_name} (${examToView.academic_year})`
                     : examToView.term_name || 'N/A'}
                 </p>
@@ -399,20 +389,20 @@ const ExamListPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                   <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {examToView.start_date ? new Date(examToView.start_date).toLocaleDateString('en-GB', { 
-                      day: '2-digit', 
-                      month: 'long', 
-                      year: 'numeric' 
+                    {examToView.start_date ? new Date(examToView.start_date).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
                     }) : 'N/A'}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                   <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                    {examToView.end_date ? new Date(examToView.end_date).toLocaleDateString('en-GB', { 
-                      day: '2-digit', 
-                      month: 'long', 
-                      year: 'numeric' 
+                    {examToView.end_date ? new Date(examToView.end_date).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
                     }) : 'N/A'}
                   </p>
                 </div>
@@ -420,11 +410,10 @@ const ExamListPage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    examToView.status === 'active' ? 'bg-green-100 text-green-800' :
-                    examToView.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${examToView.status === 'active' ? 'bg-green-100 text-green-800' :
+                    amToView.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                      'bgray-100 text-gray-800'
+                    }`}>
                     {examToView.status ? examToView.status.charAt(0).toUpperCase() + examToView.status.slice(1) : 'N/A'}
                   </span>
                 </p>

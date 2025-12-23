@@ -17,7 +17,7 @@ export const API_ENDPOINTS = {
   GET_TEACHER_DROPDOWN: '/admin/dropdown/getTeacherDropdown',
   CREATE_CLASS: '/api/Classsection/createClass',
   ADD_SUBJECT: '/admin/Subject/addSubject',
-  ADD_TEACHER: '/admin/hr/register/addTeacher',
+  // ADD_TEACHER: '/admin/hr/register/addTeacher',
   GET_TEACHER_CREDENTIALS: '/api/teachers/credentials',
   UPDATE_TEACHER_CREDENTIALS: (id) => `/api/teachers/credentials/${id}`,
   // Income endpoints
@@ -64,6 +64,19 @@ export const API_ENDPOINTS = {
   GENERATE_ID_CARDS: '/admin/certificate/generateMultipleIdCards',
   GENERATE_SATFF_ID_CARD: '/admin/certificate/generateStaffIdCard',
   GENERATE_SATFF_ID_CARDS: '/admin/certificate/generateMultipleStaffIdCards',
+
+  // admit card related endpoints
+  GET_ALL_EXAM_TERMS_FOR_ADMIT_CARD: '/admin/dropdown/getExamTermDropdown',
+  GET_EXAM_BY_TERM: (examTermId) => `/admin/dropdown/getExamDropdown?term_id=${examTermId}`,
+  GET_EXAM_SCHEDULE_BY_EXAM: (examId) => `/admin/dropdown/getExamScheduleByExam?exam_id=${examId}`,
+  GET_STUDENT_ADMIT_CARD: (studentId, examTermId) => `/admin/admitCard/getStudentAdmitCard?student_id=${studentId}&exam_schedule_id=${examTermId}`,
+  GET_CLASS_ADMIT_CARDS: (classId) => `/admin/admitCard/getClassAdmitCards/${classId}`,
+  GET_STUDENTS_EXAM_LIST: (classId, examTermId,classSectionId) => `/admin/admitCard/getExamStudentList?term_id=${classId}&exam_id=${examTermId}&class_section_id=${classSectionId}`,
+ 
+  // exam timetable endpoints
+  CREATE_EXAM_TIMETABLE: '/admin/examTimetable/createExamTimetable',
+  GET_CLASS_SCHEDULED_EXAMS: (classSectionId) => `/admin/examTimetable/getClassScheduledExams/${classSectionId}`,
+  
 
 
   // student report endpoints
@@ -127,7 +140,7 @@ export const API_ENDPOINTS = {
 
   // Teacher Attendance Endpoints
   GET_TEACHER_CLASSES: '/classattendance/getTeacherClasses',
-  GET_STUDENTS_BY_CLASS: (classId) => `/classattendance/getClassStudentList/${classId}`,
+  GETS_STUDENTS_BY_CLASS: (classId) => `/classattendance/getClassStudentList/${classId}`,
   MARK_CLASS_ATTENDANCE: '/classattendance/markClassAttendance',
   GET_CLASS_ATTENDANCE_BY_DATE: (classId, date) => `/classattendance/getClassAttendanceByDate?class_section_id=${classId}&date=${date}`,
 
@@ -848,4 +861,29 @@ export const generateStaffIdCard = async (user_id) => {
 
 export const generateMultipleStaffIdCards = async (user_ids) => {
   return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
+};
+
+// ADMIT CARD ENDPOINTS
+export const getAllExamTermsForAdmitCard = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_EXAM_TERMS_FOR_ADMIT_CARD);
+};
+
+export const getExamByTerm = async (examTermId) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXAM_BY_TERM(examTermId));
+};
+
+export const getExamScheduleByExam = async (examId) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXAM_SCHEDULE_BY_EXAM(examId));
+};
+
+export const getStudentAdmitCard = async (studentId, examTermId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_ADMIT_CARD(studentId, examTermId));
+};
+
+export const getClassAdmitCards = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_ADMIT_CARDS(classId));
+};
+
+export const getStudentsExamList = async (classId, examTermId, classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_EXAM_LIST(classId, examTermId, classSectionId));
 };

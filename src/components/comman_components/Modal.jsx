@@ -1,20 +1,21 @@
 import React from 'react';
-import { AnimatePresence,motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
-const Modal = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children, 
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  subtitle,
+  children,
   size = 'md',
-  showCloseButton = true 
+  showCloseButton = true
 }) => {
   const sizeClasses = {
     sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    md: 'max-w-2xl',
+    lg: 'max-w-3xl',
+    xl: 'max-w-5xl',
     full: 'max-w-7xl'
   };
 
@@ -23,49 +24,55 @@ const Modal = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <motion.div
+          className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          aria-modal="true"
+          role="dialog"
+        >
           {/* Backdrop */}
           <motion.div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-white/20 backdrop-blur-md"
           />
-          
+
           {/* Modal Content */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.92, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`relative bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full mx-4 max-h-[90vh] overflow-hidden`}
+            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+            className={`relative w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden bg-white rounded-2xl shadow-2xl border border-violet-100`}
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                {title && (
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {title}
-                  </h3>
-                )}
+              <div className="bg-violet-600 text-white p-5 flex items-start justify-between gap-4 sticky top-0 z-10 shadow-sm">
+                <div className="space-y-1">
+                  {title && <h3 className="text-lg font-semibold leading-6">{title}</h3>}
+                  {subtitle && <p className="text-sm text-violet-100 leading-relaxed">{subtitle}</p>}
+                </div>
                 {showCloseButton && (
                   <button
                     onClick={onClose}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-1.5 rounded-full hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                    aria-label="Close modal"
                   >
-                    <X className="w-5 h-5 text-gray-500" />
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
             )}
-            
-            {/* Body */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] bg-white">
               {children}
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
