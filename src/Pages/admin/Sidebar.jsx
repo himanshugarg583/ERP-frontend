@@ -50,11 +50,21 @@ const SIDEBAR_ITEMS = [
     name: "Attendance", 
     icon: TicketPlus, 
     subItems: [
+<<<<<<< Updated upstream
       { name: "Student Attendance", href: "/ClassAttendance" },
       { name: "Student Leave", href: "/leave", icon: Circle }, 
       { name: "Attendance Report", href: "/AttendanceReport", icon: Circle }
 
     ] 
+=======
+      { name: "Fee Head Management", href: "/admin/fee-head-management" },
+      { name: "Fee Structure Management", href: "/admin/fee-structure-management" },
+      { name: "Fee Assignment", href: "/admin/fee-assignment" },
+      { name: "Student Fee Reports", href: "/admin/student-fee-reports" },
+      { name: "Payment Received", href: "/admin/payment-received" },
+      { name: "Fee Reports", href: "/admin/fee-reports" },
+    ],
+>>>>>>> Stashed changes
   },
   { 
     name: "Academics", 
