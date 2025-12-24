@@ -89,7 +89,7 @@ const AddSubjectPage = () => {
   };
 
   return (
-    <div className='bg-gray-100 flex AddStudent'>
+    <div className='bg-slate-200 flex AddStudent'>
       <Sidebar />
       
       <div className='overflow-auto relative z-1 flex-col' style={{
@@ -101,7 +101,7 @@ const AddSubjectPage = () => {
       }}>
         <Header />
         
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4 md:p-6">
           {/* Add Subject Form Component */}
           <AddSubjectForm onSubjectAdded={handleSubjectAdded} />
 

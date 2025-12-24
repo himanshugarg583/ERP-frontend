@@ -139,7 +139,7 @@ const AssignClassTeacherForm = ({ onClassTeacherAssigned }) => {
                 name="class_name"
                 value={formData.class_name}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.class_name ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -164,7 +164,7 @@ const AssignClassTeacherForm = ({ onClassTeacherAssigned }) => {
                 name="section_name"
                 value={formData.section_name}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.section_name ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
@@ -188,7 +188,7 @@ const AssignClassTeacherForm = ({ onClassTeacherAssigned }) => {
                 name="teacher_name"
                 value={formData.teacher_name}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.teacher_name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="e.g. Rahul Sharma"
@@ -207,7 +207,7 @@ const AssignClassTeacherForm = ({ onClassTeacherAssigned }) => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.phone ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="e.g. 9876543210"
@@ -227,7 +227,7 @@ const AssignClassTeacherForm = ({ onClassTeacherAssigned }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="e.g. teacher@school.com"
@@ -276,7 +276,7 @@ const AssignClassTeacherForm = ({ onClassTeacherAssigned }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center space-x-2 px-6 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
               <span>{isSubmitting ? 'Assigning...' : 'Assign Class Teacher'}</span>

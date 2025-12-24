@@ -27,7 +27,7 @@ import { motion } from 'framer-motion'
     return(
 
       <motion.div
-                  className='bg-white shadow-lg backdrop-blur-md rounded-xl p-5 mb-6 relative z-1'
+                  className='bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-6 relative z-1'
                   initial={{ opacity: 0, y: 25 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: 0.2 }}
@@ -35,12 +35,12 @@ import { motion } from 'framer-motion'
         {/* <div className=" flex items-center justify-center mr-4 bg-white  rounded-lg shadow-lg w-full h-full max-w-lg overflow-x-auto " style={{}} > */}
             <div className=" text-black p-4" style={{padding:'-10px'}}>
         <h2 className="text-xl font-semibold mb-1 flex items-center">
-            <i class="fas fa-edit mr-2"></i> Add / Edit Income
+            <i className="fas fa-edit mr-2"></i> Add / Edit Income
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="">
       {/* Income Head */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4">
       <div className="mb-1">
         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="income-head">
           Income Head*
@@ -48,7 +48,7 @@ import { motion } from 'framer-motion'
         <select
           id="income-head"
           {...register('incomeHead', { required: 'Income Head is required' })}
-          className="border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-violet-600"
         >
           <option value="">Select</option>
           <option value="2" data-amount="20">Demo (20)</option>
@@ -72,7 +72,7 @@ import { motion } from 'framer-motion'
         <select
           id="account-type"
           {...register('accountType')}
-          className="border  rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline border-gray-300"
+          className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-violet-600 border-gray-300"
         >
           <option value="">Select</option>
           <option value="1">Saving's A/C</option>
@@ -91,7 +91,7 @@ import { motion } from 'framer-motion'
         <select
           id="account-name"
           {...register('accountName')}
-          className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline border-gray-300"
+          className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-violet-600 border-gray-300"
         >
           <option value="">Select</option>
           <option value="2">Salary Account</option>
@@ -109,7 +109,7 @@ import { motion } from 'framer-motion'
         <select
           id="income-from"
           {...register('incomeFrom', { required: 'Income From is required' })}
-          className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline border-gray-300"
+          className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-violet-600 border-gray-300"
         >
           <option value="">Select</option>
           <option value="2">Other</option>
@@ -126,7 +126,7 @@ import { motion } from 'framer-motion'
         <input
           type="text"
           {...register('otherName', { required: 'Name is required' })}
-          className="w-full px-3 py-2 border rounded border-gray-300"
+          className="w-full px-3 py-2 border rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
         />
         {errors.otherName && <p className="text-red-500 text-xs mt-1">{errors.otherName.message}</p>}
       </div>
@@ -142,7 +142,7 @@ import { motion } from 'framer-motion'
             required: 'Amount is required',
             min: { value: 1, message: 'Amount must be greater than 0' }
           })}
-          className="w-full px-3 py-2 border rounded border-gray-300"
+          className="w-full px-3 py-2 border rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
           placeholder="Enter amount"
         />
         {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
@@ -156,7 +156,7 @@ import { motion } from 'framer-motion'
         <input
           type="text"
           {...register('date', { required: 'Date is required' })}
-          className="w-full px-3 py-2 border rounded border-gray-300"
+          className="w-full px-3 py-2 border rounded border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-600"
           readOnly
         />
       </div>
@@ -169,7 +169,7 @@ import { motion } from 'framer-motion'
         <select
           id="payment-mode"
           {...register('paymentMode', { required: 'Payment Mode is required' })}
-          className="border-gray-300 border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="border-gray-300 border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-violet-600"
         >
           <option value="">Select</option>
           <option value="2">Cash</option>
@@ -188,7 +188,7 @@ import { motion } from 'framer-motion'
         <input
           type="file"
           {...register('document')}
-          className="border-gray-300 border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="border-gray-300 border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-violet-600"
         />
       </div>
       </div>
@@ -196,7 +196,7 @@ import { motion } from 'framer-motion'
       <div className="flex items-center justify-between">
         <button
           type="submit"
-          className="bg-black text-white font-bold py-2 px-4 rounded hover:bg-gray-800"
+          className="bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded mt-4"
         >
           Save
         </button>
