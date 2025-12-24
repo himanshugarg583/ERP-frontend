@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
-import { 
+import Footer from "../../../components/comman_components/Footer";
+import {
   fetchAllClassesForAttendance,
   getStudentReport,
   getParentReport,
@@ -9,12 +11,12 @@ import {
   getClassWiseStudentStats
 } from "../../../helper/requests-method/apiMethods";
 import { toast, ToastContainer } from 'react-toastify';
-import { FileText, Users, Key, GraduationCap, ArrowLeft, UserCheck, UserX } from 'lucide-react';
+import { FileText, Users, Key, GraduationCap, ArrowLeft, UserCheck, UserX, BarChart3 } from 'lucide-react';
 import StandardStatCard from '../../../components/comman_components/StandardStatCard';
 import 'react-toastify/dist/ReactToastify.css';
 
 const StudentReports = () => {
-  const [selectedReportType, setSelectedReportType] = useState(null); // 'student-report', 'parent-report', 'student-credentials'
+  const [selectedReportType, setSelectedReportType] = useState(null);
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [reportData, setReportData] = useState(null);
@@ -75,11 +77,11 @@ const StudentReports = () => {
 
   const fetchReportData = async () => {
     if (!selectedClass) return;
-    
+
     try {
       setLoadingReport(true);
       let response;
-      
+
       switch (selectedReportType) {
         case 'student-report':
           response = await getStudentReport(selectedClass.id);
@@ -145,31 +147,31 @@ const StudentReports = () => {
     if (!reportData || !reportData.students) return null;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-        <div className="mb-4 pb-4 border-b border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">Class Information</h3>
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+        <div className="mb-6 pb-4 border-b border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Class Information</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-slate-600">Class:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-indigo-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Class</span>
+              <span className="font-semibold text-indigo-700">
                 {reportData.class_info?.class_name || 'N/A'}
               </span>
             </div>
-            <div>
-              <span className="text-slate-600">Section:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-purple-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Section</span>
+              <span className="font-semibold text-purple-700">
                 {reportData.class_info?.section_name || 'N/A'}
               </span>
             </div>
-            <div>
-              <span className="text-slate-600">Room No:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Room No</span>
+              <span className="font-semibold text-blue-700">
                 {reportData.class_info?.room_no || 'N/A'}
               </span>
             </div>
-            <div>
-              <span className="text-slate-600">Total Students:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-green-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Total Students</span>
+              <span className="font-semibold text-green-700">
                 {reportData.total_students || 0}
               </span>
             </div>
@@ -178,7 +180,7 @@ const StudentReports = () => {
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
+            <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">S.No</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Name</th>
@@ -192,9 +194,9 @@ const StudentReports = () => {
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {reportData.students.map((student, index) => (
-                <tr key={student.student_id} className="hover:bg-slate-50">
+                <tr key={student.student_id} className="hover:bg-indigo-50 transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{index + 1}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{student.name || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">{student.name || 'N/A'}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{student.roll_number || 'N/A'}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{formatDate(student.date_of_birth)}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 capitalize">{student.gender || 'N/A'}</td>
@@ -214,31 +216,31 @@ const StudentReports = () => {
     if (!reportData || !reportData.students) return null;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-        <div className="mb-4 pb-4 border-b border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">Class Information</h3>
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+        <div className="mb-6 pb-4 border-b border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Class Information</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-slate-600">Class:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-indigo-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Class</span>
+              <span className="font-semibold text-indigo-700">
                 {reportData.class_info?.class_name || 'N/A'}
               </span>
             </div>
-            <div>
-              <span className="text-slate-600">Section:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-purple-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Section</span>
+              <span className="font-semibold text-purple-700">
                 {reportData.class_info?.section_name || 'N/A'}
               </span>
             </div>
-            <div>
-              <span className="text-slate-600">Room No:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Room No</span>
+              <span className="font-semibold text-blue-700">
                 {reportData.class_info?.room_no || 'N/A'}
               </span>
             </div>
-            <div>
-              <span className="text-slate-600">Total Students:</span>
-              <span className="ml-2 font-medium text-slate-800">
+            <div className="bg-green-50 p-3 rounded-lg">
+              <span className="text-slate-600 block mb-1">Total Students</span>
+              <span className="font-semibold text-green-700">
                 {reportData.total_students || 0}
               </span>
             </div>
@@ -247,7 +249,7 @@ const StudentReports = () => {
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
+            <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">S.No</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Student Name</th>
@@ -262,9 +264,9 @@ const StudentReports = () => {
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {reportData.students.map((student, index) => (
-                <tr key={student.student_id} className="hover:bg-slate-50">
+                <tr key={student.student_id} className="hover:bg-indigo-50 transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{index + 1}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{student.student_name || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">{student.student_name || 'N/A'}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{student.roll_number || 'N/A'}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
                     {student.parent_info?.father_name || 'N/A'}
@@ -296,17 +298,19 @@ const StudentReports = () => {
   const renderStudentCredentials = () => {
     if (!reportData || !reportData.students) return null;
 
-    // Find the stats for the selected class
     const selectedClassStat = classStats.find(
-      (stat) => stat.class_name === reportData.class_info?.class_name && 
-                 stat.section_name === reportData.class_info?.section_name
+      (stat) => stat.class_name === reportData.class_info?.class_name &&
+        stat.section_name === reportData.class_info?.section_name
     );
 
     return (
-      <div className="space-y-4 md:space-y-6">
-        {/* Class Stats - Show stats for selected class only */}
+      <div className="space-y-6">
         {selectedClassStat && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+          >
             <StandardStatCard
               name="Total Students"
               icon={Users}
@@ -325,29 +329,28 @@ const StudentReports = () => {
               value={selectedClassStat.female || 0}
               color="#ec4899"
             />
-          </div>
+          </motion.div>
         )}
 
-        {/* Credentials Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-          <div className="mb-4 pb-4 border-b border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">Class Information</h3>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+          <div className="mb-6 pb-4 border-b border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">Class Information</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="text-slate-600">Class:</span>
-                <span className="ml-2 font-medium text-slate-800">
+              <div className="bg-indigo-50 p-3 rounded-lg">
+                <span className="text-slate-600 block mb-1">Class</span>
+                <span className="font-semibold text-indigo-700">
                   {reportData.class_info?.class_name || 'N/A'}
                 </span>
               </div>
-              <div>
-                <span className="text-slate-600">Section:</span>
-                <span className="ml-2 font-medium text-slate-800">
+              <div className="bg-purple-50 p-3 rounded-lg">
+                <span className="text-slate-600 block mb-1">Section</span>
+                <span className="font-semibold text-purple-700">
                   {reportData.class_info?.section_name || 'N/A'}
                 </span>
               </div>
-              <div>
-                <span className="text-slate-600">Total Students:</span>
-                <span className="ml-2 font-medium text-slate-800">
+              <div className="bg-green-50 p-3 rounded-lg">
+                <span className="text-slate-600 block mb-1">Total Students</span>
+                <span className="font-semibold text-green-700">
                   {reportData.total_students || 0}
                 </span>
               </div>
@@ -356,7 +359,7 @@ const StudentReports = () => {
 
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+              <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">S.No</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Name</th>
@@ -367,12 +370,12 @@ const StudentReports = () => {
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {reportData.students.map((student, index) => (
-                  <tr key={student.user_id} className="hover:bg-slate-50">
+                  <tr key={student.user_id} className="hover:bg-indigo-50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{index + 1}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{student.name || 'N/A'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">{student.name || 'N/A'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{student.roll_number || 'N/A'}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{student.email || 'N/A'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 font-mono">{student.password || 'N/A'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 font-mono bg-slate-50 rounded px-2">{student.password || 'N/A'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -384,121 +387,191 @@ const StudentReports = () => {
   };
 
   return (
-    <div className='bg-slate-200 flex AddStudent'>
+    <div className='bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex AddStudent'>
       <Sidebar />
-      <div className='overflow-auto relative z-1 flex-col' style={{ height: '95vh', width: '100vw', gap: '10px', display: 'flex', transition: 'margin-left 0.3s ease' }}>
+      <div className='overflow-auto relative z-1 flex flex-col' style={{ height: '100vh', width: '100vw', transition: 'margin-left 0.3s ease' }}>
         <Header />
-        <main className="w-full py-4 md:py-6 px-4 md:px-6">
+        <main className="flex-1 overflow-auto w-full py-6 px-4 md:px-6">
           <ToastContainer />
-          <div className="space-y-4 md:space-y-6">
+
+          {/* Page Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Student Reports
+                </h1>
+                <p className="text-sm text-slate-600 mt-1">
+                  Generate and view various student reports
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="space-y-6">
             {/* Report Type Cards */}
             {!selectedReportType ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                <button
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              >
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleReportTypeClick('student-report')}
-                  className="bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-violet-400 p-6 md:p-8 transition-all cursor-pointer text-center group"
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all cursor-pointer text-center group"
                 >
-                  <FileText className="w-12 h-12 mx-auto mb-4 text-slate-600 group-hover:text-violet-600" />
-                  <h3 className="text-lg md:text-xl font-semibold text-slate-800 group-hover:text-violet-700 mb-2">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                    <FileText className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
                     Student Report
                   </h3>
                   <p className="text-sm text-slate-600">View detailed student information</p>
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleReportTypeClick('parent-report')}
-                  className="bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-violet-400 p-6 md:p-8 transition-all cursor-pointer text-center group"
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all cursor-pointer text-center group"
                 >
-                  <Users className="w-12 h-12 mx-auto mb-4 text-slate-600 group-hover:text-violet-600" />
-                  <h3 className="text-lg md:text-xl font-semibold text-slate-800 group-hover:text-violet-700 mb-2">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
                     Parent Report
                   </h3>
                   <p className="text-sm text-slate-600">View parent information by class</p>
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleReportTypeClick('student-credentials')}
-                  className="bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-violet-400 p-6 md:p-8 transition-all cursor-pointer text-center group"
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all cursor-pointer text-center group"
                 >
-                  <Key className="w-12 h-12 mx-auto mb-4 text-slate-600 group-hover:text-violet-600" />
-                  <h3 className="text-lg md:text-xl font-semibold text-slate-800 group-hover:text-violet-700 mb-2">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                    <Key className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
                     Student Credentials
                   </h3>
                   <p className="text-sm text-slate-600">View student login credentials</p>
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             ) : (
-              <div className="space-y-4 md:space-y-6">
+              <div className="space-y-6">
                 {/* Class Selection */}
                 {!selectedClass ? (
                   <>
-                    {/* Back Button - Only show when selecting classes */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-                      <button
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6"
+                    >
+                      <motion.button
+                        whileHover={{ x: -4 }}
                         onClick={handleBackToReports}
-                        className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer font-medium"
                       >
                         <ArrowLeft className="w-4 h-4" />
                         Back to Reports
-                      </button>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-                      <h2 className="text-lg md:text-xl font-semibold text-slate-800 mb-4">Select a Class</h2>
+                      </motion.button>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6"
+                    >
+                      <h2 className="text-xl font-bold text-slate-800 mb-6">Select a Class</h2>
                       {loadingClasses ? (
-                        <div className="text-center py-8 text-slate-500">Loading classes...</div>
+                        <div className="flex flex-col items-center justify-center py-12">
+                          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                          <p className="text-slate-600 font-medium">Loading classes...</p>
+                        </div>
                       ) : classes.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500">No classes found</div>
+                        <div className="text-center py-12 text-slate-500">No classes found</div>
                       ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-                          {classes.map((cls) => (
-                            <button
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          {classes.map((cls, index) => (
+                            <motion.button
                               key={cls.id}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: index * 0.05 }}
+                              whileHover={{ y: -4, scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => setSelectedClass(cls)}
-                              className="p-4 bg-slate-50 hover:bg-violet-50 border-2 border-slate-200 hover:border-violet-400 rounded-lg transition-all cursor-pointer text-center group"
+                              className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border-2 border-indigo-200 hover:border-indigo-400 rounded-xl transition-all cursor-pointer text-center group"
                             >
-                              <GraduationCap className="w-8 h-8 mx-auto mb-2 text-slate-600 group-hover:text-violet-600" />
-                              <div className="text-sm font-medium text-slate-800 group-hover:text-violet-700">
+                              <GraduationCap className="w-10 h-10 mx-auto mb-3 text-indigo-600 group-hover:text-indigo-700" />
+                              <div className="text-sm font-semibold text-slate-800">
                                 {cls.display_name}
                               </div>
-                            </button>
+                            </motion.button>
                           ))}
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   </>
                 ) : (
-                  <div className="space-y-4 md:space-y-6">
-                    {/* Back to Classes Button and Class Info */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-                      <div className="flex items-center gap-3">
-                        <button
+                  <div className="space-y-6">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6"
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <motion.button
+                          whileHover={{ x: -4 }}
                           onClick={handleBackToClasses}
-                          className="px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
+                          className="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer font-medium"
                         >
                           ← Back to Classes
-                        </button>
-                        <div>
-                          <h2 className="text-lg md:text-xl font-semibold text-slate-800">{selectedClass.display_name}</h2>
-                          <p className="text-sm text-slate-600">
+                        </motion.button>
+                        <div className="text-right">
+                          <h2 className="text-xl font-bold text-slate-800">{selectedClass.display_name}</h2>
+                          <p className="text-sm text-slate-600 mt-1">
                             {selectedReportType === 'student-report' && 'Student Report'}
                             {selectedReportType === 'parent-report' && 'Parent Report'}
                             {selectedReportType === 'student-credentials' && 'Student Credentials'}
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Report Content */}
                     {loadingReport ? (
-                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-                        <div className="text-center py-8 text-slate-500">Loading report...</div>
-                      </div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8"
+                      >
+                        <div className="flex flex-col items-center justify-center py-12">
+                          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                          <p className="text-slate-600 font-medium">Loading report...</p>
+                        </div>
+                      </motion.div>
                     ) : (
-                      <>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
                         {selectedReportType === 'student-report' && renderStudentReport()}
                         {selectedReportType === 'parent-report' && renderParentReport()}
                         {selectedReportType === 'student-credentials' && renderStudentCredentials()}
-                      </>
+                      </motion.div>
                     )}
                   </div>
                 )}
@@ -506,6 +579,7 @@ const StudentReports = () => {
             )}
           </div>
         </main>
+        <Footer />
       </div>
     </div>
   );

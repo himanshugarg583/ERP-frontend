@@ -1,25 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  faCoffee,
-  faUser,
-  faLanguage,
-} from "@fortawesome/free-solid-svg-icons";
-import {
-  FaExpand,
-  FaCompress,
-  FaBars,
-  FaSearch,
-  FaBell,
-  FaEnvelope,
-  FaUser,
-  FaCog,
-  FaSignOutAlt,
-  FaLock,
-} from "react-icons/fa";
+  Bell,
+  Search,
+  Maximize2,
+  Minimize2,
+  User,
+  LogOut,
+  Lock,
+  ChevronDown,
+  Globe
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { getAdminProfile, getTeacherProfile, getStudentProfile } from "../../helper/requests-method/apiMethods";
 
@@ -32,6 +25,7 @@ const Header = ({ title }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef(null);
 
   // Fetch profile based on user role
@@ -66,9 +60,7 @@ const Header = ({ title }) => {
       }
 
       if (response && response.success && response.data) {
-        // For teacher, the data structure is different
         if (isTeacher && response.data) {
-          // Map teacher profile data to a consistent structure
           const teacherData = {
             name: response.data.personal_info?.name || '',
             email: response.data.personal_info?.email || '',
@@ -79,7 +71,6 @@ const Header = ({ title }) => {
           };
           setProfile(teacherData);
         } else if (isStudent && response.data) {
-          // Map student profile data to a consistent structure
           const studentData = {
             name: response.data.personal_info?.name || '',
             email: response.data.personal_info?.email || '',
@@ -95,7 +86,6 @@ const Header = ({ title }) => {
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      // Don't show error toast on initial load to avoid annoying users
     } finally {
       setProfileLoading(false);
     }
@@ -103,7 +93,6 @@ const Header = ({ title }) => {
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
-    // Redirect to profile page based on user role
     if (isStudent) {
       navigate("/student/profile");
     } else if (isTeacher) {
@@ -115,7 +104,6 @@ const Header = ({ title }) => {
 
   const handleChangePasswordClick = () => {
     setIsDropdownOpen(false);
-    // Redirect to profile page with password change option based on user role
     if (isStudent) {
       navigate("/student/profile?tab=password");
     } else if (isTeacher) {
@@ -127,132 +115,17 @@ const Header = ({ title }) => {
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
-    // Clear all authentication-related localStorage items
     localStorage.removeItem("authToken");
     localStorage.removeItem("userData");
     localStorage.removeItem("rememberEmail");
-    // Clear sidebar state
     localStorage.removeItem("studentSidebar:openDropdown");
     localStorage.removeItem("teacherSidebar:openDropdown");
     localStorage.removeItem("sidebar:openDropdown");
     localStorage.removeItem("studentSidebar:isOpen");
     localStorage.removeItem("teacherSidebar:isOpen");
     localStorage.removeItem("sidebar:isOpen");
-    // Redirect to login page
     navigate("/login", { replace: true });
     toast.success("Logged out successfully");
-  };
-
-  const validatePasswordForm = () => {
-    const errors = {};
-
-    if (!passwordForm.current_password.trim()) {
-      errors.current_password = "Current password is required";
-    }
-
-    if (!passwordForm.new_password.trim()) {
-      errors.new_password = "New password is required";
-    } else if (passwordForm.new_password.length < 6) {
-      errors.new_password = "New password must be at least 6 characters";
-    }
-
-    // For teacher and student, use confirm_new_password; for admin, use confirm_password
-    const confirmField = (isTeacher || isStudent) ? 'confirm_new_password' : 'confirm_password';
-    const confirmValue = (isTeacher || isStudent) ? passwordForm.confirm_new_password : passwordForm.confirm_password;
-
-    if (!confirmValue.trim()) {
-      errors[confirmField] = "Please confirm your new password";
-    } else if (passwordForm.new_password !== confirmValue) {
-      errors[confirmField] = "Passwords do not match";
-    }
-
-    if (passwordForm.current_password === passwordForm.new_password) {
-      errors.new_password = "New password must be different from current password";
-    }
-
-    setPasswordErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
-    if (passwordErrors[name]) {
-      setPasswordErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validatePasswordForm()) {
-      toast.error("Please fix the errors in the form");
-      return;
-    }
-
-    setIsChangingPassword(true);
-
-    try {
-      // Different payload structure for teacher/student vs admin
-      const payload = (isTeacher || isStudent)
-        ? {
-            current_password: passwordForm.current_password,
-            new_password: passwordForm.new_password,
-            confirm_new_password: passwordForm.confirm_new_password,
-          }
-        : {
-            current_password: passwordForm.current_password,
-            new_password: passwordForm.new_password,
-            confirm_password: passwordForm.confirm_password,
-          };
-
-      let response;
-      if (isTeacher) {
-        response = await changeTeacherPassword(payload);
-      } else if (isStudent) {
-        response = await changeStudentPassword(payload);
-      } else {
-        response = await changePassword(payload);
-      }
-
-      if (response && (response.success === true || response.statusCode === 200)) {
-        toast.success(response.message || "Password changed successfully");
-        setChangePasswordModalOpen(false);
-        setPasswordForm({
-          current_password: "",
-          new_password: "",
-          confirm_password: "",
-          confirm_new_password: "",
-        });
-        setPasswordErrors({});
-      } else {
-        toast.error(response?.message || "Failed to change password");
-      }
-    } catch (error) {
-      console.error("Error changing password:", error);
-      let errorMessage = "Failed to change password";
-
-      if (error?.response) {
-        errorMessage =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.response?.data?.errorMessage ||
-          `Error: ${error.response.status} ${error.response.statusText}`;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-
-      toast.error(errorMessage);
-    } finally {
-      setIsChangingPassword(false);
-    }
   };
 
   const toggleFullScreen = () => {
@@ -266,102 +139,161 @@ const Header = ({ title }) => {
   };
 
   return (
-    <>
-    <header
-      className="bg-slate-800 border-b border-slate-700 shadow-lg flex flex-wrap items-center justify-between px-4 py-1 z-0"
-      style={{ flexDirection: "row" }}
-    >
-      {/* w-screen */}
-      <div className="max-w-7xl px-4 py-2" style={{}}>
-        <h1 className="text-xl font-semibold text-white">
-          GurukulSarthi School Management Software
-        </h1>
-      </div>
+    <header className="relative bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm z-50">
+      <div className="px-4 md:px-6 py-3">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left Section - Title */}
+          <div className="flex items-center gap-4 flex-1">
+            <motion.h1
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="text-lg md:text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hidden sm:block"
+            >
+              GurukulSarthi School
+            </motion.h1>
 
-      <ul
-        className="navbar-nav navbar-nav-right flex flex-wrap items-center gap-4 px-2 py-2 sm:px-4 lg:px-6"
-        style={{ width: "auto" }}
-      >
-        <li className="" style={{}}>
-          <div className="text-slate-200 hover:text-violet-300 transition-colors">
-            Session Year : <span id="sessionYearNameHeader">2025-26</span>
-            <span id="semesterNameHeader"></span>
-          </div>
-        </li>
-        <li className="nav-item">
-          <a
-            className="nav-link count-indicator dropdown-toggle text-slate-200 hover:text-violet-300 transition-colors"
-            id="messageDropdown"
-            href="#"
-            data-toggle="dropdown"
-            aria-expanded="false"
-          >
-            <FontAwesomeIcon icon={faLanguage} />
-          </a>
-        </li>
-      </ul>
-      {/* Profile and FullScreen section */}
-      <div className="flex items-center gap-4">
-        {/* Profile Dropdown */}
-          <div className="relative" ref={dropdownRef}>
-          <div
-            className="flex items-center cursor-pointer group px-4 py-4 sm:px-6 lg:px-8"
-            onClick={() => setIsDropdownOpen((prev) => !prev)}
-          >
-            <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
-              alt="Profile"
-              className="h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-transparent group-hover:border-violet-500 transition-all"
-            />
-            <span className="ml-2 text-sm md:text-base text-slate-200 group-hover:text-violet-300 transition-colors">
-                {profileLoading
-                  ? "Loading..."
-                  : profile?.name
-                  ? profile.name
-                  : "Admin"}
-            </span>
-          </div>
-
-          {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg z-20 p-2 animate-dropdown opacity-100">
-              <ul className="text-sm">
-                  <li
-                    className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
-                    onClick={handleProfileClick}
-                  >
-                  <FaUser className="mr-2 text-gray-600" />
-                  My Profile
-                </li>
-                  <li
-                    className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
-                    onClick={handleChangePasswordClick}
-                  >
-                    <FaLock className="mr-2 text-gray-600" />
-                    Change Password
-                </li>
-                  <li
-                    className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors text-red-600"
-                    onClick={handleLogout}
-                  >
-                  <FaSignOutAlt className="mr-2 text-red-600" />
-                  Logout
-                </li>
-              </ul>
+            {/* Search Bar - Hidden on mobile */}
+            <div className="hidden lg:flex items-center flex-1 max-w-md">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                />
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Right Section - Actions */}
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Session Year */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+              <span className="text-xs font-medium text-indigo-700">
+                Session: <span className="font-bold">2025-26</span>
+              </span>
+            </div>
+
+            {/* Language Selector */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="hidden md:flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-indigo-600 transition-all"
+            >
+              <Globe className="w-5 h-5" />
+            </motion.button>
+
+            {/* Notifications */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-indigo-600 transition-all"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            </motion.button>
+
+            {/* Fullscreen Toggle */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleFullScreen}
+              className="hidden md:flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-indigo-600 transition-all"
+            >
+              {isFullScreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            </motion.button>
+
+            {/* Profile Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                className="flex items-center gap-2 md:gap-3 px-2 md:px-3 py-1.5 md:py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100 cursor-pointer hover:shadow-md transition-all"
+              >
+                <div className="relative">
+                  <img
+                    src="https://randomuser.me/api/portraits/women/44.jpg"
+                    alt="Profile"
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm"
+                  />
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-semibold text-gray-800">
+                    {profileLoading ? "Loading..." : profile?.name || "Admin"}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize">
+                    {user?.role || "Administrator"}
+                  </p>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </motion.div>
+
+              {/* Dropdown Menu */}
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50"
+                  >
+                    <div className="p-3 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+                      <p className="text-sm font-semibold text-gray-800">
+                        {profile?.name || "User"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {profile?.email || user?.email || "user@example.com"}
+                      </p>
+                    </div>
+
+                    <div className="p-2">
+                      <motion.button
+                        whileHover={{ x: 4 }}
+                        onClick={handleProfileClick}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 rounded-lg transition-colors"
+                      >
+                        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                          <User className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <span className="font-medium">My Profile</span>
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ x: 4 }}
+                        onClick={handleChangePasswordClick}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-purple-50 rounded-lg transition-colors"
+                      >
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <span className="font-medium">Change Password</span>
+                      </motion.button>
+
+                      <div className="my-2 border-t border-gray-100"></div>
+
+                      <motion.button
+                        whileHover={{ x: 4 }}
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                          <LogOut className="w-4 h-4 text-red-600" />
+                        </div>
+                        <span className="font-medium">Logout</span>
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
-        {/* Fullscreen Icon to the right of Profile */}
-        <button
-          onClick={toggleFullScreen}
-          className="text-slate-200 hover:text-violet-300 transition-colors cursor-pointer"
-        >
-          {isFullScreen ? <FaExpand size={20} /> : <FaCompress size={18} />}
-        </button>
       </div>
     </header>
-
-      <ToastContainer position="top-right" autoClose={3000} />
-    </>
   );
 };
 

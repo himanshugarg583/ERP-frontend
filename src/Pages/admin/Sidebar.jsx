@@ -1,41 +1,42 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  BarChart2,
-  Coins,
-  TicketPlus,
+  LayoutDashboard,
+  DollarSign,
   Users,
-  WalletCards,
-  Ticket,
-  ChevronRight,
-  Circle,
-  ChevronsRight,
+  Wallet,
+  ClipboardCheck,
+  BookOpen,
+  GraduationCap,
+  MessageSquare,
+  Download,
+  UserCog,
+  Award,
   User,
+  ChevronRight,
+  ChevronsRight,
+  LogOut,
+  X
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import "./Admin.css";
+
 const SIDEBAR_ITEMS = [
   {
     name: "Dashboard",
-    icon: BarChart2,
-    subItems: [{ name: "dashboard", href: "/admin/dashboard" }],
+    icon: LayoutDashboard,
+    subItems: [{ name: "Dashboard", href: "/admin/dashboard" }],
   },
-
   {
     name: "Front Office",
-    icon: Coins,
+    icon: Users,
     subItems: [
-      {
-        name: "Admission Enquiry",
-        href: "/admin/admission-enquiry",
-        icon: ChevronsRight,
-      },
+      { name: "Admission Enquiry", href: "/admin/admission-enquiry" },
     ],
   },
-
   {
-    name: "Student info",
-    icon: Users,
+    name: "Student Info",
+    icon: GraduationCap,
     subItems: [
       { name: "Student Admission", href: "/admin/add-students" },
       { name: "Students Details", href: "/admin/students-details" },
@@ -44,23 +45,21 @@ const SIDEBAR_ITEMS = [
   },
   {
     name: "Income",
-    icon: Coins,
+    icon: DollarSign,
     subItems: [
-      { name: "Add Income", href: "/admin/add-income", icon: ChevronsRight },
-      // { name: "Income Head", href: "/admin/incomehead", icon: ChevronsRight },
+      { name: "Add Income", href: "/admin/add-income" },
     ],
   },
   {
     name: "Expense",
-    icon: WalletCards,
+    icon: Wallet,
     subItems: [
-      { name: "Add Expense", href: "/admin/add-expense", icon: Circle },
-      // { name: "Expense Head", href: "/admin/expense-head", icon: Circle },
+      { name: "Add Expense", href: "/admin/add-expense" },
     ],
   },
   {
     name: "Fee Collection",
-    icon: Users,
+    icon: DollarSign,
     subItems: [
       { name: "Fee Head Management", href: "/admin/fee-head-management" },
       { name: "Fee Structure Management", href: "/admin/fee-structure-management" },
@@ -69,20 +68,19 @@ const SIDEBAR_ITEMS = [
       { name: "Payment Received", href: "/admin/payment-received" },
       { name: "Fee Reports", href: "/admin/fee-reports" },
     ],
-
   },
   {
     name: "Attendance",
-    icon: TicketPlus,
+    icon: ClipboardCheck,
     subItems: [
       { name: "Student Attendance", href: "/admin/class-attendance" },
-      { name: "Student Leave", href: "/admin/leave", icon: Circle },
-      { name: "Attendance Report", href: "/admin/attendance-report", icon: Circle },
+      { name: "Student Leave", href: "/admin/leave" },
+      { name: "Attendance Report", href: "/admin/attendance-report" },
     ],
   },
   {
     name: "Academics",
-    icon: Ticket,
+    icon: BookOpen,
     subItems: [
       { name: "Add Class", href: "/admin/add-class" },
       { name: "Add Subject", href: "/admin/add-subject" },
@@ -93,38 +91,27 @@ const SIDEBAR_ITEMS = [
   },
   {
     name: "Examination",
-    icon: WalletCards,
+    icon: Award,
     subItems: [
       { name: "Exam Term", href: "/admin/term-list-page" },
       { name: "Exam List", href: "/admin/exam-list-page" },
-      { name: "Exam timetable", href: "/admin/exam-time-table-page" },
+      { name: "Exam Timetable", href: "/admin/exam-time-table-page" },
       { name: "Admit Card", href: "/admin/admit-card-page" },
       { name: "Marks Register", href: "/admin/marks-register-page" },
       { name: "Report Card", href: "/admin/report-card-page" },
-      // { name: "ExamAttendance", href: "/admin/exam-attendance-page" },
-      { name: "Examnation Report", href: "/admin/exam-report-page" },
+      { name: "Examination Report", href: "/admin/exam-report-page" },
     ],
   },
   {
     name: "Communication",
-    icon: Users,
+    icon: MessageSquare,
     subItems: [
       { name: "Notices", href: "/admin/notes" },
     ],
   },
-
-  // Teacher Info section removed - functionality integrated into Teacher Management
-  // {
-  //   name: "Teacher Info",
-  //   icon: TicketPlus,
-  //   subItems: [
-  //     { name: "Add Teacher", href: "/admin/add-teacher" },
-  //   ],
-  // },
-
   {
     name: "Download Center",
-    icon: WalletCards,
+    icon: Download,
     subItems: [
       { name: "Upload Content", href: "/admin/upload-content" },
       { name: "Study Material", href: "/admin/study-material" },
@@ -132,17 +119,15 @@ const SIDEBAR_ITEMS = [
   },
   {
     name: "Human Resource",
-    icon: Users,
+    icon: UserCog,
     subItems: [
       { name: "Teacher Management", href: "/admin/teacher-management" },
       { name: "HR Reports", href: "/admin/hr-reports" },
-      // { name: "Payroll", href: "/admin/payroll" },
     ],
   },
-
   {
     name: "Certificates",
-    icon: TicketPlus,
+    icon: Award,
     subItems: [
       { name: "Student TC", href: "/admin/tc-page" },
       { name: "Staff Certificate", href: "/admin/staff-certificate" },
@@ -190,7 +175,6 @@ const Sidebar = () => {
     }
   }, [isMobile]);
 
-  // Keep parent dropdown open based on current route (without flicker)
   useEffect(() => {
     const parent = SIDEBAR_ITEMS.find((item) => item.subItems && item.subItems.some((s) => s.href === location.pathname));
     const next = parent ? parent.name : null;
@@ -198,19 +182,18 @@ const Sidebar = () => {
     localStorage.setItem('sidebar:openDropdown', next || '');
   }, [location.pathname]);
 
-  // Restore sidebar scroll position on mount and after route change
   const restoreScroll = () => {
     const savedScroll = Number(localStorage.getItem('sidebar:scrollTop') || 0);
     if (navRef.current) {
       navRef.current.scrollTop = savedScroll;
     }
   };
+
   useEffect(() => {
-    // initial
     requestAnimationFrame(restoreScroll);
   }, []);
+
   useEffect(() => {
-    // after navigation content paints
     requestAnimationFrame(restoreScroll);
   }, [location.pathname]);
 
@@ -225,145 +208,171 @@ const Sidebar = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     setTooltip({ visible: true, text, top: rect.top + rect.height / 2, left: rect.right + 12 });
   };
+
   const hideCollapsedTooltip = () => setTooltip((t) => ({ ...t, visible: false }));
+
+  const toggleSidebar = () => {
+    const next = !isSidebarOpen;
+    setIsSidebarOpen(next);
+    localStorage.setItem('sidebar:isOpen', JSON.stringify(next));
+  };
 
   return (
     <div className="relative flex-shrink-0">
       {/* Mobile overlay */}
       {isMobile && isSidebarOpen && (
-        <div
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-10 bg-black/50 backdrop-blur-sm"
         />
       )}
 
       <motion.aside
-        className={`relative transition-all duration-300 ease-in-out ${
-          isMobile ? "fixed left-0 top-0 h-full" : "h-screen"
-        } ${isSidebarOpen ? "w-72" : "w-20"}`}
+        className={`relative transition-all duration-300 ease-in-out ${isMobile ? "fixed left-0 top-0 h-full z-20" : "h-screen"
+          }`}
         animate={{ width: isSidebarOpen ? 288 : 80 }}
         transition={{ type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="h-full bg-slate-800 text-white px-4 py-3 flex flex-col border-r border-slate-700 overflow-visible shadow-2xl">
+        <div className="h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white px-4 py-4 flex flex-col border-r border-slate-700/50 overflow-visible shadow-2xl">
           {/* Header: Logo */}
-          <div className="flex items-center justify-between gap-2 pb-2">
-            <img
-              src="/logo.jpg"
-              alt="Logo"
-              className="w-10 h-10 rounded-full shadow border border-white/20 ml-1"
-            />
-            {/* Collapse/expand button inside sidebar header */}
-            {/* moved toggle to absolute half-outside button below */}
-            <div className="w-9 h-9" />
+          <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-700/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <GraduationCap className="w-6 h-6 text-white" />
+              </div>
+              <AnimatePresence>
+                {isSidebarOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                  >
+                    <h2 className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                      EduManage
+                    </h2>
+                    <p className="text-xs text-slate-400">Admin Panel</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {isMobile && isSidebarOpen && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-700/50 hover:bg-slate-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </motion.button>
+            )}
           </div>
 
-          {/* Sidebar Navigation without Scrollbar */}
+          {/* Sidebar Navigation */}
           <nav
-            className="mt-3 flex-grow overflow-y-auto border-t border-white/10 space-y-2"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="mt-4 flex-grow overflow-y-auto space-y-1.5 custom-scrollbar"
             ref={navRef}
             onScroll={persistScroll}
           >
-            {SIDEBAR_ITEMS.map((item) => (
-              <div key={item.name}>
-                <motion.div
-                  className={`flex items-center justify-between text-sm cursor-pointer`}
-                  onClick={() =>
-                    item.subItems &&
-                    (() => {
-                      const next = openDropdown === item.name ? null : item.name;
-                      setOpenDropdown(next);
-                      localStorage.setItem('sidebar:openDropdown', next || '');
-                    })()
-                  }
-                >
-                  <div className={`flex items-center w-full ${isSidebarOpen ? '' : 'justify-center'}`}>
-                    {/* Whole link card */}
-                    <div className={`group relative flex items-center w-full bg-white text-slate-800 rounded-xl px-3 py-2 shadow-sm border hover:shadow hover:border-violet-500 transition ${
-                      item.subItems && item.subItems.some((sub) => sub.href === location.pathname)
-                        ? 'border-violet-600'
-                        : 'border-slate-200'
-                    } ${isSidebarOpen ? '' : 'px-0 py-0 justify-center'}`}>
-                      <span onMouseEnter={(e)=>showCollapsedTooltip(e, item.name)} onMouseLeave={hideCollapsedTooltip} className={`flex items-center justify-center rounded-full w-9 h-9 min-w-[36px] flex-shrink-0 ${isSidebarOpen ? 'mr-3' : 'mr-0'} transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white ${
-                        item.subItems && item.subItems.some((sub) => sub.href === location.pathname)
-                          ? 'bg-violet-600 text-white'
-                          : 'bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white'
-                      }`}>
-                        <item.icon size={18} />
-                      </span>
+            {SIDEBAR_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.subItems && item.subItems.some((sub) => sub.href === location.pathname);
+              const isOpen = openDropdown === item.name;
+
+              return (
+                <div key={item.name}>
+                  <motion.div
+                    whileHover={{ x: isSidebarOpen ? 4 : 0 }}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      if (item.subItems) {
+                        const next = openDropdown === item.name ? null : item.name;
+                        setOpenDropdown(next);
+                        localStorage.setItem('sidebar:openDropdown', next || '');
+                      }
+                    }}
+                  >
+                    <div
+                      className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/30'
+                          : 'hover:bg-slate-700/50'
+                        }`}
+                      onMouseEnter={(e) => showCollapsedTooltip(e, item.name)}
+                      onMouseLeave={hideCollapsedTooltip}
+                    >
+                      <div className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all ${isActive ? 'bg-white/20' : 'bg-slate-700/50 group-hover:bg-slate-700'
+                        }`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+
                       <AnimatePresence>
                         {isSidebarOpen && (
-                          <motion.span
-                            className="flex-1 font-semibold text-slate-800 group-hover:text-violet-700"
-                            initial={{ opacity: 0, x: -8 }}
+                          <motion.div
+                            initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -8 }}
-                            transition={{ duration: 0.2 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            className="flex-1 flex items-center justify-between"
                           >
-                            {item.name}
-                          </motion.span>
+                            <span className="font-medium text-sm">{item.name}</span>
+                            {item.subItems && (
+                              <motion.div
+                                animate={{ rotate: isOpen ? 90 : 0 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                              </motion.div>
+                            )}
+                          </motion.div>
                         )}
                       </AnimatePresence>
-                      {/* Removed inline tooltip to avoid clipping; using fixed tooltip */}
-                      {item.subItems && isSidebarOpen && (
-                        <motion.div
-                          animate={{ rotate: openDropdown === item.name ? 90 : 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <ChevronRight size={16} className="text-slate-400 group-hover:text-violet-500" />
-                        </motion.div>
-                      )}
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
 
-                {/* Dropdown Items */}
-                <AnimatePresence initial={false}>
-                  {item.subItems && openDropdown === item.name && (
-                    <motion.div
-                      initial={false}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    className={`pl-6 overflow-visible space-y-2 pt-2 ${
-                      isSidebarOpen ? "" : "hidden"
-                    }`}
-                    >
-                      {item.subItems.map((subItem) => (
-                      <Link key={subItem.href} to={subItem.href} className="block" onClick={persistScroll}>
-                        <motion.div
-                            className={`flex items-center text-sm rounded-lg cursor-pointer subitems py-0.5`}
-                          >
-                            <div className={`group flex items-center w-full bg-white rounded-xl px-3 py-2 shadow-sm border hover:shadow hover:border-violet-500 transition ${
-                              location.pathname === subItem.href ? 'border-violet-600' : 'border-slate-200'
-                            }`}>
-                              <span className={`flex items-center justify-center rounded-full w-7 h-7 min-w-[28px] mr-3 transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white ${
-                                location.pathname === subItem.href ? 'bg-violet-600 text-white' : 'bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white'
-                              }`}>
-                                <ChevronsRight size={14} />
-                              </span>
-                              {isSidebarOpen && (
-                                <span className={`font-medium ${location.pathname === subItem.href ? 'text-violet-700' : 'text-slate-700 group-hover:text-violet-700'}`}>{subItem.name}</span>
-                              )}
-                            </div>
-                          </motion.div>
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
+                  {/* Dropdown Items */}
+                  <AnimatePresence initial={false}>
+                    {item.subItems && isOpen && isSidebarOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-6 mt-1 space-y-1 border-l-2 border-slate-700/50 pl-4"
+                      >
+                        {item.subItems.map((subItem) => {
+                          const isSubActive = location.pathname === subItem.href;
+
+                          return (
+                            <Link key={subItem.href} to={subItem.href} onClick={persistScroll}>
+                              <motion.div
+                                whileHover={{ x: 4 }}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${isSubActive
+                                    ? 'bg-indigo-600/20 text-indigo-300 font-medium'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/30'
+                                  }`}
+                              >
+                                <ChevronsRight className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span className="truncate">{subItem.name}</span>
+                              </motion.div>
+                            </Link>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </nav>
-          <style>{`
-          nav::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
-          {/* Logout Button at Bottom */}
-          <div className={`mt-auto pt-4 flex ${isSidebarOpen ? '' : 'justify-center'}`}>
-            <button
-              onClick={() => { 
+
+          {/* Logout Button */}
+          <div className="mt-auto pt-4 border-t border-slate-700/50">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
                 localStorage.removeItem("authToken");
                 localStorage.removeItem("userData");
                 localStorage.removeItem("rememberEmail");
@@ -373,46 +382,72 @@ const Sidebar = () => {
                 localStorage.removeItem("studentSidebar:isOpen");
                 localStorage.removeItem("teacherSidebar:isOpen");
                 localStorage.removeItem("sidebar:isOpen");
-                window.location.href = '/login'; 
+                window.location.href = '/login';
               }}
-              className={`group flex items-center gap-2 py-2 px-4 rounded-xl bg-white text-slate-800 font-semibold shadow hover:shadow-md border border-slate-200 hover:border-violet-500 transition-colors w-full ${isSidebarOpen ? '' : 'justify-center px-2'}`}
-              style={{ minWidth: isSidebarOpen ? '100%' : '48px' }}
+              className={`group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 border border-red-600/20 hover:border-red-600/40 transition-all ${!isSidebarOpen ? 'justify-center' : ''
+                }`}
             >
-              <span className="flex items-center justify-center rounded-full min-w-[32px] min-h-[32px] bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-                </svg>
-              </span>
-              {isSidebarOpen && <span className="whitespace-nowrap group-hover:text-violet-700">Logout</span>}
-            </button>
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-red-600/20 group-hover:bg-red-600/30 transition-all">
+                <LogOut className="w-5 h-5 text-red-400" />
+              </div>
+              <AnimatePresence>
+                {isSidebarOpen && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="font-medium text-sm text-red-400"
+                  >
+                    Logout
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
-      {/* Absolute half-outside toggle (stays visible always) */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => { const next = !isSidebarOpen; setIsSidebarOpen(next); localStorage.setItem('sidebar:isOpen', JSON.stringify(next)); }}
-        aria-label="Toggle sidebar"
-        className={`absolute top-12 -right-3 z-[9999] w-10 h-10 rounded-full border border-white/20 shadow-xl bg-violet-600 text-white flex items-center justify-center cursor-pointer ${
-          isMobile ? 'md:flex' : 'flex'
-        }`}
-      >
-        {isSidebarOpen ? (
-          <ChevronRight size={18} className="rotate-180" />
-        ) : (
-          <ChevronRight size={18} />
-        )}
-      </motion.button>
-      {/* Fixed tooltip for collapsed mode */}
-      {tooltip.visible && !isSidebarOpen && (
-        <div
-          className="pointer-events-none fixed  bg-white text-slate-800 text-sm rounded-lg px-3 py-1 shadow-xl border border-slate-200"
-          style={{ top: tooltip.top, left: tooltip.left, transform: 'translateY(-50%)' }}
+
+        {/* Toggle Button */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={toggleSidebar}
+          className="absolute -right-4 top-20 z-20 w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex items-center justify-center text-white"
         >
-          {tooltip.text}
-        </div>
-      )}
+          <motion.div
+            animate={{ rotate: isSidebarOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </motion.div>
+        </motion.button>
+
+        {/* Tooltip for collapsed mode */}
+        {tooltip.visible && !isSidebarOpen && (
+          <div
+            className="fixed z-50 bg-slate-800 text-white text-sm rounded-lg px-3 py-2 shadow-xl border border-slate-700"
+            style={{ top: tooltip.top, left: tooltip.left, transform: 'translateY(-50%)' }}
+          >
+            {tooltip.text}
+          </div>
+        )}
       </motion.aside>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(51, 65, 85, 0.3);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(99, 102, 241, 0.5);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(99, 102, 241, 0.7);
+        }
+      `}</style>
     </div>
   );
 };

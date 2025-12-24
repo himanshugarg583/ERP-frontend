@@ -348,9 +348,18 @@ const HomePage = () => {
                 EduManage
               </span>
             </div>
-            <p className="text-gray-600 text-sm">
-              © 2025 School Management System. All rights reserved.
-            </p>
+            <div className="text-center md:text-left">
+              <p className="text-gray-600 text-sm">
+                Copyright © 2025{" "}
+                <span className="font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  gurukulsarthi School
+                </span>
+                . All rights reserved.
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Version <span className="font-mono font-medium text-indigo-600">(0.11)</span>
+              </p>
+            </div>
           </div>
         </div>
       </footer>

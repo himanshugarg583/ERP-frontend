@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import Sidebar from "./Sidebar";
 import Header from "../../components/comman_components/Header";
+import Footer from "../../components/comman_components/Footer";
 import AdminDashboard from "../../components/AdminDash/AdminDashboard";
 
 const AdminDashboardPage = () => {
@@ -9,20 +10,20 @@ const AdminDashboardPage = () => {
       <Sidebar />
 
       <div
-        className=" overflow-auto relative z-1 flex-col"
+        className="overflow-auto relative z-1 flex flex-col"
         style={{
-          height: "95vh",
+          height: "100vh",
           width: "100vw",
-          gap: "10px",
-          display: "flex",
           transition: "margin-left 0.3s ease",
         }}
       >
         <Header />
 
-        <main className="">
+        <main className="flex-1 overflow-auto">
           <AdminDashboard />
         </main>
+
+        <Footer />
       </div>
     </div>
   );

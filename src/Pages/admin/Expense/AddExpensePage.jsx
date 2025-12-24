@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { DollarSign, TrendingDown, Package, AlertCircle } from 'lucide-react'
-import StandardStatCard from '../../../components/comman_components/StandardStatCard'
-import ReusableTable from '../../../components/comman_components/ReusableTable'
-import Header from '../../../components/comman_components/Header'
-import Sidebar from '../Sidebar'
-import { 
-    getAllExpense, 
-    addExpense, 
-    updateExpense, 
-    deleteExpense 
-} from '../../../helper/requests-method/apiMethods'
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { DollarSign, TrendingDown, Package, AlertCircle, ShoppingBag } from 'lucide-react';
+import StandardStatCard from '../../../components/comman_components/StandardStatCard';
+import ReusableTable from '../../../components/comman_components/ReusableTable';
+import Header from '../../../components/comman_components/Header';
+import Footer from '../../../components/comman_components/Footer';
+import Sidebar from '../Sidebar';
+import {
+    getAllExpense,
+    addExpense,
+    updateExpense,
+    deleteExpense
+} from '../../../helper/requests-method/apiMethods';
 
 const AddExpensePage = () => {
     const [stats, setStats] = useState({
@@ -24,23 +26,23 @@ const AddExpensePage = () => {
 
     // Define columns for expense management
     const expenseColumns = [
-        { 
-            key: 'category', 
-            header: 'Category', 
+        {
+            key: 'category',
+            header: 'Category',
             required: true,
             type: 'text',
             placeholder: 'Enter category'
         },
-        { 
-            key: 'sub_category', 
-            header: 'Sub Category', 
+        {
+            key: 'sub_category',
+            header: 'Sub Category',
             required: true,
             type: 'text',
             placeholder: 'Enter sub category'
         },
-        { 
-            key: 'amount', 
-            header: 'Amount', 
+        {
+            key: 'amount',
+            header: 'Amount',
             required: true,
             type: 'number',
             placeholder: 'Enter amount',
@@ -48,8 +50,8 @@ const AddExpensePage = () => {
                 return `₹${parseFloat(value || 0).toFixed(2)}`;
             }
         },
-        { 
-            key: 'payment_mode', 
+        {
+            key: 'payment_mode',
             header: 'Payment Mode',
             required: true,
             type: 'select',
@@ -61,20 +63,20 @@ const AddExpensePage = () => {
             ],
             render: (value) => {
                 if (!value) return 'N/A';
-                return value.charAt(0).toUpperCase() + value.slice(1);
+                return value.charAt(0).toUpperCase() + value.slice(1).replace('_', ' ');
             }
         },
-        { 
-            key: 'transaction_ref', 
-            header: 'Transaction Reference', 
+        {
+            key: 'transaction_ref',
+            header: 'Transaction Reference',
             required: false,
             type: 'text',
             placeholder: 'Enter transaction reference',
             hideInTable: true
         },
-        { 
-            key: 'entry_date', 
-            header: 'Entry Date', 
+        {
+            key: 'entry_date',
+            header: 'Entry Date',
             required: true,
             type: 'date',
             render: (value) => {
@@ -92,16 +94,16 @@ const AddExpensePage = () => {
                 }
             }
         },
-        { 
-            key: 'recorded_by', 
-            header: 'Recorded By', 
+        {
+            key: 'recorded_by',
+            header: 'Recorded By',
             required: true,
             type: 'text',
             placeholder: 'Enter recorded by'
         },
-        { 
-            key: 'description', 
-            header: 'Description', 
+        {
+            key: 'description',
+            header: 'Description',
             required: false,
             type: 'textarea',
             placeholder: 'Enter description',
@@ -109,31 +111,19 @@ const AddExpensePage = () => {
         }
     ];
 
-    // Filter columns for table display (exclude hideInTable columns)
     const displayColumns = expenseColumns.filter(col => !col.hideInTable);
 
-    // API functions for expense management
     const handleCreateExpense = async (expenseData) => {
         try {
             setLoading(true);
             const response = await addExpense(expenseData);
             if (response.success) {
                 await fetchExpenses();
-                return { 
-                    success: true, 
-                    message: response.message || 'Expense added successfully!'
-                };
-            } else {
-                return { 
-                    success: false, 
-                    message: response.message || 'Failed to create expense' 
-                };
+                return { success: true, message: response.message || 'Expense added successfully!' };
             }
+            return { success: false, message: response.message || 'Failed to create expense' };
         } catch (error) {
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Failed to create expense' 
-            };
+            return { success: false, message: error.response?.data?.message || 'Failed to create expense' };
         } finally {
             setLoading(false);
         }
@@ -145,21 +135,11 @@ const AddExpensePage = () => {
             const response = await updateExpense(id, expenseData);
             if (response.success) {
                 await fetchExpenses();
-                return { 
-                    success: true, 
-                    message: response.message || 'Expense updated successfully!'
-                };
-            } else {
-                return { 
-                    success: false, 
-                    message: response.message || 'Failed to update expense' 
-                };
+                return { success: true, message: response.message || 'Expense updated successfully!' };
             }
+            return { success: false, message: response.message || 'Failed to update expense' };
         } catch (error) {
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Failed to update expense' 
-            };
+            return { success: false, message: error.response?.data?.message || 'Failed to update expense' };
         } finally {
             setLoading(false);
         }
@@ -171,36 +151,24 @@ const AddExpensePage = () => {
             const response = await deleteExpense(id);
             if (response.success) {
                 await fetchExpenses();
-                return { 
-                    success: true, 
-                    message: response.message || 'Expense deleted successfully!'
-                };
-            } else {
-                return { 
-                    success: false, 
-                    message: response.message || 'Failed to delete expense' 
-                };
+                return { success: true, message: response.message || 'Expense deleted successfully!' };
             }
+            return { success: false, message: response.message || 'Failed to delete expense' };
         } catch (error) {
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Failed to delete expense' 
-            };
+            return { success: false, message: error.response?.data?.message || 'Failed to delete expense' };
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch all expenses from API
     const fetchExpenses = async () => {
         try {
             setLoading(true);
             const response = await getAllExpense();
-            
+
             if (response.success && response.data && response.data.expenses) {
                 setExpenseData(response.data.expenses);
-                
-                // Calculate stats
+
                 const expenses = response.data.expenses;
                 const totalAmount = expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
                 const now = new Date();
@@ -214,7 +182,7 @@ const AddExpensePage = () => {
                     const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
                     return itemDate.getMonth() === prevMonth && itemDate.getFullYear() === prevYear;
                 }).reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-                
+
                 setStats({
                     totalExpense: expenses.length,
                     totalAmount: totalAmount,
@@ -230,59 +198,113 @@ const AddExpensePage = () => {
             setLoading(false);
         }
     };
-    
+
     useEffect(() => {
         fetchExpenses();
     }, []);
-    
+
     return (
-        <div className="bg-slate-200 flex h-screen overflow-hidden">
+        <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-red-50 flex h-screen overflow-hidden">
             <Sidebar />
-            
+
             <div
                 className="overflow-auto relative z-1 flex-col"
                 style={{
                     height: "100vh",
                     width: "100vw",
-                    gap: "10px",
                     display: "flex",
                     transition: "margin-left 0.3s ease"
                 }}
             >
                 <Header />
-                
-                <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <StandardStatCard name="Total Expense" icon={DollarSign} value={stats.totalExpense.toLocaleString()} color="#ef4444"/>
-                        <StandardStatCard name="Total Amount" icon={TrendingDown} value={`₹${stats.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`} color="#f59e0b" />
-                        <StandardStatCard name="This Month" icon={Package} value={`₹${stats.thisMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`} color="#ef4444" />
-                        <StandardStatCard name="Last Month" icon={AlertCircle} value={`₹${stats.lastMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`} color="#7c3aed" />
-        </div>
 
-                    <ReusableTable
-                        title="Expense Management"
-                        initialData={expenseData}
-                        columns={expenseColumns}
-                        displayColumns={displayColumns}
-                        apiFunction={handleCreateExpense}
-                        updateApiFunction={handleUpdateExpense}
-                        deleteApiFunction={handleDeleteExpense}
-                        searchPlaceholder="Search by category, sub category, transaction ref"
-                        addButtonText="Add New Expense"
-                        exportFileName="expense"
-                        loading={loading}
-                        showActions={{
-                            add: true,
-                            edit: true,
-                            delete: true,
-                            view: true
-                        }}
-                    />
-      </main>
-    </div>
-    </div>
-  )
+                <main className="flex-1 overflow-auto w-full py-6 px-4 md:px-6">
+                    {/* Page Header */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6"
+                    >
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <ShoppingBag className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-rose-600 to-red-600 bg-clip-text text-transparent">
+                                    Expense Management
+                                </h1>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    Track and manage all school expenses
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Stats Cards */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+                    >
+                        <StandardStatCard
+                            name="Total Expense"
+                            icon={ShoppingBag}
+                            value={stats.totalExpense.toLocaleString()}
+                            color="#ef4444"
+                        />
+                        <StandardStatCard
+                            name="Total Amount"
+                            icon={TrendingDown}
+                            value={`₹${stats.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
+                            color="#f97316"
+                        />
+                        <StandardStatCard
+                            name="This Month"
+                            icon={Package}
+                            value={`₹${stats.thisMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
+                            color="#f43f5e"
+                        />
+                        <StandardStatCard
+                            name="Last Month"
+                            icon={AlertCircle}
+                            value={`₹${stats.lastMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
+                            color="#dc2626"
+                        />
+                    </motion.div>
+
+                    {/* Table Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <ReusableTable
+                            title="Expense Records"
+                            initialData={expenseData}
+                            columns={expenseColumns}
+                            displayColumns={displayColumns}
+                            apiFunction={handleCreateExpense}
+                            updateApiFunction={handleUpdateExpense}
+                            deleteApiFunction={handleDeleteExpense}
+                            searchPlaceholder="Search by category, sub category..."
+                            addButtonText="Add New Expense"
+                            exportFileName="expense_records"
+                            loading={loading}
+                            showActions={{
+                                add: true,
+                                edit: true,
+                                delete: true,
+                                view: true
+                            }}
+                        />
+                    </motion.div>
+                </main>
+
+                <Footer />
+            </div>
+        </div>
+    )
 }
 
-export default AddExpensePage
+export default AddExpensePage;

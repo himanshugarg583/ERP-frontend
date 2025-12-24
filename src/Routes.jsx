@@ -244,7 +244,6 @@ const routes = {
     { path: "/admin/fee-head-management", element: <FeeHeadManagementPage /> },
     { path: "/admin/fee-structure-management", element: <FeeStructureManagementPage /> },
     { path: "/admin/fee-assignment", element: <FeeAssignmentPage /> },
-
     { path: "/admin/student-fee-reports", element: <StudentFeeReportPage /> },
 
     { path: "/admin/add-income", element: <AddIncomePage /> },

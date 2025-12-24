@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Users, UserCheck, UserX, GraduationCap } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Users, UserCheck, UserX, GraduationCap, Search, Filter } from 'lucide-react';
 import StandardStatCard from '../../../components/comman_components/StandardStatCard';
 import ReusableTable from '../../../components/comman_components/ReusableTable';
 import Header from '../../../components/comman_components/Header';
+import Footer from '../../../components/comman_components/Footer';
 import Sidebar from '../Sidebar';
 import { toast } from 'react-toastify';
-import { 
-    getAllStudents, 
+import {
+    getAllStudents,
     getStudentStats,
     updateStudent,
     fetchClassDropdown
@@ -52,7 +54,6 @@ const StudentsDetails = () => {
         try {
             const response = await getAllStudents(page, limit);
             if (response.success && response.data) {
-                // Map API response to table format
                 const mappedData = response.data.map((student) => ({
                     id: student.student_id,
                     student_id: student.student_id,
@@ -68,7 +69,7 @@ const StudentsDetails = () => {
                     address: student.User?.address || '',
                 }));
                 setStudentsData(mappedData);
-                
+
                 if (response.pagination) {
                     setPagination({
                         page: response.pagination.page || page,
@@ -112,14 +113,13 @@ const StudentsDetails = () => {
         fetchClasses();
     }, [fetchStats, fetchStudents, fetchClasses, refreshKey]);
 
-    // Handle update student - wrapper for ReusableTable
+    // Handle update student
     const handleUpdateStudent = async (id, studentData) => {
-        // Map class_section_id if it's a string value
         const updateData = { ...studentData };
         if (updateData.class_section_id && typeof updateData.class_section_id === 'string') {
             updateData.class_section_id = parseInt(updateData.class_section_id);
         }
-        
+
         const response = await updateStudent(id, updateData);
         if (response.success) {
             toast.success(response.message || 'Student updated successfully');
@@ -134,52 +134,52 @@ const StudentsDetails = () => {
 
     // Define columns for student management
     const studentColumns = [
-        { 
-            key: 'student_id', 
-            header: 'Student ID', 
+        {
+            key: 'student_id',
+            header: 'Student ID',
             required: false,
             type: 'text',
             hideInTable: true
         },
-        { 
-            key: 'name', 
-            header: 'Student Name', 
+        {
+            key: 'name',
+            header: 'Student Name',
             required: true,
             type: 'text',
             placeholder: 'Enter student name'
         },
-        { 
-            key: 'roll_number', 
-            header: 'Roll Number', 
+        {
+            key: 'roll_number',
+            header: 'Roll Number',
             required: false,
             type: 'text',
             placeholder: 'Enter roll number'
         },
-        { 
-            key: 'email', 
-            header: 'Email', 
+        {
+            key: 'email',
+            header: 'Email',
             required: true,
             type: 'email',
             placeholder: 'Enter email address'
         },
-        { 
-            key: 'phone_no', 
-            header: 'Phone Number', 
+        {
+            key: 'phone_no',
+            header: 'Phone Number',
             required: true,
             type: 'tel',
             placeholder: 'Enter phone number'
         },
-        { 
-            key: 'class_section_id', 
-            header: 'Class & Section', 
+        {
+            key: 'class_section_id',
+            header: 'Class & Section',
             required: true,
             type: 'select',
             options: classOptions,
             placeholder: 'Select class & section'
         },
-        { 
-            key: 'dob', 
-            header: 'Date of Birth', 
+        {
+            key: 'dob',
+            header: 'Date of Birth',
             required: true,
             type: 'date',
             render: (value) => {
@@ -197,8 +197,8 @@ const StudentsDetails = () => {
                 }
             }
         },
-        { 
-            key: 'gender', 
+        {
+            key: 'gender',
             header: 'Gender',
             required: true,
             type: 'select',
@@ -212,17 +212,17 @@ const StudentsDetails = () => {
                 return value.charAt(0).toUpperCase() + value.slice(1);
             }
         },
-        { 
-            key: 'address', 
-            header: 'Address', 
+        {
+            key: 'address',
+            header: 'Address',
             required: false,
             type: 'textarea',
             placeholder: 'Enter address',
             hideInTable: true
         },
-        { 
-            key: 'father_name', 
-            header: 'Father Name', 
+        {
+            key: 'father_name',
+            header: 'Father Name',
             required: false,
             type: 'text',
             placeholder: 'Enter father name',
@@ -230,18 +230,50 @@ const StudentsDetails = () => {
         },
     ];
 
-    // Display columns (columns to show in table)
     const displayColumns = studentColumns.filter(col => !col.hideInTable);
 
     return (
-        <div className="bg-slate-200 flex AddStudent">
+        <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex AddStudent">
             <Sidebar />
-            <div className='overflow-auto relative z-1 flex-col' style={{ height: '95vh', width: '100vw', gap: '10px', display: 'flex', transition: 'margin-left 0.3s ease' }}>
+            <div
+                className='overflow-auto relative z-1 flex flex-col'
+                style={{
+                    height: '100vh',
+                    width: '100vw',
+                    transition: 'margin-left 0.3s ease'
+                }}
+            >
                 <Header />
-                <main className="w-full py-4 md:py-6 px-4 md:px-6">
-                    <div className="space-y-4 md:space-y-6">
+                <main className="flex-1 overflow-auto w-full py-6 px-4 md:px-6">
+                    {/* Page Header */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6"
+                    >
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <Users className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                                    Students Details
+                                </h1>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    Manage and view all student information
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    <div className="space-y-6">
                         {/* Stats Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                        >
                             <StandardStatCard
                                 name="Total Active Students"
                                 icon={Users}
@@ -260,78 +292,109 @@ const StudentsDetails = () => {
                                 value={stats.femaleStudents}
                                 color="#ec4899"
                             />
-                        </div>
+                        </motion.div>
 
                         {/* Students Table */}
-                        {loading && studentsData.length === 0 ? (
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-                                <div className="text-center py-8 text-slate-500">Loading students...</div>
-                            </div>
-                        ) : (
-                            <>
-                                <ReusableTable
-                                    title="Students List"
-                                    columns={studentColumns}
-                                    displayColumns={displayColumns}
-                                    apiFunction={null}
-                                    updateApiFunction={handleUpdateStudent}
-                                    initialData={studentsData}
-                                    searchPlaceholder="Search students by name, roll number, email..."
-                                    addButtonText="Add Student"
-                                    exportFileName="students_details"
-                                    showActions={{ add: false, edit: true, delete: false, view: true }}
-                                />
-                        
-                                {/* Pagination */}
-                                {pagination.totalPages > 1 && (
-                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                            <div className="text-sm text-slate-600">
-                                                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} students
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => fetchStudents(pagination.page - 1, pagination.limit)}
-                                                    disabled={pagination.page === 1 || loading}
-                                                    className="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    Previous
-                                                </button>
-                                                <div className="flex items-center gap-1">
-                                                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => (
-                                                        <button
-                                                            key={pageNum}
-                                                            onClick={() => fetchStudents(pageNum, pagination.limit)}
-                                                            disabled={loading}
-                                                            className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                                                                pagination.page === pageNum
-                                                                    ? 'bg-violet-600 text-white'
-                                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                                        >
-                                                            {pageNum}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <button
-                                                    onClick={() => fetchStudents(pagination.page + 1, pagination.limit)}
-                                                    disabled={pagination.page === pagination.totalPages || loading}
-                                                    className="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    Next
-                                                </button>
-                                            </div>
-                                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            {loading && studentsData.length === 0 ? (
+                                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                        <p className="text-slate-600 font-medium">Loading students...</p>
                                     </div>
-                                )}
-                            </>
-                        )}
+                                </div>
+                            ) : (
+                                <>
+                                    <ReusableTable
+                                        title="Students List"
+                                        columns={studentColumns}
+                                        displayColumns={displayColumns}
+                                        apiFunction={null}
+                                        updateApiFunction={handleUpdateStudent}
+                                        initialData={studentsData}
+                                        searchPlaceholder="Search students by name, roll number, email..."
+                                        addButtonText="Add Student"
+                                        exportFileName="students_details"
+                                        showActions={{ add: false, edit: true, delete: false, view: true }}
+                                    />
+
+                                    {/* Pagination */}
+                                    {pagination.totalPages > 1 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.3 }}
+                                            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4 mt-4"
+                                        >
+                                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                                <div className="text-sm text-slate-600 font-medium">
+                                                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} students
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        onClick={() => fetchStudents(pagination.page - 1, pagination.limit)}
+                                                        disabled={pagination.page === 1 || loading}
+                                                        className="px-4 py-2 text-sm bg-white hover:bg-indigo-50 text-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 font-medium"
+                                                    >
+                                                        Previous
+                                                    </motion.button>
+                                                    <div className="flex items-center gap-1">
+                                                        {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                                                            let pageNum;
+                                                            if (pagination.totalPages <= 5) {
+                                                                pageNum = i + 1;
+                                                            } else if (pagination.page <= 3) {
+                                                                pageNum = i + 1;
+                                                            } else if (pagination.page >= pagination.totalPages - 2) {
+                                                                pageNum = pagination.totalPages - 4 + i;
+                                                            } else {
+                                                                pageNum = pagination.page - 2 + i;
+                                                            }
+                                                            return (
+                                                                <motion.button
+                                                                    key={pageNum}
+                                                                    whileHover={{ scale: 1.05 }}
+                                                                    whileTap={{ scale: 0.95 }}
+                                                                    onClick={() => fetchStudents(pageNum, pagination.limit)}
+                                                                    disabled={loading}
+                                                                    className={`px-3 py-2 text-sm rounded-lg transition-all font-medium ${pagination.page === pageNum
+                                                                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                                                                            : 'bg-white hover:bg-indigo-50 text-slate-700 border border-slate-200'
+                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                >
+                                                                    {pageNum}
+                                                                </motion.button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        onClick={() => fetchStudents(pagination.page + 1, pagination.limit)}
+                                                        disabled={pagination.page === pagination.totalPages || loading}
+                                                        className="px-4 py-2 text-sm bg-white hover:bg-indigo-50 text-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 font-medium"
+                                                    >
+                                                        Next
+                                                    </motion.button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </>
+                            )}
+                        </motion.div>
                     </div>
                 </main>
+                <Footer />
             </div>
         </div>
     );
 };
 
 export default StudentsDetails;
-
