@@ -86,11 +86,12 @@ import AdminProfile from "./Pages/admin/AdminProfile.jsx";
 import EnquiryPage from "./Pages/admin/front_office/EnquiryPage";
 import AddStudent from "./Pages/admin/Student_info/AddStudent";
 import StudentReports from "./Pages/admin/Student_info/StudentReports";
-import ChequePage from "./Pages/admin/fees_collection/ChequePage";
-import DemandNotice from "./Pages/admin/fees_collection/DemandNotice";
-import FeeDiscountPage from "./Pages/admin/fees_collection/FeeDiscountPage";
 import FeeReports from "./Pages/admin/fees_collection/FeeReports";
-import PaymentRecipt from "./Pages/admin/fees_collection/PaymentRecipt";
+import FeeHeadManagementPage from "./Pages/admin/fees_collection/FeeHeadManagementPage";
+import FeeStructureManagementPage from "./Pages/admin/fees_collection/FeeStructureManagementPage";
+import FeeAssignmentPage from "./Pages/admin/fees_collection/FeeAssignmentPage";
+import StudentFeeReportPage from "./Pages/admin/fees_collection/StudentFeeReportPage";
+import PaymentReceivedPage from "./Pages/admin/fees_collection/PaymentReceivedPage";
 import AddIncomePage from "./Pages/admin/Income/AddIncomePage";
 import IncomeHead from "./Pages/admin/Income/IncomeHead";
 import StudentsDetails from "./Pages/admin/Student_info/StudentsDetails";
@@ -254,6 +255,7 @@ const routes = {
     { path: "/admin/assign-subject", element: <AssignSubjectPage/> },
     { path: "/admin/view-assign-sub-page", element: <ViewAssignSubPage/> },
     { path: "/admin/class-time-table-page", element: <ClassTimeTablePage/> },
+
     // exam routes
     { path: "/admin/admit-card-page", element: <AdmitCardPage/> },
     { path: "/admin/exam-attendance-page", element: <ExamAttendancePage/> },

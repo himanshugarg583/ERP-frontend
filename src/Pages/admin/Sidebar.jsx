@@ -62,12 +62,21 @@ const SIDEBAR_ITEMS = [
     name: "Fee Collection",
     icon: Users,
     subItems: [
+      { name: "Fee Head Management", href: "/admin/fee-head-management" },
+      { name: "Fee Structure Management", href: "/admin/fee-structure-management" },
+      { name: "Fee Assignment", href: "/admin/fee-assignment" },
+      { name: "Student Fee Reports", href: "/admin/student-fee-reports" },
+      { name: "Payment Received", href: "/admin/payment-received" },
+      { name: "Fee Reports", href: "/admin/fee-reports" },
+    ],
+
       { name: "Payment Receipt", href: "/admin/payment-receipt" },
       { name: "Demand Notice", href: "/admin/demand-notice" },
       { name: "Fee Discount", href: "/admin/fee-discount-page" },
       { name: "Cheque", href: "/admin/cheque-page" },
       { name: "Fee Reports", href: "/admin/fee-reports" },
     ],
+
   },
   {
     name: "Attendance",

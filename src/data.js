@@ -104,22 +104,6 @@ export const User_Data = [
 
 
 
-export const Cheque_Data = [
-    { id: 1, studentName: "John Doe", chequeNo: "123456", bankName: "ABC Bank", amount: "$500", status: "Cleared" },
-    { id: 2, studentName: "Jane Smith", chequeNo: "789012", bankName: "XYZ Bank", amount: "$700", status: "Pending" },
-    { id: 3, studentName: "David Brown", chequeNo: "345678", bankName: "LMN Bank", amount: "$450", status: "Bounced" },
-    { id: 4, studentName: "Emily Davis", chequeNo: "234567", bankName: "PQR Bank", amount: "$600", status: "Cleared" },
-    { id: 5, studentName: "Michael Johnson", chequeNo: "987654", bankName: "RST Bank", amount: "$550", status: "Pending" },
-    { id: 6, studentName: "Sarah Wilson", chequeNo: "564738", bankName: "UVW Bank", amount: "$750", status: "Bounced" },
-    { id: 7, studentName: "Robert Lee", chequeNo: "673829", bankName: "MNO Bank", amount: "$900", status: "Cleared" },
-    { id: 8, studentName: "Olivia Taylor", chequeNo: "918273", bankName: "GHI Bank", amount: "$1,200", status: "Pending" },
-    { id: 9, studentName: "Daniel White", chequeNo: "112233", bankName: "JKL Bank", amount: "$620", status: "Cleared" },
-    { id: 10, studentName: "Sophia Martin", chequeNo: "445566", bankName: "EFG Bank", amount: "$830", status: "Bounced" },
-    { id: 11, studentName: "William Harris", chequeNo: "778899", bankName: "XYZ Bank", amount: "$400", status: "Pending" },
-    { id: 12, studentName: "Emma Clark", chequeNo: "991122", bankName: "ABC Bank", amount: "$980", status: "Cleared" },
-  ];
-
-
   export const Leave_Data = [
     {
         id: 1,

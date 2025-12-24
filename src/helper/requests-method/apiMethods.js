@@ -184,6 +184,7 @@ export const API_ENDPOINTS = {
   //student notice endpoints
   GET_STUDENT_NOTICES: '/student/notice/getNoticesForMe',
   
+
 };
 
 // Reusable authorized GET request
@@ -855,6 +856,114 @@ export const generateMultipleIdCards = async (user_ids) => {
   return authorizedPost(API_ENDPOINTS.GENERATE_ID_CARDS, { user_ids });
 };
 
+
+// ============= Fee Management Functions =============
+
+// Create Fee Head
+export const createFeeHead = async (feeHeadData) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_FEE_HEAD, feeHeadData);
+};
+
+// Get All Fee Heads
+export const getAllFeeHeads = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_FEE_HEADS);
+};
+
+// Get Fee Head by ID
+export const getFeeHeadById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_FEE_HEAD_BY_ID(id));
+};
+
+// Update Fee Head
+export const updateFeeHead = async (id, feeHeadData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_FEE_HEAD(id), feeHeadData);
+};
+
+// Delete Fee Head
+export const deleteFeeHead = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_FEE_HEAD(id));
+};
+
+// ============= Fee Structure Functions =============
+
+// Create Fee Structure
+export const createFeeStructure = async (feeStructureData) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_FEE_STRUCTURE, feeStructureData);
+};
+
+// Get All Fee Structures
+export const getAllFeeStructures = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_FEE_STRUCTURES);
+};
+
+// Get Fee Structure by ID
+export const getFeeStructureById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_FEE_STRUCTURE_BY_ID(id));
+};
+
+// Update Fee Structure
+export const updateFeeStructure = async (id, feeStructureData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_FEE_STRUCTURE(id), feeStructureData);
+};
+
+// Delete Fee Structure
+export const deleteFeeStructure = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_FEE_STRUCTURE(id));
+};
+
+// ============= Fee Assignment Functions =============
+
+// Assign Fee to Students
+export const assignFeeToStudents = async (assignmentData) => {
+  return authorizedPost(API_ENDPOINTS.ASSIGN_FEE_TO_STUDENTS, assignmentData);
+};
+
+// Get All Fee Assignments
+export const getAllFeeAssignments = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_FEE_ASSIGNMENTS);
+};
+
+// Get Students by Class and Section
+export const getStudentsByClassSection = async (classId, sectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS_SECTION(classId, sectionId));
+};
+
+// ============= Student Fee Report Functions =============
+
+// Get Student Fee Report
+export const getStudentFeeReport = async (studentId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_FEE_REPORT(studentId));
+};
+
+// Get Students Fee Summary by Class and Section
+export const getStudentsFeesSummary = async (classId, sectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_FEE_SUMMARY(classId, sectionId));
+};
+
+// ============= Payment Records Functions =============
+
+// Get All Payments
+export const getAllPayments = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_PAYMENTS);
+};
+
+// Get Payment by ID
+export const getPaymentById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_PAYMENT_BY_ID(id));
+};
+
+// Create Payment
+export const createPayment = async (paymentData) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_PAYMENT, paymentData);
+};
+
+export const generateStaffIdCard = async (user_id) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
+};
+
+export const generateMultipleStaffIdCards = async (user_ids) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
+
 export const generateStaffIdCard = async (user_id) => {
   return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
 };
@@ -886,4 +995,5 @@ export const getClassAdmitCards = async (classId) => {
 
 export const getStudentsExamList = async (classId, examTermId, classSectionId) => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENTS_EXAM_LIST(classId, examTermId, classSectionId));
+
 };
