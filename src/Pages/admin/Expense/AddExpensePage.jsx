@@ -10,7 +10,7 @@ import PageHeader from '../../../components/comman_components/PageHeader'
 const AddExpensePage = () => {
   return (
 
-    <div className='bg-gray-100 flex AddStudent'>
+    <div className='bg-slate-200 flex AddStudent'>
         <Sidebar/>
     
     <div className='flex-1 overflow-auto relative z-1'>
@@ -18,7 +18,7 @@ const AddExpensePage = () => {
       
 
             {/* STAT DATA  */}
-      <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
+      <main className="w-full py-6 px-4 md:px-6">
         <motion.div
             className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-7"
             initial={{ opacity: 0, y: 30 }}
@@ -33,12 +33,18 @@ const AddExpensePage = () => {
 
         
             {/* PRODUCT TABLE */}
-           <div className='flex flex-col' >
-            <PageHeader pageheading ="Income" Subheading="Add Income" className="m-auto"/> 
-            {/* <AddIncome/> */}
-           
-        <ProductTable />
-
+           <div className='grid grid-cols-12 gap-6' >
+            <div className='col-span-12 lg:col-span-4'>
+              <div className='bg-white shadow-sm border border-slate-200 rounded-xl p-4 h-full'>
+                <PageHeader pageheading ="Expense" Subheading="Add Expense" className="m-auto"/> 
+                <AddIncome/>
+              </div>
+            </div>
+            <div className='col-span-12 lg:col-span-8'>
+              <div className='bg-white shadow-sm border border-slate-200 rounded-xl p-0 h-full'>
+                <ProductTable />
+              </div>
+            </div>
         </div>
             {/* CHARTS */}
 

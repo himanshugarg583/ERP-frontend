@@ -22,62 +22,57 @@ const AdminDashboard = () => {
   return (
    
      
-    <Box >
-        <Box
-          gridColumn="span 3"
-        
-        
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
+    <Box>
+      <div className="bg-slate-200 min-h-screen">
+        <div className="max-w-full mx-auto px-4 md:px-6 py-4">
           <StatBox />
-            
-        </Box>
-       {/* new box */}
-       <div className="flex flex-col min-h-screen bg-gray-100 p-6 gap-6">
-      {/* 1st Container */}
-      <div className="flex flex-col md:flex-row w-full gap-6 ">
-        <div className="flex-1 bg-white rounded-xl shadow-lg  hover:shadow-xl transition-shadow duration-300">
-          <IncomeExpenseLineChart />
-        </div>
-        <div className="flex-1 bg-white rounded-xl shadow-lg  flex hover:shadow-xl transition-shadow duration-300">
-          <AnnouncementList/>
-        </div>
-      </div>
 
-      {/* 2nd Container */}
-      <div className="flex flex-col md:flex-row-reverse w-full gap-6">
-        <div className="flex-1 bg-white rounded-xl shadow-lg  hover:shadow-xl transition-shadow duration-300">
-          <LineChart />
-        </div>
-        <div className="flex-1 bg-white rounded-xl shadow-lg  flex  justify-center hover:shadow-xl transition-shadow duration-300">
-          <span className="text-gray-700 font-semibold text-lg flex  justify-center">
-            <FeesPiechart/>
-          
-          </span>
-        </div>
-      </div>
+          <div className="grid grid-cols-12 gap-6">
+            {/* Row 1: 50/50 */}
+            <div className="col-span-12 lg:col-span-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-0 h-full min-h-[420px]">
+                <IncomeExpenseLineChart />
+              </div>
+            </div>
+            <div className="col-span-12 lg:col-span-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-0 h-full min-h-[420px] flex">
+                <AnnouncementList />
+              </div>
+            </div>
 
-      {/* 3rd Container */}
-      <div className="flex flex-col md:flex-row w-full gap-6">
-        <div className="flex-1 bg-white rounded-xl shadow-lg  hover:shadow-xl transition-shadow duration-300">
-          <ClassAttendanceBarChart />
-        </div>
-        <div className="flex-1 bg-white rounded-xl shadow-lg  flex justify-center hover:shadow-xl transition-shadow duration-300">
-          <EarningsPieChart/>
+            {/* Row 2: 50/50 */}
+            <div className="col-span-12 lg:col-span-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-0 h-full min-h-[360px]">
+                <LineChart />
+              </div>
+            </div>
+            <div className="col-span-12 lg:col-span-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 h-full min-h-[360px] flex justify-center">
+                <FeesPiechart />
+              </div>
+            </div>
+
+            {/* Row 3: 50/50 */}
+            <div className="col-span-12 lg:col-span-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-0 h-full min-h-[360px]">
+                <ClassAttendanceBarChart />
+              </div>
+            </div>
+            <div className="col-span-12 lg:col-span-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 h-full min-h-[360px] flex justify-center">
+                <EarningsPieChart />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </Box>
        
    
 
         
        
 
-      
-    
-</Box>
       
    
   );

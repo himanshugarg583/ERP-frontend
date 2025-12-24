@@ -1,6 +1,6 @@
 import { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
-import { formatDate } from '@fullcalendar/core';
+import { formatDate } from "@fullcalendar/core";
 
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -14,7 +14,6 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-
 
 const Calendar = () => {
   const theme = useTheme();
@@ -48,26 +47,28 @@ const Calendar = () => {
   };
 
   return (
-    <Box m="20px">
-
-
+    <Box m="16px">
       <Box display="flex" justifyContent="space-between">
         {/* CALENDAR SIDEBAR */}
         <Box
           flex="1 1 20%"
-          backgroundColor="#42a5f5"
-          p="15px"
-          borderRadius="4px"
+          sx={{
+            backgroundColor: '#ffffff',
+            p: '12px',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}
         >
-          <Typography variant="h5">Events</Typography>
+          <Typography variant="h5" sx={{ color: '#7c3aed', fontWeight: 600 }}>Events</Typography>
           <List>
             {currentEvents.map((event) => (
               <ListItem
                 key={event.id}
                 sx={{
-                  backgroundColor: "text-green-500",
-                  margin: "10px 0",
-                  borderRadius: "2px",
+                  backgroundColor: '#ede9fe',
+                  color: '#6d28d9',
+                  margin: '8px 0',
+                  borderRadius: '6px',
                 }}
               >
                 <ListItemText
@@ -88,7 +89,7 @@ const Calendar = () => {
         </Box>
 
         {/* CALENDAR */}
-        <Box flex="1 1 100%" ml="15px">
+        <Box flex="1 1 100%" ml="15px" sx={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', p: '8px' }}>
           <FullCalendar
             height="75vh"
             plugins={[

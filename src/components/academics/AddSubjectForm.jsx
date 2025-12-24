@@ -200,7 +200,7 @@ const AddSubjectForm = ({ onSubjectAdded }) => {
                 name="subject_name"
                 value={formData.subject_name}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.subject_name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="e.g. Mathematics"
@@ -219,7 +219,7 @@ const AddSubjectForm = ({ onSubjectAdded }) => {
                 name="subject_code"
                 value={formData.subject_code}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.subject_code ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="e.g. MATH101"
@@ -237,7 +237,7 @@ const AddSubjectForm = ({ onSubjectAdded }) => {
                 name="class_section_id"
                 value={formData.class_section_id}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.class_section_id ? 'border-red-500' : 'border-gray-300'
                 }`}
                 disabled={classLoading}
@@ -264,7 +264,7 @@ const AddSubjectForm = ({ onSubjectAdded }) => {
                 name="teacher_id"
                 value={formData.teacher_id}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
                   errors.teacher_id ? 'border-red-500' : 'border-gray-300'
                 }`}
                 disabled={teacherLoading}
@@ -287,7 +287,7 @@ const AddSubjectForm = ({ onSubjectAdded }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center space-x-2 px-6 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
               <span>{isSubmitting ? 'Adding...' : 'Add Subject'}</span>

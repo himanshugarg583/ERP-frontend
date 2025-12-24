@@ -108,7 +108,7 @@ const EnquiryAddForm = ({ onClose, onSuccess, apiFunction }) => {
           name="name"
           value={formData.name}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors ${
             errors.name ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="Enter student's full name"
@@ -134,7 +134,7 @@ const EnquiryAddForm = ({ onClose, onSuccess, apiFunction }) => {
           name="phone"
           value={formData.phone}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors ${
             errors.phone ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="Enter 10-digit phone number"
@@ -161,7 +161,7 @@ const EnquiryAddForm = ({ onClose, onSuccess, apiFunction }) => {
           name="parentName"
           value={formData.parentName}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors ${
             errors.parentName ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="Enter parent's full name"
@@ -187,7 +187,7 @@ const EnquiryAddForm = ({ onClose, onSuccess, apiFunction }) => {
           name="className"
           value={formData.className}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors ${
             errors.className ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="e.g., 10th A, 9th B"
@@ -212,7 +212,7 @@ const EnquiryAddForm = ({ onClose, onSuccess, apiFunction }) => {
           name="status"
           value={formData.status}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors ${
             errors.status ? 'border-red-500' : 'border-gray-300'
           }`}
         >
@@ -237,14 +237,14 @@ const EnquiryAddForm = ({ onClose, onSuccess, apiFunction }) => {
           type="button"
           onClick={onClose}
           disabled={loading}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="px-4 py-2 border border-violet-300 rounded-lg text-violet-700 hover:bg-violet-50 transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+          className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />

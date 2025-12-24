@@ -32,7 +32,7 @@ const ReportFilter = ({
         <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
         <button
           onClick={() => setIsFilterOpen(!isFilterOpen)}
-          className="text-blue-600 hover:text-blue-800 font-medium"
+          className="text-violet-600 hover:text-violet-800 font-medium"
         >
           {isFilterOpen ? "Hide Filters" : "Show Filters"}
         </button>
@@ -49,7 +49,7 @@ const ReportFilter = ({
                 <select
                   value={filters[field.key] || ''}
                   onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600"
                 >
                   <option value="">All {field.label}</option>
                   {field.options.map((option, optIndex) => (
@@ -64,7 +64,7 @@ const ReportFilter = ({
                   placeholder={field.placeholder || `Enter ${field.label}`}
                   value={filters[field.key] || ''}
                   onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600"
                 />
               )}
             </div>

@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Download, Printer, X, User, Mail, Phone, BookOpen, GraduationCap, Award } from 'lucide-react';
-import jsPDF from 'jspdf';
-import Sidebar from '../Sidebar';
-import Header from '../../../components/comman_components/Header';
-import CommonTable from '../../../components/tables/CommonTable';
-import CommonFilter from '../../../components/tables/CommonFilter';
-import { teacherData } from '../../../data.js';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  Download,
+  Printer,
+  X,
+  User,
+  Mail,
+  Phone,
+  BookOpen,
+  GraduationCap,
+  Award,
+} from "lucide-react";
+import jsPDF from "jspdf";
+import Sidebar from "../Sidebar";
+import Header from "../../../components/comman_components/Header";
+import CommonTable from "../../../components/tables/CommonTable";
+import CommonFilter from "../../../components/tables/CommonFilter";
+import { teacherData } from "../../../data.js";
 
 const TeacherManagement = () => {
   const [teachers] = useState(teacherData);
@@ -20,7 +30,7 @@ const TeacherManagement = () => {
 
   // Handle add teacher navigation
   const handleAddTeacher = () => {
-    navigate('/AddStaff');
+    navigate("/AddStaff");
   };
 
   // Handle view teacher
@@ -38,54 +48,56 @@ const TeacherManagement = () => {
   // Download teacher information as PDF
   const downloadTeacherPDF = (teacher) => {
     const doc = new jsPDF();
-    
+
     // Header
     doc.setFontSize(20);
     doc.setTextColor(75, 0, 130); // Purple color
-    doc.text('Gurukulsarthi School Management', 105, 20, { align: 'center' });
-    
+    doc.text("Gurukulsarthi School Management", 105, 20, { align: "center" });
+
     doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
-    doc.text('Teacher Information', 105, 35, { align: 'center' });
-    
+    doc.text("Teacher Information", 105, 35, { align: "center" });
+
     // Line separator
     doc.setLineWidth(0.5);
     doc.line(20, 42, 190, 42);
-    
+
     // Teacher details
     let yPosition = 60;
     doc.setFontSize(12);
-    
+
     const details = [
-      ['Teacher ID:', teacher.teacher_id || 'N/A'],
-      ['Name:', teacher.name || 'N/A'],
-      ['Email:', teacher.email || 'N/A'],
-      ['Phone:', teacher.phone || 'N/A'],
-      ['Subject:', teacher.subject || 'N/A'],
-      ['Qualification:', teacher.qualification || 'N/A'],
-      ['Experience:', teacher.experience || 'N/A']
+      ["Teacher ID:", teacher.teacher_id || "N/A"],
+      ["Name:", teacher.name || "N/A"],
+      ["Email:", teacher.email || "N/A"],
+      ["Phone:", teacher.phone || "N/A"],
+      ["Subject:", teacher.subject || "N/A"],
+      ["Qualification:", teacher.qualification || "N/A"],
+      ["Experience:", teacher.experience || "N/A"],
     ];
-    
+
     details.forEach(([label, value]) => {
-      doc.setFont('helvetica', 'bold');
+      doc.setFont("helvetica", "bold");
       doc.text(label, 25, yPosition);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont("helvetica", "normal");
       doc.text(value, 80, yPosition);
       yPosition += 15;
     });
-    
+
     // Footer
     doc.setFontSize(10);
     doc.setTextColor(128, 128, 128);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 25, 250);
-    doc.text('Gurukulsarthi School Management System', 105, 270, { align: 'center' });
-    
-    doc.save(`${teacher.name || 'teacher'}_profile.pdf`);
+    doc.text("Gurukulsarthi School Management System", 105, 270, {
+      align: "center",
+    });
+
+    doc.save(`${teacher.name || "teacher"}_profile.pdf`);
   };
 
   // Print teacher information
   const printTeacherInfo = (teacher) => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -160,31 +172,31 @@ const TeacherManagement = () => {
           <div class="info-grid">
             <div class="info-item">
               <span class="label">Teacher ID:</span>
-              <span class="value">${teacher.teacher_id || 'N/A'}</span>
+              <span class="value">${teacher.teacher_id || "N/A"}</span>
             </div>
             <div class="info-item">
               <span class="label">Name:</span>
-              <span class="value">${teacher.name || 'N/A'}</span>
+              <span class="value">${teacher.name || "N/A"}</span>
             </div>
             <div class="info-item">
               <span class="label">Email:</span>
-              <span class="value">${teacher.email || 'N/A'}</span>
+              <span class="value">${teacher.email || "N/A"}</span>
             </div>
             <div class="info-item">
               <span class="label">Phone:</span>
-              <span class="value">${teacher.phone || 'N/A'}</span>
+              <span class="value">${teacher.phone || "N/A"}</span>
             </div>
             <div class="info-item">
               <span class="label">Subject:</span>
-              <span class="value">${teacher.subject || 'N/A'}</span>
+              <span class="value">${teacher.subject || "N/A"}</span>
             </div>
             <div class="info-item">
               <span class="label">Qualification:</span>
-              <span class="value">${teacher.qualification || 'N/A'}</span>
+              <span class="value">${teacher.qualification || "N/A"}</span>
             </div>
             <div class="info-item">
               <span class="label">Experience:</span>
-              <span class="value">${teacher.experience || 'N/A'}</span>
+              <span class="value">${teacher.experience || "N/A"}</span>
             </div>
           </div>
           
@@ -195,7 +207,7 @@ const TeacherManagement = () => {
         </body>
       </html>
     `;
-    
+
     printWindow.document.write(printContent);
     printWindow.document.close();
     printWindow.focus();
@@ -208,59 +220,124 @@ const TeacherManagement = () => {
   // Define columns for teacher management
   const teacherColumns = [
     {
-      key: 'count',
-      header: 'S.No',
-      type: 'text',
+      key: "count",
+      header: "S.No",
+      type: "text",
       render: (value, item, index) => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         return startIndex + index + 1;
       },
-      required: false
+      required: false,
     },
-    { key: 'teacher_id', header: 'Teacher ID', type: 'text', required: true, placeholder: 'e.g. TCH001' },
-    { key: 'name', header: 'Teacher Name', type: 'text', required: true, placeholder: 'e.g. Rajesh Kumar' },
-    { key: 'email', header: 'Email', type: 'email', required: true, placeholder: 'e.g. teacher@school.com' },
-    { key: 'phone', header: 'Phone', type: 'text', required: true, placeholder: 'e.g. 9876543210' },
-    { key: 'subject', header: 'Subject', type: 'text', required: true, placeholder: 'e.g. Mathematics' },
-    { key: 'qualification', header: 'Qualification', type: 'text', required: true, placeholder: 'e.g. M.Sc, B.Ed' },
-    { key: 'experience', header: 'Experience', type: 'text', required: true, placeholder: 'e.g. 5 years' }
+    {
+      key: "teacher_id",
+      header: "Teacher ID",
+      type: "text",
+      required: true,
+      placeholder: "e.g. TCH001",
+    },
+    {
+      key: "name",
+      header: "Teacher Name",
+      type: "text",
+      required: true,
+      placeholder: "e.g. Rajesh Kumar",
+    },
+    {
+      key: "email",
+      header: "Email",
+      type: "email",
+      required: true,
+      placeholder: "e.g. teacher@school.com",
+    },
+    {
+      key: "phone",
+      header: "Phone",
+      type: "text",
+      required: true,
+      placeholder: "e.g. 9876543210",
+    },
+    {
+      key: "subject",
+      header: "Subject",
+      type: "text",
+      required: true,
+      placeholder: "e.g. Mathematics",
+    },
+    {
+      key: "qualification",
+      header: "Qualification",
+      type: "text",
+      required: true,
+      placeholder: "e.g. M.Sc, B.Ed",
+    },
+    {
+      key: "experience",
+      header: "Experience",
+      type: "text",
+      required: true,
+      placeholder: "e.g. 5 years",
+    },
   ];
 
   // Filter fields for teachers
   const filterFields = [
-    { key: 'name', label: 'Teacher Name', type: 'text', placeholder: 'Search by teacher name' },
-    { key: 'teacher_id', label: 'Teacher ID', type: 'text', placeholder: 'Search by teacher ID' },
-    { key: 'subject', label: 'Subject', type: 'select', options: [
-      { value: 'Mathematics', label: 'Mathematics' },
-      { value: 'English', label: 'English' },
-      { value: 'Science', label: 'Science' },
-      { value: 'Hindi', label: 'Hindi' },
-      { value: 'Social Studies', label: 'Social Studies' },
-      { value: 'Physics', label: 'Physics' },
-      { value: 'Chemistry', label: 'Chemistry' },
-      { value: 'Biology', label: 'Biology' },
-      { value: 'History', label: 'History' },
-      { value: 'Geography', label: 'Geography' }
-    ]},
-    { key: 'qualification', label: 'Qualification', type: 'select', options: [
-      { value: 'M.Sc, B.Ed', label: 'M.Sc, B.Ed' },
-      { value: 'M.A, B.Ed', label: 'M.A, B.Ed' },
-      { value: 'B.Sc, B.Ed', label: 'B.Sc, B.Ed' },
-      { value: 'B.A, B.Ed', label: 'B.A, B.Ed' },
-      { value: 'M.Tech', label: 'M.Tech' },
-      { value: 'Ph.D', label: 'Ph.D' }
-    ]}
+    {
+      key: "name",
+      label: "Teacher Name",
+      type: "text",
+      placeholder: "Search by teacher name",
+    },
+    {
+      key: "teacher_id",
+      label: "Teacher ID",
+      type: "text",
+      placeholder: "Search by teacher ID",
+    },
+    {
+      key: "subject",
+      label: "Subject",
+      type: "select",
+      options: [
+        { value: "Mathematics", label: "Mathematics" },
+        { value: "English", label: "English" },
+        { value: "Science", label: "Science" },
+        { value: "Hindi", label: "Hindi" },
+        { value: "Social Studies", label: "Social Studies" },
+        { value: "Physics", label: "Physics" },
+        { value: "Chemistry", label: "Chemistry" },
+        { value: "Biology", label: "Biology" },
+        { value: "History", label: "History" },
+        { value: "Geography", label: "Geography" },
+      ],
+    },
+    {
+      key: "qualification",
+      label: "Qualification",
+      type: "select",
+      options: [
+        { value: "M.Sc, B.Ed", label: "M.Sc, B.Ed" },
+        { value: "M.A, B.Ed", label: "M.A, B.Ed" },
+        { value: "B.Sc, B.Ed", label: "B.Sc, B.Ed" },
+        { value: "B.A, B.Ed", label: "B.A, B.Ed" },
+        { value: "M.Tech", label: "M.Tech" },
+        { value: "Ph.D", label: "Ph.D" },
+      ],
+    },
   ];
 
   // Handle filter changes
   const handleFilterChange = (filters) => {
     let filtered = [...teachers];
 
-    Object.keys(filters).forEach(key => {
+    Object.keys(filters).forEach((key) => {
       if (filters[key]) {
-        filtered = filtered.filter(item => {
-          if (key === 'name' || key === 'teacher_id') {
-            return item[key] && item[key].toLowerCase().includes(filters[key].toLowerCase());
+        filtered = filtered.filter((item) => {
+          if (key === "name" || key === "teacher_id") {
+            return (
+              item[key] &&
+              item[key].toLowerCase().includes(filters[key].toLowerCase())
+            );
           }
           return item[key] === filters[key];
         });
@@ -283,23 +360,30 @@ const TeacherManagement = () => {
   };
 
   return (
-    <div className='bg-gray-100 flex TeacherManagement'>
+    <div className="bg-slate-200 flex TeacherManagement">
       <Sidebar />
-      
-      <div className='overflow-auto relative z-1 flex-col' style={{
-        height: '95vh',
-        width: '100vw',
-        gap: '10px',
-        display: 'flex',
-        transition: 'margin-left 0.3s ease'
-      }}>
+
+      <div
+        className="overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
         <Header />
-        
+
         <div className="flex-1 p-6">
           {/* Page Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Teacher Management</h1>
-            <p className="text-gray-600">Manage teacher information, view details, and track performance</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Teacher Management
+            </h1>
+            <p className="text-gray-600">
+              Manage teacher information, view details, and track performance
+            </p>
           </div>
 
           {/* Filter Component */}
@@ -341,10 +425,12 @@ const TeacherManagement = () => {
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[9999] flex items-center justify-center"
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                backdropFilter: 'blur(4px)',
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                backdropFilter: "blur(4px)",
               }}
-              onClick={(e) => e.target === e.currentTarget && handleCloseViewModal()}
+              onClick={(e) =>
+                e.target === e.currentTarget && handleCloseViewModal()
+              }
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -354,11 +440,15 @@ const TeacherManagement = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="bg-purple-900 text-white p-6 rounded-t-lg">
+                <div className="bg-violet-600 text-white p-6 rounded-t-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold">Gurukulsarthi School Management</h2>
-                      <p className="text-purple-200 mt-1">Teacher Profile Details</p>
+                      <h2 className="text-2xl font-bold">
+                        Gurukulsarthi School Management
+                      </h2>
+                      <p className="text-violet-100 mt-1">
+                        Teacher Profile Details
+                      </p>
                     </div>
                     <button
                       onClick={handleCloseViewModal}
@@ -373,73 +463,87 @@ const TeacherManagement = () => {
                 <div className="p-6">
                   {/* Teacher Info Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
-                        <User className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800 uppercase tracking-wide">Teacher ID</span>
+                        <User className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Teacher ID
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-blue-900">
-                        {selectedTeacher.teacher_id || 'N/A'}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.teacher_id || "N/A"}
                       </span>
                     </div>
 
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
-                        <User className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-800 uppercase tracking-wide">Full Name</span>
+                        <User className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Full Name
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-green-900">
-                        {selectedTeacher.name || 'N/A'}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.name || "N/A"}
                       </span>
                     </div>
 
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
-                        <Mail className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-800 uppercase tracking-wide">Email</span>
+                        <Mail className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Email
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-purple-900">
-                        {selectedTeacher.email || 'N/A'}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.email || "N/A"}
                       </span>
                     </div>
 
-                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
-                        <Phone className="w-5 h-5 text-orange-600" />
-                        <span className="text-sm font-medium text-orange-800 uppercase tracking-wide">Phone</span>
+                        <Phone className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Phone
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-orange-900">
-                        {selectedTeacher.phone || 'N/A'}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.phone || "N/A"}
                       </span>
                     </div>
 
-                    <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 rounded-lg border border-teal-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
-                        <BookOpen className="w-5 h-5 text-teal-600" />
-                        <span className="text-sm font-medium text-teal-800 uppercase tracking-wide">Subject</span>
+                        <BookOpen className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Subject
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-teal-900">
-                        {selectedTeacher.subject || 'N/A'}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.subject || "N/A"}
                       </span>
                     </div>
 
-                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-lg border border-indigo-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
-                        <GraduationCap className="w-5 h-5 text-indigo-600" />
-                        <span className="text-sm font-medium text-indigo-800 uppercase tracking-wide">Qualification</span>
+                        <GraduationCap className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Qualification
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-indigo-900">
-                        {selectedTeacher.qualification || 'N/A'}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.qualification || "N/A"}
                       </span>
                     </div>
 
-                    <div className="bg-gradient-to-br from-rose-50 to-rose-100 p-4 rounded-lg border border-rose-200 md:col-span-2 lg:col-span-1">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200 md:col-span-2 lg:col-span-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <Award className="w-5 h-5 text-rose-600" />
-                        <span className="text-sm font-medium text-rose-800 uppercase tracking-wide">Experience</span>
+                        <Award className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Experience
+                        </span>
                       </div>
-                      <span className="text-lg font-semibold text-rose-900">
-                        {selectedTeacher.experience || 'N/A'}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.experience || "N/A"}
                       </span>
                     </div>
                   </div>
@@ -452,21 +556,21 @@ const TeacherManagement = () => {
                     <div className="flex gap-3">
                       <button
                         onClick={() => downloadTeacherPDF(selectedTeacher)}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
                       >
                         <Download size={18} />
                         Download PDF
                       </button>
                       <button
                         onClick={() => printTeacherInfo(selectedTeacher)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
                       >
                         <Printer size={18} />
                         Print
                       </button>
                       <button
                         onClick={handleCloseViewModal}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                        className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                       >
                         Close
                       </button>
