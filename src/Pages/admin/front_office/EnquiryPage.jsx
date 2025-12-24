@@ -123,8 +123,8 @@ const EnquiryPage = () => {
                 }
             }
         },
-        { 
-            key: 'status', 
+                { 
+                    key: 'status', 
             header: 'Status',
             required: true,
             type: 'select',
@@ -137,7 +137,7 @@ const EnquiryPage = () => {
                 const statusMap = {
                     active: { text: 'Active', color: 'bg-green-100 text-green-800' },
                     inactive: { text: 'Inactive', color: 'bg-yellow-100 text-yellow-800' },
-                    admitted: { text: 'Admitted', color: 'bg-blue-100 text-blue-800' }
+                    admitted: { text: 'Admitted', color: 'bg-violet-100 text-violet-700' }
                 };
                 const status = statusMap[value] || statusMap.active;
                 return (
@@ -280,7 +280,7 @@ const EnquiryPage = () => {
     }, []);
     
     return (
-        <div className="bg-gray-100 flex h-screen overflow-hidden">
+        <div className="bg-slate-200 flex h-screen overflow-hidden">
             <Sidebar />
             
             <div
@@ -295,11 +295,11 @@ const EnquiryPage = () => {
             >
                 <Header />
                 
-                <main className="max-w-full py-6 px-4 lg:px-8">
+                <main className="max-w-full py-4 px-4 md:px-6">
                     <div
                         className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-7"
                     >  
-                        <StatCards name="Total Enquiry" icon={UserIcon} value={stats.totalEnquiries.toLocaleString()} color="#6366f1"/>
+                        <StatCards name="Total Enquiry" icon={UserIcon} value={stats.totalEnquiries.toLocaleString()} color="#7c3aed"/>
                         <StatCards name="Active Enquiry" icon={UserCheck} value={stats.activeEnquiries.toLocaleString()} color="#f59e0b" />
                         <StatCards name="InActive Enquiry" icon={UserX} value={stats.inactiveEnquiries.toLocaleString()} color="#ef4444" />
                         <StatCards name="Admitted Enquiry" icon={UserPlus} value={stats.admittedEnquiries.toLocaleString()} color="#10b981" />
