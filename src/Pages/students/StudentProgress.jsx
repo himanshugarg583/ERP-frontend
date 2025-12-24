@@ -5,8 +5,8 @@ import {
   FaExclamationTriangle, FaUser, FaChalkboardTeacher, FaBook, FaCode, FaClock,
   FaBullseye, FaGraduationCap
 } from 'react-icons/fa';
-import StudentNavbar from './StudentNavbar';
 import StudentSidebar from './StudentSidebar';
+import Header from '../../components/comman_components/Header';
 
 // Reusable Card Component
 const Card = ({ title, icon, children, color = "text-gray-800" }) => (
@@ -108,15 +108,22 @@ const StudentProgress = () => {
   const textSmGray = "text-sm text-gray-500";
 
   return (
-    <div className="bg-gray-100 min-h-screen flex font-sans">
-      <div className="fixed top-0 left-0 right-0 z-20 bg-white shadow-md md:left-64">
-        <StudentNavbar />
-      </div>
-      <div className="flex flex-1">
-        <div className="fixed top-0 bottom-0 w-64 hidden md:block z-30 bg-white shadow-lg">
-          <StudentSidebar />
-        </div>
-        <main className="flex-1 md:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Row 1: Overall GPA and Subject Grades */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

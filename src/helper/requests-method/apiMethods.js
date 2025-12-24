@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000'; // Adjust the base URL as needed
+const API_BASE_URL = 'http://localhost:5000'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
   LOGIN: '/api/auth/login',
+  SIGNUP: '/api/auth/signup',
+  REQUEST_PASSWORD_RESET: '/api/auth/request-password-reset',
   GET_ALL_ENQUIRIES: '/api/admissionenquiry/getAllEnquiries',
   CREATE_ENQUIRY: '/api/admissionenquiry/createEnquiry',
   UPDATE_ENQUIRY: (id) => `/api/admissionenquiry/updateEnquiry/${id}`,
@@ -15,12 +17,9 @@ export const API_ENDPOINTS = {
   GET_TEACHER_DROPDOWN: '/admin/dropdown/getTeacherDropdown',
   CREATE_CLASS: '/api/Classsection/createClass',
   ADD_SUBJECT: '/admin/Subject/addSubject',
-  ADD_TEACHER: '/admin/hr/register/addTeacher',
+  // ADD_TEACHER: '/admin/hr/register/addTeacher',
   GET_TEACHER_CREDENTIALS: '/api/teachers/credentials',
   UPDATE_TEACHER_CREDENTIALS: (id) => `/api/teachers/credentials/${id}`,
-<<<<<<< Updated upstream
-  // Add more endpoints here as needed
-=======
   // Income endpoints
   GET_ALL_INCOME: '/admin/income/getAllIncome',
   ADD_INCOME: '/admin/income/createIncome',
@@ -65,6 +64,19 @@ export const API_ENDPOINTS = {
   GENERATE_ID_CARDS: '/admin/certificate/generateMultipleIdCards',
   GENERATE_SATFF_ID_CARD: '/admin/certificate/generateStaffIdCard',
   GENERATE_SATFF_ID_CARDS: '/admin/certificate/generateMultipleStaffIdCards',
+
+  // admit card related endpoints
+  GET_ALL_EXAM_TERMS_FOR_ADMIT_CARD: '/admin/dropdown/getExamTermDropdown',
+  GET_EXAM_BY_TERM: (examTermId) => `/admin/dropdown/getExamDropdown?term_id=${examTermId}`,
+  GET_EXAM_SCHEDULE_BY_EXAM: (examId) => `/admin/dropdown/getExamScheduleByExam?exam_id=${examId}`,
+  GET_STUDENT_ADMIT_CARD: (studentId, examTermId) => `/admin/admitCard/getStudentAdmitCard?student_id=${studentId}&exam_schedule_id=${examTermId}`,
+  GET_CLASS_ADMIT_CARDS: (classId) => `/admin/admitCard/getClassAdmitCards/${classId}`,
+  GET_STUDENTS_EXAM_LIST: (classId, examTermId,classSectionId) => `/admin/admitCard/getExamStudentList?term_id=${classId}&exam_id=${examTermId}&class_section_id=${classSectionId}`,
+ 
+  // exam timetable endpoints
+  CREATE_EXAM_TIMETABLE: '/admin/examTimetable/createExamTimetable',
+  GET_CLASS_SCHEDULED_EXAMS: (classSectionId) => `/admin/examTimetable/getClassScheduledExams/${classSectionId}`,
+  
 
 
   // student report endpoints
@@ -128,7 +140,7 @@ export const API_ENDPOINTS = {
 
   // Teacher Attendance Endpoints
   GET_TEACHER_CLASSES: '/classattendance/getTeacherClasses',
-  GET_STUDENTS_BY_CLASS: (classId) => `/classattendance/getClassStudentList/${classId}`,
+  GETS_STUDENTS_BY_CLASS: (classId) => `/classattendance/getClassStudentList/${classId}`,
   MARK_CLASS_ATTENDANCE: '/classattendance/markClassAttendance',
   GET_CLASS_ATTENDANCE_BY_DATE: (classId, date) => `/classattendance/getClassAttendanceByDate?class_section_id=${classId}&date=${date}`,
 
@@ -160,35 +172,6 @@ export const API_ENDPOINTS = {
   GET_STUDENT_FEES_DETAILS: '/student/fees/getFeeDetails',
   // get student installments
   GET_STUDENT_INSTALLMENTS: '/student/fees/getInstallments',
-  
-  // Admin Fee Management endpoints
-  CREATE_FEE_HEAD: '/admin/fees/createFeeHead',
-  GET_ALL_FEE_HEADS: '/admin/fees/getAllFeeHeads',
-  GET_FEE_HEAD_BY_ID: (id) => `/admin/fees/getFeeHead/${id}`,
-  UPDATE_FEE_HEAD: (id) => `/admin/fees/updateFeeHead/${id}`,
-  DELETE_FEE_HEAD: (id) => `/admin/fees/deleteFeeHead/${id}`,
-  
-  // Admin Fee Structure endpoints
-  CREATE_FEE_STRUCTURE: '/admin/feeStructure/createFeeStructure',
-  GET_ALL_FEE_STRUCTURES: '/admin/feeStructure/getAllFeeStructures',
-  GET_FEE_STRUCTURE_BY_ID: (id) => `/admin/feeStructure/getFeeStructure/${id}`,
-  UPDATE_FEE_STRUCTURE: (id) => `/admin/feeStructure/updateFeeStructure/${id}`,
-  DELETE_FEE_STRUCTURE: (id) => `/admin/feeStructure/deleteFeeStructure/${id}`,
-  
-  // Admin Fee Assignment endpoints
-  ASSIGN_FEE_TO_STUDENTS: '/admin/feeAssignment/assignFeeToStudents',
-  GET_ALL_FEE_ASSIGNMENTS: '/admin/feeAssignment/getAllFeeAssignments',
-  GET_STUDENTS_BY_CLASS_SECTION: (classId, sectionId) => `/admin/feeAssignment/getStudentsByClassSection/${classId}/${sectionId}`,
-  
-  // Student Fee Report endpoints
-  GET_STUDENT_FEE_REPORT: (studentId) => `/admin/feeReport/getStudentFeeReport/${studentId}`,
-  GET_STUDENTS_FEE_SUMMARY: (classId, sectionId) => `/admin/feeReport/getStudentsFeesSummary/${classId}/${sectionId}`,
-  
-  // Payment Records endpoints
-  GET_ALL_PAYMENTS: '/admin/payments/getAllPayments',
-  GET_PAYMENT_BY_ID: (id) => `/admin/payments/getPayment/${id}`,
-  CREATE_PAYMENT: '/admin/payments/createPayment',
-  
   // get student profile and change password
   GET_STUDENT_PROFILE: '/student/setting/getProfile',
   CHANGE_STUDENT_PASSWORD: '/student/setting/changePassword',
@@ -201,7 +184,7 @@ export const API_ENDPOINTS = {
   //student notice endpoints
   GET_STUDENT_NOTICES: '/student/notice/getNoticesForMe',
   
->>>>>>> Stashed changes
+
 };
 
 // Reusable authorized GET request
@@ -252,6 +235,18 @@ export const authorizedPut = async (endpoint, data) => {
   return response.data;
 };
 
+// Reusable authorized PUT request with FormData (for file uploads)
+export const authorizedPutFormData = async (endpoint, formData) => {
+  const token = localStorage.getItem('authToken');
+  const response = await axios.put(`${API_BASE_URL}${endpoint}`, formData, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 // Reusable authorized DELETE request
 export const authorizedDelete = async (endpoint) => {
   const token = localStorage.getItem('authToken');
@@ -279,6 +274,36 @@ export const loginUser = async (credentials) => {
     return response.data;
   } catch (error) {
     console.error('Login failed:', error);
+    throw error;
+  }
+};
+
+// Signup function
+export const signupUser = async (payload) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.SIGNUP}`,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Signup failed:', error);
+    throw error;
+  }
+};
+
+// Request password reset
+export const requestPasswordReset = async (email) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.REQUEST_PASSWORD_RESET}`,
+      { email },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Password reset request failed:', error);
     throw error;
   }
 };
@@ -329,6 +354,46 @@ export const addStudent = async (studentData, files = {}) => {
   return authorizedPostFormData(API_ENDPOINTS.ADD_STUDENT, formData);
 };
 
+// Get all students with pagination
+export const getAllStudents = async (page = 1, limit = 10) => {
+  return authorizedGet(`${API_ENDPOINTS.GET_ALL_STUDENTS}?page=${page}&limit=${limit}`);
+};
+
+// Get student statistics
+export const getStudentStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_STATES);
+};
+
+// Update student
+export const updateStudent = async (id, studentData) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_STUDENT(id), studentData);
+};
+
+// Delete student (soft delete)
+export const deleteStudent = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_STUDENT(id));
+};
+
+// Get student report by class
+export const getStudentReport = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_REPORT(classId));
+};
+
+// Get parent report by class
+export const getParentReport = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_PARENT_REPORT(classId));
+};
+
+// Get student credentials by class
+export const getStudentCredentials = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_CREDENTIALS(classId));
+};
+
+// Get class-wise student stats
+export const getClassWiseStudentStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_STATES());
+};
+
 // Create new class
 export const createClass = async (classData) => {
   return authorizedPost(API_ENDPOINTS.CREATE_CLASS, classData);
@@ -376,8 +441,6 @@ export const addTeacher = async (teacherData, imageFile = null) => {
   }
   
   return authorizedPostFormData(API_ENDPOINTS.ADD_TEACHER, formData);
-<<<<<<< Updated upstream
-=======
 };
 
 //get all income
@@ -793,6 +856,7 @@ export const generateMultipleIdCards = async (user_ids) => {
   return authorizedPost(API_ENDPOINTS.GENERATE_ID_CARDS, { user_ids });
 };
 
+
 // ============= Fee Management Functions =============
 
 // Create Fee Head
@@ -899,5 +963,37 @@ export const generateStaffIdCard = async (user_id) => {
 
 export const generateMultipleStaffIdCards = async (user_ids) => {
   return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
->>>>>>> Stashed changes
+
+export const generateStaffIdCard = async (user_id) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
+};
+
+export const generateMultipleStaffIdCards = async (user_ids) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
+};
+
+// ADMIT CARD ENDPOINTS
+export const getAllExamTermsForAdmitCard = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_EXAM_TERMS_FOR_ADMIT_CARD);
+};
+
+export const getExamByTerm = async (examTermId) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXAM_BY_TERM(examTermId));
+};
+
+export const getExamScheduleByExam = async (examId) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXAM_SCHEDULE_BY_EXAM(examId));
+};
+
+export const getStudentAdmitCard = async (studentId, examTermId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_ADMIT_CARD(studentId, examTermId));
+};
+
+export const getClassAdmitCards = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_ADMIT_CARDS(classId));
+};
+
+export const getStudentsExamList = async (classId, examTermId, classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_EXAM_LIST(classId, examTermId, classSectionId));
+
 };

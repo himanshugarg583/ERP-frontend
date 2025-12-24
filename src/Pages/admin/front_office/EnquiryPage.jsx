@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { UserCheck, UserIcon, UserX, UserPlus } from 'lucide-react'
-import StatCards from '../../../components/comman_components/StatsCards'
+import StandardStatCard from '../../../components/comman_components/StandardStatCard'
 import ReusableTable from '../../../components/comman_components/ReusableTable'
 import Header from '../../../components/comman_components/Header'
 import Sidebar from '../Sidebar'
-import EnquiryAddForm from '../../../components/enquiry/EnquiryAddForm'
-import EnquiryEditForm from '../../../components/enquiry/EnquiryEditForm'
 import { 
     fetchEnquiryCount, 
     fetchAllEnquiries, 
@@ -80,27 +78,11 @@ const EnquiryPage = () => {
             ]
         },
         { 
-            key: 'address', 
-            header: 'Address', 
-            required: false,
-            type: 'textarea',
-            placeholder: 'Enter complete address',
-            hideInTable: true // Hide in table display but show in forms
-        },
-        { 
             key: 'oldSchool', 
             header: 'Previous School', 
             required: false,
             type: 'text',
             placeholder: 'Enter previous school name',
-            hideInTable: true // Hide in table display but show in forms
-        },
-        { 
-            key: 'description', 
-            header: 'Description/Remarks', 
-            required: false,
-            type: 'textarea',
-            placeholder: 'Enter any additional information',
             hideInTable: true // Hide in table display but show in forms
         },
         { 
@@ -123,8 +105,8 @@ const EnquiryPage = () => {
                 }
             }
         },
-        { 
-            key: 'status', 
+                { 
+                    key: 'status', 
             header: 'Status',
             required: true,
             type: 'select',
@@ -137,7 +119,7 @@ const EnquiryPage = () => {
                 const statusMap = {
                     active: { text: 'Active', color: 'bg-green-100 text-green-800' },
                     inactive: { text: 'Inactive', color: 'bg-yellow-100 text-yellow-800' },
-                    admitted: { text: 'Admitted', color: 'bg-blue-100 text-blue-800' }
+                    admitted: { text: 'Admitted', color: 'bg-violet-100 text-violet-700' }
                 };
                 const status = statusMap[value] || statusMap.active;
                 return (
@@ -146,6 +128,22 @@ const EnquiryPage = () => {
                     </span>
                 );
             }
+        },
+        { 
+            key: 'address', 
+            header: 'Address', 
+            required: false,
+            type: 'textarea',
+            placeholder: 'Enter complete address',
+            hideInTable: true // Hide in table display but show in forms
+        },
+        { 
+            key: 'description', 
+            header: 'Description/Remarks', 
+            required: false,
+            type: 'textarea',
+            placeholder: 'Enter any additional information',
+            hideInTable: true // Hide in table display but show in forms
         }
     ];
 
@@ -184,9 +182,7 @@ const EnquiryPage = () => {
     const handleUpdateEnquiry = async (id, enquiryData) => {
         try {
             setLoading(true);
-            console.log('Updating enquiry with ID:', id, 'Data:', enquiryData); // Debug log
             const response = await updateEnquiry(id, enquiryData);
-            console.log('Update response:', response); // Debug log
             if (response.success) {
                 // Refresh the enquiry list after successful update
                 await fetchEnquiries();
@@ -243,19 +239,14 @@ const EnquiryPage = () => {
     const fetchEnquiries = async () => {
         try {
             setLoading(true);
-            console.log('Fetching enquiries...');
             const response = await fetchAllEnquiries();
-            console.log('API Response:', response);
             
             if (response.success && response.data) {
-                console.log('Enquiry data received:', response.data);
                 setEnquiryData(response.data);
             } else {
-                console.error('Failed to fetch enquiries:', response.message);
                 setEnquiryData([]);
             }
         } catch (error) {
-            console.error('Error fetching enquiries:', error);
             setEnquiryData([]);
         } finally {
             setLoading(false);
@@ -280,7 +271,7 @@ const EnquiryPage = () => {
     }, []);
     
     return (
-        <div className="bg-gray-100 flex h-screen overflow-hidden">
+        <div className="bg-slate-200 flex h-screen overflow-hidden">
             <Sidebar />
             
             <div
@@ -295,14 +286,13 @@ const EnquiryPage = () => {
             >
                 <Header />
                 
-                <main className="max-w-full py-6 px-4 lg:px-8">
-                    <div
-                        className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-7"
-                    >  
-                        <StatCards name="Total Enquiry" icon={UserIcon} value={stats.totalEnquiries.toLocaleString()} color="#6366f1"/>
-                        <StatCards name="Active Enquiry" icon={UserCheck} value={stats.activeEnquiries.toLocaleString()} color="#f59e0b" />
-                        <StatCards name="InActive Enquiry" icon={UserX} value={stats.inactiveEnquiries.toLocaleString()} color="#ef4444" />
-                        <StatCards name="Admitted Enquiry" icon={UserPlus} value={stats.admittedEnquiries.toLocaleString()} color="#10b981" />
+                <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <StandardStatCard name="Total Enquiry" icon={UserIcon} value={stats.totalEnquiries.toLocaleString()} color="#7c3aed"/>
+                        <StandardStatCard name="Active Enquiry" icon={UserCheck} value={stats.activeEnquiries.toLocaleString()} color="#f59e0b" />
+                        <StandardStatCard name="InActive Enquiry" icon={UserX} value={stats.inactiveEnquiries.toLocaleString()} color="#ef4444" />
+                        <StandardStatCard name="Admitted Enquiry" icon={UserPlus} value={stats.admittedEnquiries.toLocaleString()} color="#10b981" />
                     </div>
                     
                     <ReusableTable

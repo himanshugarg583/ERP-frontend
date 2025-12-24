@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from './TeacherSidebar';
-import Header from './TeacherHeader';
+import TeacherSidebar from './TeacherSidebar';
+import Header from '../../components/comman_components/Header';
 import { FaCloudUploadAlt, FaEdit, FaTrash, FaEye, FaPlus, FaSave, FaDownload } from 'react-icons/fa';
 
 const AssignmentForm = ({ editingId, newAssignment, teacherSubjects, teacherClasses, onChange, onFileChange, onSubmit }) => (
@@ -215,11 +215,22 @@ const TeacherAssignment = () => {
   const isLateSubmission = (submittedAt, dueDate) => (submittedAt && dueDate) ? new Date(submittedAt) > new Date(dueDate) : false;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 lg:ml-64">
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
         <Header />
-        <main className="p-4">
+
+        <main className="w-full px-4 md:px-6">
           <div className="bg-white shadow rounded-lg p-4">
             <AssignmentForm 
               editingId={editingId} 

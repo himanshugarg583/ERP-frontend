@@ -1,33 +1,44 @@
-import React, { useState } from 'react';
-import StudentNavbar from './StudentNavbar';
+import React, { useMemo, useState, memo } from 'react';
 import StudentSidebar from './StudentSidebar';
+import Header from '../../components/comman_components/Header';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 const Student = () => {
   return (
-    <div className="bg-gray-100 min-h-screen flex font-sans">
-      <StudentSidebar className="fixed top-0 left-0 w-64 h-full" />
-      <div className="fixed top-0 left-64 right-0 z-10 bg-white shadow-md">
-        <StudentNavbar />
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="">
+          <div className='p-4 md:p-6 lg:p-8'>
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-4">
+              <Card title="Attendance" percentage="92.5%" details="Present: 37 days | Absent: 3 days" color="green" />
+              <Card title="Assignments" percentage="75%" details="Completed: 6 | Pending: 2" color="blue" pending="2 Pending" />
+              <Card title="Overall Grade" percentage="88%" details="Current: 88% | Last Term: 84%" color="indigo" grade="A" />
+            </section>
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <UpcomingClasses />
+              <PendingAssignments />
+            </section>
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <AcademicPerformance />
+              <UpcomingEvents />
+            </section>
+          </div>
+        </main>
       </div>
-      <main className="flex-1 md:ml-64 mt-10">
-        <div className='p-4 md:p-6 lg:p-8'>
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-4">
-            <Card title="Attendance" percentage="92.5%" details="Present: 37 days | Absent: 3 days" color="green" />
-            <Card title="Assignments" percentage="75%" details="Completed: 6 | Pending: 2" color="blue" pending="2 Pending" />
-            <Card title="Overall Grade" percentage="88%" details="Current: 88% | Last Term: 84%" color="indigo" grade="A" />
-          </section>
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <UpcomingClasses />
-            <PendingAssignments />
-          </section>
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <AcademicPerformance />
-            <UpcomingEvents />
-          </section>
-        </div>
-      </main>
     </div>
   );
 };
@@ -164,8 +175,8 @@ const AcademicPerformance = () => {
     ],
   };
 
-  const subjects = performanceData[selectedExam].map(item => item.subject);
-  const scores = performanceData[selectedExam].map(item => item.score);
+  const subjects = useMemo(() => performanceData[selectedExam].map(item => item.subject), [selectedExam]);
+  const scores = useMemo(() => performanceData[selectedExam].map(item => item.score), [selectedExam]);
 
   return (
     <Box sx={{ bgcolor: 'white', p: 3, borderRadius: 2, boxShadow: 1, flexGrow: 2 }} className="col-span-2">
@@ -218,4 +229,4 @@ const UpcomingEvents = () => {
   );
 };
 
-export default Student;
+export default memo(Student);

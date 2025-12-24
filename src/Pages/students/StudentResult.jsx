@@ -1,6 +1,6 @@
 import React from 'react';
-import StudentNavbar from './StudentNavbar';
 import StudentSidebar from './StudentSidebar';
+import Header from '../../components/comman_components/Header';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -123,15 +123,23 @@ const StudentResult = () => {
   ];
 
   return (
-    <div className="bg-gray-100 font-pt-sans min-h-screen flex">
-      <div className="fixed top-0 bottom-0 hidden md:block w-64 bg-white shadow-lg">
-        <StudentSidebar />
-      </div>
-      <div className="flex-1 bg-gray-50 md:ml-64">
-        <div className="fixed top-0 left-64 right-0 bg-white shadow-md z-10">
-          <StudentNavbar />
-        </div>
-        <div className="p-4 pt-20">
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
+          <div className="p-4">
           <div className="w-full mx-auto bg-white shadow-lg rounded-lg p-6">
             {/* Header */}
             <div className="flex justify-between items-start border-b border-gray-300 pb-4">
@@ -278,7 +286,8 @@ const StudentResult = () => {
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

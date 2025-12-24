@@ -4,7 +4,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createClass, fetchTeacherDropdown } from '../../helper/requests-method/apiMethods';
 
-const CreateClass = () => {
+const CreateClass = ({ onClassAdded }) => {
   const [newClass, setNewClass] = useState({
     class_name: '',
     section_name: '',
@@ -97,7 +97,7 @@ const CreateClass = () => {
       const payload = {
         class_name: newClass.class_name,
         section_name: newClass.section_name,
-        room_No: newClass.room_No,
+        room_no: newClass.room_No,
         capacity: newClass.capacity.toString(),
         teacher_id: newClass.teacher_id
       };
@@ -116,6 +116,10 @@ const CreateClass = () => {
           capacity: '',
           teacher_id: ''
         });
+        // Trigger refresh in parent component
+        if (onClassAdded) {
+          onClassAdded();
+        }
       } else {
         showToast(response, "Failed to create class");
       }
@@ -138,7 +142,7 @@ const CreateClass = () => {
     <>
       <ToastContainer />
       <div className="bg-white shadow-lg rounded-xl p-6 mb-6">
-        <div className="bg-purple-900 text-white text-lg font-semibold p-4 rounded-lg mb-6">
+        <div className="bg-violet-600 text-white text-lg font-semibold p-4 rounded-lg mb-6">
           <div className="flex items-center">
             <div className="bg-white bg-opacity-20 p-2 rounded-lg mr-3">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,7 +151,7 @@ const CreateClass = () => {
             </div>
             <div>
               <span className="text-xl font-bold">Add New Class</span>
-              <p className="text-purple-100 text-sm">Create a new class section for your school</p>
+              <p className="text-violet-100 text-sm">Create a new class section for your school</p>
             </div>
           </div>
         </div>
@@ -163,7 +167,7 @@ const CreateClass = () => {
                 name="class_name"
                 value={newClass.class_name}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
                 placeholder="e.g. Class 7"
                 required
               />
@@ -178,7 +182,7 @@ const CreateClass = () => {
                 name="section_name"
                 value={newClass.section_name}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
                 placeholder="e.g. A"
                 required
               />
@@ -193,7 +197,7 @@ const CreateClass = () => {
                 name="room_No"
                 value={newClass.room_No}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
                 placeholder="e.g. 101"
                 required
               />
@@ -208,7 +212,7 @@ const CreateClass = () => {
                 name="capacity"
                 value={newClass.capacity}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
                 placeholder="e.g. 30"
                 min="1"
                 required
@@ -246,7 +250,7 @@ const CreateClass = () => {
               className={`px-8 py-3 text-white rounded-lg font-medium transition-all duration-200 shadow-md ${
                 loading 
                   ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-purple-900 hover:bg-purple-800 hover:shadow-lg transform hover:-translate-y-0.5'
+                  : 'bg-violet-600 hover:bg-violet-700 hover:shadow-lg transform hover:-translate-y-0.5'
               }`}
             >
               {loading ? (

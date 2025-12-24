@@ -3,7 +3,7 @@ import { FaUser, FaBus, FaMoneyBillWave, FaMapMarkedAlt, FaDownload } from 'reac
 import { MdCheckCircle } from 'react-icons/md';
 import { jsPDF } from 'jspdf';
 import StudentSidebar from './StudentSidebar';
-import StudentNavbar from './StudentNavbar';
+import Header from '../../components/comman_components/Header';
 
 const StudentTransport = () => {
   const [studentData, setStudentData] = useState(() => {
@@ -152,11 +152,22 @@ const StudentTransport = () => {
   );
 
   return (
-    <div className="bg-gray-100 font-[PT Sans] min-h-screen flex">
-      <StudentSidebar className="fixed top-0 bottom-0 w-64 hidden md:block z-30 bg-white shadow-lg" />
-      <div className="flex-1 md:ml-64">
-        <StudentNavbar className="fixed top-0 left-0 right-0 md:left-64 z-20 bg-white shadow-md" />
-        <main className="p-4 sm:p-6 lg:p-8">
+    <div className="bg-gray-100 flex AddStudent">
+      <StudentSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
           
           <div className="space-y-8">
             <section className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">

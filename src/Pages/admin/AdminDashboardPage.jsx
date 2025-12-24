@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import Sidebar from "./Sidebar";
 import Header from "../../components/comman_components/Header";
 import AdminDashboard from "../../components/AdminDash/AdminDashboard";
@@ -28,4 +28,4 @@ const AdminDashboardPage = () => {
   );
 };
 
-export default AdminDashboardPage;
+export default memo(AdminDashboardPage);

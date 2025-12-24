@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import Sidebar from './TeacherSidebar';
-import Header from './TeacherHeader';
+import TeacherSidebar from './TeacherSidebar';
+import Header from '../../components/comman_components/Header';
 
 const TeacherResult = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [students] = useState([
     { rollNo: '101', name: 'Aadhya Kapoor', phone: '(123) 456-7890', gender: 'Female' },
@@ -57,22 +56,22 @@ const TeacherResult = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
+
       <div
-        className={`fixed inset-y-0 left-0 transform ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 transition-transform duration-300 ease-in-out z-30 w-64 bg-white shadow-md h-screen`}>
-        <Sidebar
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}/>
-      </div>
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
 
-      <div className="flex-1 flex flex-col md:ml-64 z-10">
-        <header className="fixed top-0 left-0 right-0 z-20 bg-white shadow-md md:left-64">
-          <Header setIsSidebarOpen={setIsSidebarOpen} />
-        </header>
-
-        <main className="flex-1 mt-16 p-4 md:p-6 overflow-y-auto">
+        <main className="w-full px-4 md:px-6">
           <div className="container mx-auto max-w-full">
             <div className="bg-white shadow-xl rounded-xl p-4 md:p-6">
               <h2 className="text-2xl md:text-3xl font-bold text-indigo-600 mb-6 text-center">

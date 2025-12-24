@@ -36,16 +36,30 @@ const TeacherLogin = () => {
     const onSubmit = async (data) => {
       setLoading(true);
       setErrorMessage("");
-      console.log(data);
   
       try {
         const response = await loginUser(data);
-        console.log(response);
-  
-        if (response.role === "teacher") {
-          navigate("/TeacherPortal");
+        
+        if (response.success && response.token && response.role) {
+          // Store token and user data in localStorage
+          localStorage.setItem('authToken', response.token);
+          localStorage.setItem('userData', JSON.stringify({
+            id: response.id || null,
+            email: data.email,
+            role: response.role.toLowerCase(),
+            name: response.name || 'Teacher',
+            token: response.token
+          }));
+          
+          // Navigate based on role
+          if (response.role.toLowerCase() === "teacher") {
+            navigate("/teacher/dashboard", { replace: true });
+          } else {
+            setErrorMessage("Invalid role for teacher login");
+          }
+        } else {
+          setErrorMessage(response.message || "Login failed. Please try again.");
         }
-  
       } catch (error) {
         console.error("Login Failed:", error);
         setErrorMessage(

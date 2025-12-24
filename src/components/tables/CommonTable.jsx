@@ -60,7 +60,7 @@ const CommonTable = ({
       'active': 'bg-green-100 text-green-800',
       'inactive': 'bg-red-100 text-red-800',
       'pending': 'bg-yellow-100 text-yellow-800',
-      'completed': 'bg-blue-100 text-blue-800'
+      'completed': 'bg-violet-100 text-violet-800'
     },
     // Legacy support
     activeValue: 'active',
@@ -200,12 +200,20 @@ const CommonTable = ({
 
   // Handle delete click
   const handleDeleteClick = async (item) => {
-    if (!window.confirm("Are you sure you want to delete this item?")) {
+    // If onDelete is provided, use custom handler (which should show custom modal)
+    // Otherwise, use browser confirm for deleteApi
+    if (onDelete) {
+      await onDelete(item);
       return;
     }
     
-    try {
-      if (deleteApi) {
+    // Only show browser confirm if using deleteApi directly
+    if (deleteApi) {
+      if (!window.confirm("Are you sure you want to delete this item?")) {
+        return;
+      }
+      
+      try {
         const response = await deleteApi(item.id);
         if (response && response.success) {
           showToast(response, "Item deleted successfully!");
@@ -214,12 +222,10 @@ const CommonTable = ({
         } else {
           showToast(response, "Failed to delete item");
         }
-      } else if (onDelete) {
-        await onDelete(item);
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        toast.error("Failed to delete item");
       }
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      toast.error("Failed to delete item");
     }
   };
 
@@ -391,7 +397,7 @@ const CommonTable = ({
             name={key}
             value={formData[key] || ''}
             onChange={handleInputChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
             required={required}
           >
             <option value="">Select {header}</option>
@@ -406,7 +412,7 @@ const CommonTable = ({
             name={key}
             value={formData[key] || ''}
             onChange={handleInputChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-vertical"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200 resize-vertical"
             placeholder={placeholder || `Enter ${header}`}
             required={required}
             rows={3}
@@ -418,7 +424,7 @@ const CommonTable = ({
               name={key}
               checked={formData[key] || false}
               onChange={handleInputChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-violet-600 focus:ring-violet-600 border-gray-300 rounded"
               required={required}
             />
             <label className="ml-2 block text-sm text-gray-900">
@@ -431,7 +437,7 @@ const CommonTable = ({
             name={key}
             value={formData[key] || ''}
             onChange={handleInputChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
             placeholder={placeholder || `Enter ${header}`}
             required={required}
             min={min}
@@ -468,7 +474,7 @@ const CommonTable = ({
               <div className="relative" ref={exportDropdownRef}>
                 <button 
                   onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
                 >
                   <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4" />
                   Export
@@ -527,7 +533,7 @@ const CommonTable = ({
                     setAddModalOpen(true);
                   }
                 }} 
-                className='text-green-500 hover:text-green-600 flex-shrink-0 cursor-pointer'
+                  className='text-violet-600 hover:text-violet-700 flex-shrink-0 cursor-pointer'
               >
                 <Plus size={20} />
               </button> 
@@ -539,7 +545,7 @@ const CommonTable = ({
                 <input
                   type="text"
                   placeholder={searchPlaceholder}
-                  className='w-full bg-slate-300 text-black placeholder-slate-800 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  className='w-full bg-slate-100 text-black placeholder-slate-800 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-violet-600'
                   onChange={handleSearch}
                   value={searchTerm}
                 />
@@ -589,7 +595,7 @@ const CommonTable = ({
                         </button>
                       )}
                       {enableEdit && (
-                        <button className='text-indigo-400 hover:text-indigo-300 mr-3 cursor-pointer' onClick={() => handleEditClick(item)}>
+                        <button className='text-violet-600 hover:text-violet-700 mr-3 cursor-pointer' onClick={() => handleEditClick(item)}>
                           <Edit size={18} />
                         </button>
                       )}

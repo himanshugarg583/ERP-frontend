@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState, memo } from 'react';
 import { FaUsers, FaCheckCircle, FaChartLine, FaClipboardList, FaArrowRight, FaChevronLeft, FaChevronRight, FaBell, FaFileAlt, FaSync, FaCalendarAlt, FaExclamationCircle } from 'react-icons/fa';
 import { PieChart } from '@mui/x-charts/PieChart';
-import Sidebar from './TeacherSidebar';
-import Header from './TeacherHeader';
+import TeacherSidebar from './TeacherSidebar';
+import Header from '../../components/comman_components/Header';
 
 const TeacherPortal = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
   const [leaveApplications, setLeaveApplications] = useState([
@@ -45,7 +44,7 @@ const TeacherPortal = () => {
     return days;
   };
 
-  const last7Days = getLast7Days();
+  const last7Days = useMemo(() => getLast7Days(), []);
 
   const getDayColor = (isoDate) => {
     if ((attendanceData?.[0]?.value ?? 0) > 0 && isoDate <= '2025-03-21') return 'bg-green-500';
@@ -121,11 +120,22 @@ const TeacherPortal = () => {
   }) ?? [];
 
   return (
-    <div id="webcrumbs" className="flex flex-col min-h-screen bg-gray-50 overflow-x-hidden">
-      <div className="flex w-full">
-        <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-        <div className="flex-1 overflow-auto md:ml-64">
-          <Header setIsSidebarOpen={setIsSidebarOpen} />
+    <div className="bg-gray-100 flex AddStudent">
+      <TeacherSidebar />
+
+      <div
+        className=" overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
+        <Header />
+
+        <main className="w-full px-4 md:px-6">
           <div className="p-2 sm:p-4 md:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-6 md:mb-8">
               {[
@@ -483,10 +493,10 @@ const TeacherPortal = () => {
               </div>
             )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
 };
 
-export default TeacherPortal;
+export default memo(TeacherPortal);

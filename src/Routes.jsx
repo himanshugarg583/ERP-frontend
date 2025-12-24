@@ -6,6 +6,7 @@ import ParentLogin from './Pages/Authentication/ParentLogin';
 import StudentLogin from './Pages/Authentication/StudentLogin';
 import TeacherLogin from './Pages/Authentication/TeacherLogin';
 import UnifiedLogin from './Pages/Authentication/UnifiedLogin';
+import UnifiedSignup from './Pages/Authentication/UnifiedSignup';
 
 // home page 
 import Home from './Pages/Home';
@@ -52,6 +53,9 @@ import StudentAssignment from './Pages/students/StudentAssignment';
 import StudentResult from './Pages/students/StudentResult';
 import StudentProgress from './Pages/students/StudentProgress';
 import StudentTransport from "./Pages/students/StudentTransport";
+import StudentFees from "./Pages/students/StudentFees";
+import StudentLeave from "./Pages/students/StudentLeave";
+import StudentNotice from "./Pages/students/StudentNotice";
 import StudentProfile from "./Pages/students/StudentProfile";
 
 // **Library Pages**
@@ -78,6 +82,7 @@ import AccountantSetting from "./Pages/Accountant/Accountant_Setting.jsx";
 
 // **Admin Routes**
 import AdminDashboardPage from "./Pages/admin/AdminDashboardPage.jsx";
+import AdminProfile from "./Pages/admin/AdminProfile.jsx";
 import EnquiryPage from "./Pages/admin/front_office/EnquiryPage";
 import AddStudent from "./Pages/admin/Student_info/AddStudent";
 import StudentReports from "./Pages/admin/Student_info/StudentReports";
@@ -88,9 +93,10 @@ import FeeAssignmentPage from "./Pages/admin/fees_collection/FeeAssignmentPage";
 import StudentFeeReportPage from "./Pages/admin/fees_collection/StudentFeeReportPage";
 import PaymentReceivedPage from "./Pages/admin/fees_collection/PaymentReceivedPage";
 import AddIncomePage from "./Pages/admin/Income/AddIncomePage";
-import Student_Crediential from "./Pages/admin/Student_info/Student_Crediential";
-import AddTeacherPage from "./Pages/admin/teacher info/AddTeacher";
+import IncomeHead from "./Pages/admin/Income/IncomeHead";
+import StudentsDetails from "./Pages/admin/Student_info/StudentsDetails";
 import AddExpensePage from "./Pages/admin/Expense/AddExpensePage";
+import ExpenseHead from "./Pages/admin/Expense/ExpenseHead";
 import ClassWiseAttendance from "./Pages/admin/Attendance/ClassWiseAttendance";
 import Leave from "./Pages/admin/Attendance/LeavePage";
 import AttendanceReport from "./Pages/admin/Attendance/AttendanceReport";
@@ -107,14 +113,20 @@ import ExamTimeTablePage from "./Pages/admin/examination/ExamTimeTablePage.jsx";
 import MarksRegisterPage from "./Pages/admin/examination/MarksRegisterPage.jsx";
 import ReportCardPage from "./Pages/admin/examination/ReportCardPage.jsx";
 import TermListPage from "./Pages/admin/examination/TermListPage.jsx";
+import ExamListPage from "./Pages/admin/examination/ExamListPage.jsx";
 import ExamReportPage from "./Pages/admin/examination/ExamReportPage.jsx";
-import EventPage from "./Pages/admin/Announcement/EventPage.jsx";
-import AddAccontantPage from "./Pages/admin/HR/AddAccontantPage.jsx";
-import AddStaff from "./Pages/admin/HR/AddStaff.jsx";
-import AddLibrarian from "./Pages/admin/HR/AddLibrarian.jsx";
 import TeacherManagement from "./Pages/admin/HR/TeacherManagement.jsx";
-import TeacherCredentials from "./Pages/admin/HR/TeacherCredentials.jsx";
 import HRReports from "./Pages/admin/HR/HRReports.jsx";
+import TeacherCredentialsPage from "./Pages/admin/HR/TeacherCredentialsPage.jsx";
+import TeacherSalaryPage from "./Pages/admin/HR/TeacherSalaryPage.jsx";
+import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
+import StudyMaterial from "./Pages/admin/DownloadCenter/StudyMaterial.jsx";
+// Certificates
+import TcPage from "./Pages/admin/Certificates/TcPage.jsx";
+import StudentIdPage from "./Pages/admin/Certificates/StudentIdPage.jsx";
+import StaffCertificate from "./Pages/admin/Certificates/StaffCertificate.jsx";
+import StaffIdCard from "./Pages/admin/Certificates/StaffIdCard.jsx";
+import AdminNotes from "./Pages/admin/AdminNotes";
 
 // online learning
 import OnlineLearningDash from "./Pages/OnlineLearning/OnlineLearningDash";
@@ -148,19 +160,18 @@ const routes = {
   login: [
     { path: "/login", element: <UnifiedLogin /> },
     { path: "/parentLogin", element: <ParentLogin /> },
+    { path: "/signup", element: <UnifiedSignup /> },
   ],
   teacher: [
-    { path: "/TeacherPortal", element: <TeacherPortal /> },
-    { path: "/teacherSubjects", element: <TeacherSubject /> },
-    { path: "/teacherAttendance", element: <TeacherAttendance /> },
-    { path: "/teacherResult", element: <TeacherResult /> },
-    { path: "/teacherTimetable", element: <TeacherTimetable /> },
-    { path: "/teacherTransportation", element: <TeacherTransportation /> },
-    { path: "/teacherAssignment", element: <TeacherAssignment /> },
-    { path: "/teacherNotice", element: <TeacherNotice /> },
-
-    {path:"/teacherProfile",element:<TeacherProfile/>},
-
+    { path: "/teacher/dashboard", element: <TeacherPortal /> },
+    { path: "/teacher/subjects", element: <TeacherSubject /> },
+    { path: "/teacher/attendance", element: <TeacherAttendance /> },
+    { path: "/teacher/results", element: <TeacherResult /> },
+    { path: "/teacher/timetable", element: <TeacherTimetable /> },
+    { path: "/teacher/transportation", element: <TeacherTransportation /> },
+    { path: "/teacher/assignment", element: <TeacherAssignment /> },
+    { path: "/teacher/notice", element: <TeacherNotice /> },
+    { path: "/teacher/profile", element: <TeacherProfile /> },
   ],
   superAdmin: [
     { path: "/superAdminDash", element: <SuperAdminDash /> },
@@ -196,14 +207,17 @@ const routes = {
     { path: "/AccountantSetting", element: <AccountantSetting /> },
   ],
   student: [
-    { path: "/StudentDashboard", element: <Student /> },
-    { path: "/studentattendance", element: <StudentAttendance /> },
-    { path: "/studentsubjects", element: <StudentSubject /> },
-    { path: "/studentassignments", element: <StudentAssignment /> },
-    { path: "/studentresults", element: <StudentResult /> },
-    { path: "/studentprogress", element: <StudentProgress /> },
-    { path: "/studenttransport", element: <StudentTransport /> },
-    { path: "/studentprofile", element: <StudentProfile /> },
+    { path: "/student/dashboard", element: <Student /> },
+    { path: "/student/attendance", element: <StudentAttendance /> },
+    { path: "/student/subjects", element: <StudentSubject /> },
+    { path: "/student/assignments", element: <StudentAssignment /> },
+    { path: "/student/results", element: <StudentResult /> },
+    { path: "/student/progress", element: <StudentProgress /> },
+    { path: "/student/transport", element: <StudentTransport /> },
+    { path: "/student/fees", element: <StudentFees /> },
+    { path: "/student/leave", element: <StudentLeave /> },
+    { path: "/student/notice", element: <StudentNotice /> },
+    { path: "/student/profile", element: <StudentProfile /> },
   ],
   library: [
     { path: "/LibraryDashboard", element: <LibraryDashboard /> },
@@ -215,53 +229,18 @@ const routes = {
     { path: "/libraryreports", element: <LibraryReports /> },
   ],
   admin: [
-<<<<<<< Updated upstream
-    { path: "/AdminDashboardPage", element: <AdminDashboardPage /> },
-    { path: "/Admissionenquiry", element: <EnquiryPage /> },
-    { path: "/AddStudents", element: <AddStudent /> },
-    { path: "/PaymentReceipt", element: <PaymentRecipt /> },
-    { path: "/DemandNotice", element: <DemandNotice /> },
-    { path: "/StudentReports", element: <StudentReports /> },
-    { path: "/FeeDiscountPage", element: <FeeDiscountPage /> },
-    { path: "/FeeReports", element: <FeeReports /> },
-    { path: "/ChequePage", element: <ChequePage /> },
-    { path: "/AddIncome", element: <AddIncomePage /> },
-    { path: "/Admissionenquiry", element: <EnquiryPage/> },
-    { path: "/AddStudents", element: <AddStudent/> },
-    { path: "/Student_Crediential", element: <Student_Crediential/> },
-    { path: "/PaymentReceipt", element: <PaymentRecipt/> },
-    { path: "/DemandNotice", element: <DemandNotice/> },
-    { path: "/StudentReports", element: <StudentReports/> },
-    { path: "/FeeDiscountPage", element: <FeeDiscountPage/> },
-    { path: "/FeeReports", element: <FeeReports/> },
-    { path: "/ChequePage", element: <ChequePage/> },
-    { path: "/AddIncome", element: <AddIncomePage/> },
-    { path: "/AddTeacher", element: <AddTeacherPage/> },
-    { path: "/AddExpense", element: <AddExpensePage/> },
-    { path: "/ClassAttendance", element: <ClassWiseAttendance/> },
-    { path: "/leave", element: <Leave/> },
-    { path: "/AttendanceReport", element: <AttendanceReport/> },
-    { path: "/AddClass", element: <AddClass/> },
-    { path: "/AddSubject", element: <AddSubjectPage/> },
-    { path: "/AssignClass", element: <AssignClass/> },
-    { path: "/TeacherTimeTablePage", element: <TeacherTimeTablePage/> },
-    { path: "/AssignSubject", element: <AssignSubjectPage/> },
-    { path: "/ViewAssignSubPage", element: <ViewAssignSubPage/> },
-    { path: "/ClassTimeTablePage", element: <ClassTimeTablePage/> },
-=======
     { path: "/admin/dashboard", element: <AdminDashboardPage /> },
     { path: "/admin/profile", element: <AdminProfile /> },
     { path: "/admin/admission-enquiry", element: <EnquiryPage /> },
     { path: "/admin/add-students", element: <AddStudent /> },
     { path: "/admin/student-credential", element: <StudentsDetails /> },
     { path: "/admin/students-details", element: <StudentsDetails /> },
+    { path: "/admin/payment-receipt", element: <PaymentRecipt /> },
+    { path: "/admin/demand-notice", element: <DemandNotice /> },
     { path: "/admin/student-reports", element: <StudentReports /> },
-    { path: "/admin/fee-head-management", element: <FeeHeadManagementPage /> },
-    { path: "/admin/fee-structure-management", element: <FeeStructureManagementPage /> },
-    { path: "/admin/fee-assignment", element: <FeeAssignmentPage /> },
-    { path: "/admin/student-fee-reports", element: <StudentFeeReportPage /> },
-    { path: "/admin/payment-received", element: <PaymentReceivedPage /> },
+    { path: "/admin/fee-discount-page", element: <FeeDiscountPage /> },
     { path: "/admin/fee-reports", element: <FeeReports /> },
+    { path: "/admin/cheque-page", element: <ChequePage /> },
     { path: "/admin/add-income", element: <AddIncomePage /> },
     // { path: "/admin/incomehead", element: <IncomeHead /> },
     { path: "/admin/add-expense", element: <AddExpensePage/> },
@@ -276,22 +255,28 @@ const routes = {
     { path: "/admin/assign-subject", element: <AssignSubjectPage/> },
     { path: "/admin/view-assign-sub-page", element: <ViewAssignSubPage/> },
     { path: "/admin/class-time-table-page", element: <ClassTimeTablePage/> },
->>>>>>> Stashed changes
+
     // exam routes
-    { path: "/AdmitCardPage", element: <AdmitCardPage/> },
-    { path: "/ExamAttendancePage", element: <ExamAttendancePage/> },
-    { path: "/ExamTimeTable", element: <ExamTimeTablePage/> },
-    { path: "/MarksRegisterPage", element: <MarksRegisterPage/> },
-    { path: "/ReportCardPage", element: <ReportCardPage/> },
-    { path: "/TermListPage", element: <TermListPage/> },
-    { path: "/ExamReportPage", element: <ExamReportPage/> },
-    { path: "/EventPage", element: <EventPage/> },
-    { path: "/TeacherManagement", element: <TeacherManagement/> },
-    { path: "/TeacherCredentials", element: <TeacherCredentials/> },
-    { path: "/HRReports", element: <HRReports/> },
-    { path: "/AddAccontantPage", element: <AddAccontantPage/> },
-    { path: "/AddStaff", element: <AddStaff/> },
-    { path: "/AddLibrarian", element: <AddLibrarian/> },
+    { path: "/admin/admit-card-page", element: <AdmitCardPage/> },
+    { path: "/admin/exam-attendance-page", element: <ExamAttendancePage/> },
+    { path: "/admin/exam-time-table-page", element: <ExamTimeTablePage/> },
+    { path: "/admin/marks-register-page", element: <MarksRegisterPage/> },
+    { path: "/admin/report-card-page", element: <ReportCardPage/> },
+    { path: "/admin/term-list-page", element: <TermListPage/> },
+    { path: "/admin/exam-list-page", element: <ExamListPage/> },
+    { path: "/admin/exam-report-page", element: <ExamReportPage/> },
+    { path: "/admin/notes", element: <AdminNotes/> },
+    { path: "/admin/teacher-management", element: <TeacherManagement/> },
+    { path: "/admin/hr-reports", element: <HRReports/> },
+    { path: "/admin/hr/teacher-credentials", element: <TeacherCredentialsPage/> },
+    { path: "/admin/hr/teacher-salary", element: <TeacherSalaryPage/> },
+    { path: "/admin/upload-content", element: <UploadContent /> },
+    { path: "/admin/study-material", element: <StudyMaterial /> },
+    // Certificates
+    { path: "/admin/tc-page", element: <TcPage /> },
+    { path: "/admin/student-id-page", element: <StudentIdPage /> },
+    { path: "/admin/staff-certificate", element: <StaffCertificate /> },
+    { path: "/admin/staff-id-card", element: <StaffIdCard /> },
 
       
 
