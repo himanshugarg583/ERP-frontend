@@ -1,9 +1,38 @@
+// Staff ID Card endpoints
+export const generateStaffIdCard = async (user_id) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
+};
+
+export const generateMultipleStaffIdCards = async (user_ids) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
+};
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
+    // Fee Management endpoints
+    CREATE_FEE_HEAD: '/admin/fees/createFeeHead',
+    GET_ALL_FEE_HEADS: '/admin/fees/getAllFeeHeads',
+    GET_FEE_HEAD_BY_ID: (id) => `/admin/fees/getFeeHead/${id}`,
+    UPDATE_FEE_HEAD: (id) => `/admin/fees/updateFeeHead/${id}`,
+    DELETE_FEE_HEAD: (id) => `/admin/fees/deleteFeeHead/${id}`,
+
+    CREATE_FEE_STRUCTURE: '/admin/feeStructure/createFeeStructure',
+    GET_ALL_FEE_STRUCTURES: '/admin/feeStructure/getAllFeeStructures',
+    GET_FEE_STRUCTURE_BY_ID: (id) => `/admin/feeStructure/getFeeStructure/${id}`,
+    UPDATE_FEE_STRUCTURE: (id) => `/admin/feeStructure/updateFeeStructure/${id}`,
+    DELETE_FEE_STRUCTURE: (id) => `/admin/feeStructure/deleteFeeStructure/${id}`,
+
+    ASSIGN_FEE_TO_STUDENTS: '/admin/fees_collection/assignFeeToStudents',
+    GET_ALL_FEE_ASSIGNMENTS: '/admin/fees_collection/getAllFeeAssignments',
+    GET_STUDENTS_BY_CLASS_SECTION: (classId, sectionId) => `/admin/fees_collection/getStudentsByClassSection?class_id=${classId}&section_id=${sectionId}`,
+    GET_STUDENT_FEE_REPORT: (studentId) => `/admin/fees_collection/getStudentFeeReport/${studentId}`,
+    GET_STUDENTS_FEE_SUMMARY: (classId, sectionId) => `/admin/fees_collection/getStudentsFeeSummary?class_id=${classId}&section_id=${sectionId}`,
+    GET_ALL_PAYMENTS: '/admin/fees_collection/getAllPayments',
+    GET_PAYMENT_BY_ID: (id) => `/admin/fees_collection/getPayment/${id}`,
+    CREATE_PAYMENT: '/admin/fees_collection/createPayment',
   LOGIN: '/api/auth/login',
   SIGNUP: '/api/auth/signup',
   REQUEST_PASSWORD_RESET: '/api/auth/request-password-reset',
@@ -957,20 +986,7 @@ export const createPayment = async (paymentData) => {
   return authorizedPost(API_ENDPOINTS.CREATE_PAYMENT, paymentData);
 };
 
-export const generateStaffIdCard = async (user_id) => {
-  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
-};
 
-export const generateMultipleStaffIdCards = async (user_ids) => {
-  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
-
-export const generateStaffIdCard = async (user_id) => {
-  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
-};
-
-export const generateMultipleStaffIdCards = async (user_ids) => {
-  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
-};
 
 // ADMIT CARD ENDPOINTS
 export const getAllExamTermsForAdmitCard = async () => {
@@ -993,7 +1009,3 @@ export const getClassAdmitCards = async (classId) => {
   return authorizedGet(API_ENDPOINTS.GET_CLASS_ADMIT_CARDS(classId));
 };
 
-export const getStudentsExamList = async (classId, examTermId, classSectionId) => {
-  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_EXAM_LIST(classId, examTermId, classSectionId));
-
-};

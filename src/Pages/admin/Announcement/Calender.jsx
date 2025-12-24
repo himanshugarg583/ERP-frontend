@@ -74,13 +74,15 @@ const Calendar = () => {
                 <ListItemText
                   primary={event.title}
                   secondary={
-                    <Typography>
-                      {formatDate(event.start, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </Typography>
+                    <Box component="span">
+                      <Typography component="span">
+                        {formatDate(event.start, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </Typography>
+                    </Box>
                   }
                 />
               </ListItem>

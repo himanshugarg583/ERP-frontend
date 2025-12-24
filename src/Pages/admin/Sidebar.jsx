@@ -70,13 +70,6 @@ const SIDEBAR_ITEMS = [
       { name: "Fee Reports", href: "/admin/fee-reports" },
     ],
 
-      { name: "Payment Receipt", href: "/admin/payment-receipt" },
-      { name: "Demand Notice", href: "/admin/demand-notice" },
-      { name: "Fee Discount", href: "/admin/fee-discount-page" },
-      { name: "Cheque", href: "/admin/cheque-page" },
-      { name: "Fee Reports", href: "/admin/fee-reports" },
-    ],
-
   },
   {
     name: "Attendance",

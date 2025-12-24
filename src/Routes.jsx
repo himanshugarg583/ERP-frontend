@@ -152,6 +152,10 @@ import StaffMaintenence from "./Pages/Staff/AdministrativeTask/StaffMaintenence"
 import StaffEvents from "./Pages/Staff/AdministrativeTask/StaffEvents";
 import StaffTransport from "./Pages/Staff/StaffTransport";
 import AccountantLogin from "./Pages/Authentication/AccountantLogin.jsx";
+import PaymentRecipt from "./Pages/admin/fees_collection/PaymentRecipt";
+import DemandNotice from "./Pages/admin/fees_collection/DemandNotice";
+import FeeDiscountPage from "./Pages/admin/fees_collection/FeeDiscountPage";
+
 
 const routes = {
   home: [
@@ -235,12 +239,14 @@ const routes = {
     { path: "/admin/add-students", element: <AddStudent /> },
     { path: "/admin/student-credential", element: <StudentsDetails /> },
     { path: "/admin/students-details", element: <StudentsDetails /> },
-    { path: "/admin/payment-receipt", element: <PaymentRecipt /> },
-    { path: "/admin/demand-notice", element: <DemandNotice /> },
     { path: "/admin/student-reports", element: <StudentReports /> },
-    { path: "/admin/fee-discount-page", element: <FeeDiscountPage /> },
     { path: "/admin/fee-reports", element: <FeeReports /> },
-    { path: "/admin/cheque-page", element: <ChequePage /> },
+    { path: "/admin/fee-head-management", element: <FeeHeadManagementPage /> },
+    { path: "/admin/fee-structure-management", element: <FeeStructureManagementPage /> },
+    { path: "/admin/fee-assignment", element: <FeeAssignmentPage /> },
+
+    { path: "/admin/student-fee-reports", element: <StudentFeeReportPage /> },
+
     { path: "/admin/add-income", element: <AddIncomePage /> },
     // { path: "/admin/incomehead", element: <IncomeHead /> },
     { path: "/admin/add-expense", element: <AddExpensePage/> },
@@ -272,6 +278,7 @@ const routes = {
     { path: "/admin/hr/teacher-salary", element: <TeacherSalaryPage/> },
     { path: "/admin/upload-content", element: <UploadContent /> },
     { path: "/admin/study-material", element: <StudyMaterial /> },
+    { path: "/admin/payment-received", element: <PaymentReceivedPage /> },
     // Certificates
     { path: "/admin/tc-page", element: <TcPage /> },
     { path: "/admin/student-id-page", element: <StudentIdPage /> },

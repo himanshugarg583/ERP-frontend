@@ -418,7 +418,7 @@ const FeeAssignment = () => {
 
                 <div className="space-y-3">
                   {formData.installments.map((installment, index) => (
-                    <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div key={installment.installment_number || index} className="bg-white p-4 rounded-lg border border-gray-200">
                       <div className="flex justify-between items-center mb-3">
                         <h4 className="font-semibold text-gray-800">Installment {installment.installment_number}</h4>
                         {formData.installments.length > 1 && (
