@@ -21,7 +21,7 @@ export const API_ENDPOINTS = {
 
     CREATE_FEE_STRUCTURE: '/admin/feeStructure/createFeeStructure',
     GET_ALL_FEE_STRUCTURES: '/admin/feeStructure/getAllFeeStructures',
-    GET_FEE_STRUCTURE_BY_ID: (id) => `/admin/feeStructure/getFeeStructure/${id}`,
+    GET_FEE_STRUCTURE_BY_ID: (id) => `/admin/feeStructure/getSingleFeeStructure/${id}`,
     UPDATE_FEE_STRUCTURE: (id) => `/admin/feeStructure/updateFeeStructure/${id}`,
     DELETE_FEE_STRUCTURE: (id) => `/admin/feeStructure/deleteFeeStructure/${id}`,
 
