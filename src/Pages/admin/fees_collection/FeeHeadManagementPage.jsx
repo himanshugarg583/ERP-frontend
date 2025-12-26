@@ -6,6 +6,7 @@ import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import { Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle, Eye } from "lucide-react";
+import { toast } from "react-toastify";
 
 const FeeHeadManagement = () => {
   const [feeHeads, setFeeHeads] = useState([]);
@@ -43,7 +44,9 @@ const FeeHeadManagement = () => {
       
       setFeeHeads(heads);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to fetch fee heads");
+      const errorMessage = err?.response?.data?.message || "Failed to fetch fee heads";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     setLoading(false);
   };
@@ -76,11 +79,15 @@ const FeeHeadManagement = () => {
       if (editMode && currentFeeHead) {
         // Use id instead of _id for update
         const feeHeadId = currentFeeHead.id || currentFeeHead._id;
-        await updateFeeHead(feeHeadId, form);
-        setSuccess("Fee head updated successfully!");
+        const response = await updateFeeHead(feeHeadId, form);
+        const successMessage = response?.message || "Fee head updated successfully!";
+        setSuccess(successMessage);
+        toast.success(successMessage);
       } else {
-        await createFeeHead(form);
-        setSuccess("Fee head created successfully!");
+        const response = await createFeeHead(form);
+        const successMessage = response?.message || "Fee head created successfully!";
+        setSuccess(successMessage);
+        toast.success(successMessage);
       }
       setForm({ name: "", description: "" });
       setIsModalOpen(false);
@@ -88,7 +95,9 @@ const FeeHeadManagement = () => {
       setCurrentFeeHead(null);
       fetchFeeHeads();
     } catch (err) {
-      setError(err?.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} fee head`);
+      const errorMessage = err?.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} fee head`;
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     setLoading(false);
   };
@@ -114,11 +123,15 @@ const FeeHeadManagement = () => {
     setError("");
     setSuccess("");
     try {
-      await deleteFeeHead(id);
-      setSuccess("Fee head deleted successfully!");
+      const response = await deleteFeeHead(id);
+      const successMessage = response?.message || "Fee head deleted successfully!";
+      setSuccess(successMessage);
+      toast.success(successMessage);
       fetchFeeHeads();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to delete fee head");
+      const errorMessage = err?.response?.data?.message || "Failed to delete fee head";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 

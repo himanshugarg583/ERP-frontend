@@ -26,13 +26,15 @@ export const API_ENDPOINTS = {
     DELETE_FEE_STRUCTURE: (id) => `/admin/feeStructure/deleteFeeStructure/${id}`,
 
     ASSIGN_FEE_TO_STUDENTS: '/admin/fees_collection/assignFeeToStudents',
+    ASSIGN_FEE_WITH_INSTALLMENTS: '/admin/studentFee/assignFeeWithInstallments',
     GET_ALL_FEE_ASSIGNMENTS: '/admin/fees_collection/getAllFeeAssignments',
     GET_STUDENTS_BY_CLASS_SECTION: (classId, sectionId) => `/admin/fees_collection/getStudentsByClassSection?class_id=${classId}&section_id=${sectionId}`,
     GET_STUDENT_FEE_REPORT: (studentId) => `/admin/fees_collection/getStudentFeeReport/${studentId}`,
     GET_STUDENTS_FEE_SUMMARY: (classId, sectionId) => `/admin/fees_collection/getStudentsFeeSummary?class_id=${classId}&section_id=${sectionId}`,
-    GET_ALL_PAYMENTS: '/admin/fees_collection/getAllPayments',
+    GET_ALL_PAYMENTS: '/admin/feePayment/getAllPayments',
+    GET_PAYMENT_DETAILS: (id) => `/admin/feePayment/getPaymentDetails/${id}`,
     GET_PAYMENT_BY_ID: (id) => `/admin/fees_collection/getPayment/${id}`,
-    CREATE_PAYMENT: '/admin/fees_collection/createPayment',
+    CREATE_PAYMENT: '/admin/feePayment/createPayment',
   LOGIN: '/api/auth/login',
   SIGNUP: '/api/auth/signup',
   REQUEST_PASSWORD_RESET: '/api/auth/request-password-reset',
@@ -112,6 +114,9 @@ export const API_ENDPOINTS = {
   GET_STUDENT_REPORT_BY_DATE: (className, sectionName, date) => `admin/studentsAttendance/attendanceReportByDate?class_name=${className}&section_name=${sectionName}&date=${date}`,
   GET_STUDENT_REPORT_BY_MONTH: (className, sectionName, month, year) => `admin/studentsAttendance/monthlyAttendanceReport?class_name=${className}&section_name=${sectionName}&month=${month}&year=${year}`,
   GET_CLASS_WISE_SUMMARY: (date) => `admin/studentsAttendance/classWiseSummary?date=${date}`,
+  
+  // student fee details endpoint
+  GET_STUDENT_COMPLETE_FEE_DETAILS: (studentId) => `/admin/studentFee/getStudentCompleteFeeDetails/${studentId}`,
 
   // get class sections endpoint
   GET_ALL_CLASSES_DROPDOWN: '/admin/dropdown/getClassDropdown',
@@ -201,6 +206,8 @@ export const API_ENDPOINTS = {
   GET_STUDENT_FEES_DETAILS: '/student/fees/getFeeDetails',
   // get student installments
   GET_STUDENT_INSTALLMENTS: '/student/fees/getInstallments',
+  // get student payment history
+  GET_STUDENT_PAYMENT_HISTORY: '/student/fees/getPaymentHistory',
   // get student profile and change password
   GET_STUDENT_PROFILE: '/student/setting/getProfile',
   CHANGE_STUDENT_PASSWORD: '/student/setting/changePassword',
@@ -335,6 +342,11 @@ export const requestPasswordReset = async (email) => {
     console.error('Password reset request failed:', error);
     throw error;
   }
+};
+
+// Fetch student complete fee details
+export const getStudentCompleteFeeDetails = async (studentId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_COMPLETE_FEE_DETAILS(studentId));
 };
 
 // Fetch all admission enquiries
@@ -798,6 +810,11 @@ export const getStudentInstallments = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_INSTALLMENTS);
 };
 
+// Get student payment history
+export const getStudentPaymentHistory = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_PAYMENT_HISTORY);
+};
+
 // Student Leave API functions
 export const getStudentLeaves = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_LEAVES);
@@ -947,6 +964,11 @@ export const assignFeeToStudents = async (assignmentData) => {
   return authorizedPost(API_ENDPOINTS.ASSIGN_FEE_TO_STUDENTS, assignmentData);
 };
 
+// Assign Fee with Installments
+export const assignFeeWithInstallments = async (assignmentData) => {
+  return authorizedPost(API_ENDPOINTS.ASSIGN_FEE_WITH_INSTALLMENTS, assignmentData);
+};
+
 // Get All Fee Assignments
 export const getAllFeeAssignments = async () => {
   return authorizedGet(API_ENDPOINTS.GET_ALL_FEE_ASSIGNMENTS);
@@ -974,6 +996,11 @@ export const getStudentsFeesSummary = async (classId, sectionId) => {
 // Get All Payments
 export const getAllPayments = async () => {
   return authorizedGet(API_ENDPOINTS.GET_ALL_PAYMENTS);
+};
+
+// Get Payment Details by ID
+export const getPaymentDetails = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_PAYMENT_DETAILS(id));
 };
 
 // Get Payment by ID

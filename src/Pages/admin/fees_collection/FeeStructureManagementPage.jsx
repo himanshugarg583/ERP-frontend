@@ -14,6 +14,7 @@ import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import { Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle, Eye, X } from "lucide-react";
+import { toast } from "react-toastify";
 
 const FeeStructureManagement = () => {
   const [feeStructures, setFeeStructures] = useState([]);
@@ -61,7 +62,9 @@ const FeeStructureManagement = () => {
       
       setFeeStructures(structures);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to fetch fee structures");
+      const errorMessage = err?.response?.data?.message || "Failed to fetch fee structures";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     setLoading(false);
   };
@@ -81,7 +84,9 @@ const FeeStructureManagement = () => {
       
       setFeeHeads(heads);
     } catch (err) {
-      console.error("Failed to fetch fee heads:", err);
+      const errorMessage = "Failed to fetch fee heads";
+      console.error(errorMessage, err);
+      toast.error(errorMessage);
     }
   };
 
@@ -100,7 +105,9 @@ const FeeStructureManagement = () => {
       
       setClassSections(sections);
     } catch (err) {
-      console.error("Failed to fetch class sections:", err);
+      const errorMessage = "Failed to fetch class sections";
+      console.error(errorMessage, err);
+      toast.error(errorMessage);
     }
   };
 
@@ -159,7 +166,9 @@ const FeeStructureManagement = () => {
 
     // Validate fee details
     if (form.fee_details.length === 0) {
-      setError("Please add at least one fee detail");
+      const errorMessage = "Please add at least one fee detail";
+      setError(errorMessage);
+      toast.error(errorMessage);
       setLoading(false);
       return;
     }
@@ -174,11 +183,15 @@ const FeeStructureManagement = () => {
     try {
       if (editMode && currentFeeStructure) {
         const structureId = currentFeeStructure.id || currentFeeStructure._id;
-        await updateFeeStructure(structureId, payload);
-        setSuccess("Fee structure updated successfully!");
+        const response = await updateFeeStructure(structureId, payload);
+        const successMessage = response?.message || "Fee structure updated successfully!";
+        setSuccess(successMessage);
+        toast.success(successMessage);
       } else {
-        await createFeeStructure(payload);
-        setSuccess("Fee structure created successfully!");
+        const response = await createFeeStructure(payload);
+        const successMessage = response?.message || "Fee structure created successfully!";
+        setSuccess(successMessage);
+        toast.success(successMessage);
       }
       setForm({
         name: "",
@@ -198,7 +211,9 @@ const FeeStructureManagement = () => {
       setCurrentFeeStructure(null);
       fetchFeeStructures();
     } catch (err) {
-      setError(err?.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} fee structure`);
+      const errorMessage = err?.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} fee structure`;
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     setLoading(false);
   };
@@ -225,7 +240,9 @@ const FeeStructureManagement = () => {
       setViewFeeStructure(structureData);
       setIsViewModalOpen(true);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to fetch fee structure details");
+      const errorMessage = err?.response?.data?.message || "Failed to fetch fee structure details";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
     setLoading(false);
   };
@@ -255,11 +272,15 @@ const FeeStructureManagement = () => {
     setError("");
     setSuccess("");
     try {
-      await deleteFeeStructure(id);
-      setSuccess("Fee structure deleted successfully!");
+      const response = await deleteFeeStructure(id);
+      const successMessage = response?.message || "Fee structure deleted successfully!";
+      setSuccess(successMessage);
+      toast.success(successMessage);
       fetchFeeStructures();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to delete fee structure");
+      const errorMessage = err?.response?.data?.message || "Failed to delete fee structure";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
