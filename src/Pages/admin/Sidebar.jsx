@@ -129,8 +129,6 @@ const SIDEBAR_ITEMS = [
     name: "Certificates",
     icon: Award,
     subItems: [
-      { name: "Student TC", href: "/admin/tc-page" },
-      { name: "Staff Certificate", href: "/admin/staff-certificate" },
       { name: "Student Id Card", href: "/admin/student-id-page" },
       { name: "Staff Id Card", href: "/admin/staff-id-card" },
     ],

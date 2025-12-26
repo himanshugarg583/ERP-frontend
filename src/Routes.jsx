@@ -122,9 +122,7 @@ import TeacherSalaryPage from "./Pages/admin/HR/TeacherSalaryPage.jsx";
 import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
 import StudyMaterial from "./Pages/admin/DownloadCenter/StudyMaterial.jsx";
 // Certificates
-import TcPage from "./Pages/admin/Certificates/TcPage.jsx";
 import StudentIdPage from "./Pages/admin/Certificates/StudentIdPage.jsx";
-import StaffCertificate from "./Pages/admin/Certificates/StaffCertificate.jsx";
 import StaffIdCard from "./Pages/admin/Certificates/StaffIdCard.jsx";
 import AdminNotes from "./Pages/admin/AdminNotes";
 
@@ -279,9 +277,7 @@ const routes = {
     { path: "/admin/study-material", element: <StudyMaterial /> },
     { path: "/admin/payment-received", element: <PaymentReceivedPage /> },
     // Certificates
-    { path: "/admin/tc-page", element: <TcPage /> },
     { path: "/admin/student-id-page", element: <StudentIdPage /> },
-    { path: "/admin/staff-certificate", element: <StaffCertificate /> },
     { path: "/admin/staff-id-card", element: <StaffIdCard /> },
 
       
