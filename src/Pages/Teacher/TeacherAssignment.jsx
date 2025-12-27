@@ -2,8 +2,18 @@ import React, { useState, useEffect } from 'react';
 import TeacherSidebar from './TeacherSidebar';
 import Header from '../../components/comman_components/Header';
 import { FaCloudUploadAlt, FaEdit, FaTrash, FaEye, FaPlus, FaSave, FaDownload } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import { 
+  uploadTeacherSubjectResource, 
+  getTeacherSubjectResources,
+  getTeacherSubjectResourceById,
+  updateTeacherSubjectResource,
+  deleteTeacherSubjectResource,
+  getAllClassesDropdown, 
+  getSubjectsByClass 
+} from '../../helper/requests-method/apiMethods';
 
-const AssignmentForm = ({ editingId, newAssignment, teacherSubjects, teacherClasses, onChange, onFileChange, onSubmit }) => (
+const AssignmentForm = ({ editingId, newAssignment, subjects, classes, onChange, onFileChange, onSubmit, onClassChange }) => (
   <section className="mb-6">
     <h2 className="text-xl font-semibold mb-3 flex items-center">
       <FaPlus className="mr-2" /> {editingId ? "Edit Assignment" : "Upload New Assignment"}
@@ -11,10 +21,9 @@ const AssignmentForm = ({ editingId, newAssignment, teacherSubjects, teacherClas
     <form onSubmit={onSubmit} className="bg-gray-50 p-4 rounded-lg border">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Input name="title" value={newAssignment?.title ?? ''} onChange={onChange} placeholder="Assignment Title" required />
-        <Select name="subject" value={newAssignment?.subject ?? ''} options={teacherSubjects ?? []} onChange={onChange} />
-        <Select name="class" value={newAssignment?.class ?? ''} options={teacherClasses ?? []} onChange={onChange} />
-        <Input type="date" name="dueDate" value={newAssignment?.dueDate ?? ''} onChange={onChange} required />
-        <Input type="number" name="maxPoints" value={newAssignment?.maxPoints ?? ''} onChange={onChange} placeholder="100" required />
+        <SelectDropdown name="class_section_id" value={newAssignment?.class_section_id ?? ''} options={classes ?? []} onChange={onClassChange} label="Class" />
+        <SelectDropdown name="subject_id" value={newAssignment?.subject_id ?? ''} options={subjects ?? []} onChange={onChange} label="Subject" disabled={!newAssignment?.class_section_id} />
+        <Input type="date" name="due_date" value={newAssignment?.due_date ?? ''} onChange={onChange} required />
         <textarea 
           name="description" 
           value={newAssignment?.description ?? ''} 
@@ -50,30 +59,59 @@ const Select = ({ name, value, options, onChange }) => (
   )
 );
 
+const SelectDropdown = ({ name, value, options, onChange, label, disabled }) => {
+  const getDisplayText = (opt) => {
+    if (opt.class_name && opt.section_name) {
+      return `${opt.class_name} - ${opt.section_name}`;
+    }
+    return opt.class_name || opt.subject_name || opt.name || '';
+  };
+
+  const getOptionValue = (opt) => {
+    return opt.subject_id || opt.id;
+  };
+
+  const getOptionKey = (opt) => {
+    return opt.subject_id || opt.id;
+  };
+
+  return (
+    <select 
+      name={name} 
+      value={value ?? ''} 
+      onChange={onChange} 
+      className="p-2 border rounded w-full"
+      disabled={disabled}
+      required
+    >
+      <option value="">Select {label}</option>
+      {options?.map?.((opt) => (
+        <option key={getOptionKey(opt)} value={getOptionValue(opt)}>
+          {getDisplayText(opt)}
+        </option>
+      )) ?? []}
+    </select>
+  );
+};
+
 const AssignmentTable = ({ assignments, onEdit, onDelete, onView }) => (
   <section className="mb-6">
     <h2 className="text-xl font-semibold mb-3">Current Assignments</h2>
     <table className="min-w-full border rounded">
       <thead className="bg-gray-50">
-        <tr>{["Assignment", "Subject", "Class", "Assigned", "Due", "Status", "Actions"].map(h => <th key={h} className="p-2 text-left text-xs text-gray-500">{h}</th>)}</tr>
+        <tr>{["Assignment", "Subject", "Class", "Due Date", "Actions"].map(h => <th key={h} className="p-2 text-left text-xs text-gray-500">{h}</th>)}</tr>
       </thead>
       <tbody>
         {assignments?.map?.((a) => (
-          <tr key={a?.id} className="border-t">
+          <tr key={a?.resource_id} className="border-t">
             <td className="p-2">{a?.title ?? ''}</td>
-            <td className="p-2">{a?.subject ?? ''}</td>
-            <td className="p-2">{a?.class ?? ''}</td>
-            <td className="p-2">{a?.assignedDate ?? ''}</td>
-            <td className="p-2">{a?.dueDate ?? ''}</td>
-            <td className="p-2">
-              <span className={`px-2 py-1 text-xs rounded-full ${a?.status === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
-                {a?.status ?? ''}
-              </span>
-            </td>
+            <td className="p-2">{a?.subject_name ?? ''}</td>
+            <td className="p-2">{a?.class_display ?? ''}</td>
+            <td className="p-2">{a?.due_date ? new Date(a.due_date).toLocaleDateString() : 'N/A'}</td>
             <td className="p-2 flex gap-2">
-              <button onClick={() => onEdit(a)}><FaEdit className="text-indigo-600" /></button>
-              <button onClick={() => onDelete(a?.id)}><FaTrash className="text-red-600" /></button>
-              <button onClick={() => onView(a)}><FaEye className="text-gray-600" /></button>
+              <button onClick={() => onEdit(a)} title="Edit"><FaEdit className="text-indigo-600" /></button>
+              <button onClick={() => onDelete(a?.resource_id)} title="Delete"><FaTrash className="text-red-600" /></button>
+              <button onClick={() => onView(a)} title="View"><FaEye className="text-gray-600" /></button>
             </td>
           </tr>
         )) ?? []}
@@ -144,27 +182,109 @@ const SubmissionCard = ({ assignment, isViewing, submissions, onView, isLate }) 
   );
 };
 
+const ViewAssignmentModal = ({ assignment, onClose }) => {
+  if (!assignment) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Assignment Details</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="font-semibold text-gray-700">Title:</label>
+            <p className="text-gray-600">{assignment.title}</p>
+          </div>
+          
+          <div>
+            <label className="font-semibold text-gray-700">Subject:</label>
+            <p className="text-gray-600">{assignment.subject_name}</p>
+          </div>
+          
+          <div>
+            <label className="font-semibold text-gray-700">Class:</label>
+            <p className="text-gray-600">{assignment.class_display}</p>
+          </div>
+          
+          <div>
+            <label className="font-semibold text-gray-700">Due Date:</label>
+            <p className="text-gray-600">{assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'N/A'}</p>
+          </div>
+          
+          <div>
+            <label className="font-semibold text-gray-700">Description:</label>
+            <p className="text-gray-600 whitespace-pre-wrap">{assignment.description}</p>
+          </div>
+          
+          <div>
+            <label className="font-semibold text-gray-700">Resource Type:</label>
+            <p className="text-gray-600 capitalize">{assignment.resource_type}</p>
+          </div>
+          
+          {assignment.file_url && (
+            <div>
+              <label className="font-semibold text-gray-700">Attachment:</label>
+              <div className="mt-2">
+                <a 
+                  href={assignment.file_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  <FaDownload className="mr-2" />
+                  Download File
+                </a>
+              </div>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+            <div>
+              <label className="font-semibold text-gray-700">Created At:</label>
+              <p className="text-gray-600 text-sm">{new Date(assignment.created_at).toLocaleString()}</p>
+            </div>
+            <div>
+              <label className="font-semibold text-gray-700">Updated At:</label>
+              <p className="text-gray-600 text-sm">{new Date(assignment.updated_at).toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-6 flex justify-end">
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TeacherAssignment = () => {
-  const teacherSubjects = ["Mathematics"];
-  const teacherClasses = ["Class 10A", "Class 10B"];
-  const [assignments, setAssignments] = useState(() => {
-    const saved = localStorage.getItem('assignments');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, title: "Mathematical Equations", subject: "Mathematics", class: "Class 10A", assignedDate: "15 Oct 2023", dueDate: "22 Oct 2023", status: "Active", submissions: 23, totalStudents: 30 },
-      { id: 2, title: "Algebra Basics", subject: "Mathematics", class: "Class 10B", assignedDate: "10 Oct 2023", dueDate: "20 Oct 2023", status: "Active", submissions: 18, totalStudents: 30 },
-    ];
-  });
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [newAssignment, setNewAssignment] = useState({ 
     title: "", 
-    subject: teacherSubjects?.[0] ?? '', 
-    class: teacherClasses?.[0] ?? '', 
-    dueDate: "", 
-    maxPoints: "", 
+    class_section_id: "", 
+    subject_id: "", 
+    due_date: "", 
     description: "", 
     file: null 
   });
   const [editingId, setEditingId] = useState(null);
   const [viewingSubmissions, setViewingSubmissions] = useState(null);
+  const [viewingAssignment, setViewingAssignment] = useState(null);
   const studentSubmissions = {
     1: [
       { name: "Amit", submittedAt: "2023-10-20T10:00:00", dueDate: "2023-10-22", fileUrl: "https://example.com/amit_math.pdf", fileName: "amit_math.pdf" },
@@ -176,41 +296,150 @@ const TeacherAssignment = () => {
     ],
   };
 
-  useEffect(() => localStorage.setItem('assignments', JSON.stringify(assignments ?? [])), [assignments]);
+  useEffect(() => {
+    fetchClasses();
+    fetchAssignments();
+  }, []);
+
+  const fetchAssignments = async () => {
+    try {
+      const response = await getTeacherSubjectResources();
+      if (response.success) {
+        setAssignments(response.data?.resources || []);
+      }
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      toast.error('Failed to fetch assignments');
+    }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const response = await getAllClassesDropdown();
+      if (response.success) {
+        setClasses(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      toast.error('Failed to fetch classes');
+    }
+  };
+
+  const fetchSubjects = async (classId) => {
+    try {
+      const response = await getSubjectsByClass(classId);
+      if (response.success) {
+        setSubjects(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      toast.error('Failed to fetch subjects');
+    }
+  };
 
   const handleChange = (e) => setNewAssignment({ ...newAssignment, [e.target.name]: e.target.value });
-  const handleFileChange = (e) => setNewAssignment({ ...newAssignment, file: e.target.files?.[0] ?? null });
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (editingId) {
-      setAssignments(assignments?.map?.((a) => a.id === editingId ? { ...a, ...newAssignment } : a) ?? []);
-      setEditingId(null);
+  
+  const handleClassChange = (e) => {
+    const classId = e.target.value;
+    setNewAssignment({ ...newAssignment, class_section_id: classId, subject_id: '' });
+    if (classId) {
+      fetchSubjects(classId);
     } else {
-      setAssignments([...(assignments ?? []), { 
-        id: (assignments?.length ?? 0) + 1, 
-        ...newAssignment, 
-        assignedDate: new Date().toLocaleDateString(), 
-        status: "Active", 
-        submissions: 0, 
-        totalStudents: 30 
-      }]);
+      setSubjects([]);
     }
-    setNewAssignment({ 
-      title: "", 
-      subject: teacherSubjects?.[0] ?? '', 
-      class: teacherClasses?.[0] ?? '', 
-      dueDate: "", 
-      maxPoints: "", 
-      description: "", 
-      file: null 
-    });
+  };
+  
+  const handleFileChange = (e) => setNewAssignment({ ...newAssignment, file: e.target.files?.[0] ?? null });
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const formData = new FormData();
+      formData.append('class_section_id', newAssignment.class_section_id);
+      formData.append('subject_id', newAssignment.subject_id);
+      formData.append('title', newAssignment.title);
+      formData.append('description', newAssignment.description || 'Assignment description');
+      formData.append('resource_type', 'assignment');
+      formData.append('due_date', newAssignment.due_date);
+      
+      if (newAssignment.file) {
+        formData.append('file', newAssignment.file);
+      }
+      
+      if (editingId) {
+        const response = await updateTeacherSubjectResource(editingId, formData);
+        if (response.success) {
+          toast.success(response.message || 'Assignment updated successfully');
+          fetchAssignments();
+        }
+        setEditingId(null);
+      } else {
+        const response = await uploadTeacherSubjectResource(formData);
+        
+        if (response.success) {
+          toast.success(response.message || 'Assignment uploaded successfully');
+          fetchAssignments();
+        }
+      }
+      
+      setNewAssignment({ 
+        title: "", 
+        class_section_id: "", 
+        subject_id: "", 
+        due_date: "", 
+        description: "", 
+        file: null 
+      });
+      setSubjects([]);
+    } catch (error) {
+      console.error('Error uploading assignment:', error);
+      toast.error(error.response?.data?.message || 'Failed to upload assignment');
+    }
   };
   const handleEdit = (a) => { 
-    setEditingId(a?.id ?? null); 
-    setNewAssignment({ ...a, maxPoints: "100", description: "Edit this description", file: null }); 
+    setEditingId(a?.resource_id ?? null);
+    setNewAssignment({ 
+      title: a?.title ?? '',
+      class_section_id: a?.class_section_id ?? '',
+      subject_id: a?.subject_id ?? '',
+      due_date: a?.due_date ?? '',
+      description: a?.description ?? '',
+      file: null 
+    });
+    // Fetch subjects for the class
+    if (a?.class_section_id) {
+      fetchSubjects(a.class_section_id);
+    }
   };
-  const handleDelete = (id) => setAssignments(assignments?.filter?.((a) => a.id !== id) ?? []);
-  const handleView = (a) => setNewAssignment({ ...a, maxPoints: "100", description: "View or edit this description", file: null });
+  
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this assignment?')) return;
+    
+    try {
+      const response = await deleteTeacherSubjectResource(id);
+      if (response.success) {
+        toast.success(response.message || 'Assignment deleted successfully');
+        fetchAssignments();
+      }
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete assignment');
+    }
+  };
+  
+  const handleView = async (a) => {
+    try {
+      const response = await getTeacherSubjectResourceById(a?.resource_id);
+      if (response.success) {
+        setViewingAssignment(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching assignment details:', error);
+      toast.error('Failed to fetch assignment details');
+    }
+  };
+  
   const handleViewSubmissions = (a) => setViewingSubmissions(a?.id ?? null);
   const isLateSubmission = (submittedAt, dueDate) => (submittedAt && dueDate) ? new Date(submittedAt) > new Date(dueDate) : false;
 
@@ -235,11 +464,12 @@ const TeacherAssignment = () => {
             <AssignmentForm 
               editingId={editingId} 
               newAssignment={newAssignment} 
-              teacherSubjects={teacherSubjects} 
-              teacherClasses={teacherClasses} 
+              subjects={subjects} 
+              classes={classes} 
               onChange={handleChange} 
               onFileChange={handleFileChange} 
-              onSubmit={handleSubmit} />
+              onSubmit={handleSubmit}
+              onClassChange={handleClassChange} />
             <AssignmentTable 
               assignments={assignments} 
               onEdit={handleEdit} 
@@ -262,6 +492,13 @@ const TeacherAssignment = () => {
           </div>
         </main>
       </div>
+      
+      {viewingAssignment && (
+        <ViewAssignmentModal 
+          assignment={viewingAssignment} 
+          onClose={() => setViewingAssignment(null)} 
+        />
+      )}
     </div>
   );
 };

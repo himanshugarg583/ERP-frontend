@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { uploadClassResource, getAllClassesDropdown, updateClassResource } from '../../helper/requests-method/apiMethods';
+import { toast } from 'react-toastify';
 
 const FeeDiscountForm = ({ formheading }) => {
   return (
@@ -785,123 +787,250 @@ const AddSubject = () => {
   );
 };
 
-const AddContent = () => {
+const AddContent = ({ onUploadSuccess, editingResource, onEditComplete }) => {
+  const [formData, setFormData] = useState({
+    class_section_id: '',
+    title: '',
+    description: '',
+    resource_type: '',
+    file: null
+  });
+  const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  useEffect(() => {
+    if (editingResource) {
+      setFormData({
+        class_section_id: editingResource.class_section_id,
+        title: editingResource.title,
+        description: editingResource.description || '',
+        resource_type: editingResource.resource_type,
+        file: null
+      });
+    }
+  }, [editingResource]);
+
+  const fetchClasses = async () => {
+    try {
+      const response = await getAllClassesDropdown();
+      if (response.success && response.data) {
+        setClasses(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch classes:', error);
+      toast.error('Failed to fetch classes');
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      file: e.target.files[0]
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.class_section_id || !formData.title || !formData.resource_type) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formDataToSend = new FormData();
+      formDataToSend.append('class_section_id', formData.class_section_id);
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('resource_type', formData.resource_type);
+      if (formData.file) {
+        formDataToSend.append('file', formData.file);
+      }
+
+      let response;
+      if (editingResource) {
+        response = await updateClassResource(editingResource.resource_id, formDataToSend);
+      } else {
+        response = await uploadClassResource(formDataToSend);
+      }
+      
+      if (response.success) {
+        toast.success(response.message || (editingResource ? 'Content updated successfully' : 'Content uploaded successfully'));
+        // Reset form
+        setFormData({
+          class_section_id: '',
+          title: '',
+          description: '',
+          resource_type: '',
+          file: null
+        });
+        // Reset file input
+        const fileInput = document.getElementById('content-file');
+        if (fileInput) fileInput.value = '';
+        
+        // Call appropriate callback
+        if (editingResource && onEditComplete) {
+          onEditComplete();
+        } else if (onUploadSuccess) {
+          onUploadSuccess();
+        }
+      } else {
+        toast.error(response.message || (editingResource ? 'Failed to update content' : 'Failed to upload content'));
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(error.response?.data?.message || 'Failed to upload content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white w-full p-4 rounded-lg shadow-md">
-      <div class="flex items-center mb-4">
-        <i class="fas fa-edit text-purple-700 mr-2"></i>
-        <h2 class="text-xl font-semibold text-gray-800">Add Content</h2>
-      </div>
-      <form>
-        <div class="mb-4">
-          <label
-            class="block text-gray-700 font-medium mb-1"
-            for="content-title"
-          >
-            Content Title <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="content-title"
-            class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
-            required
-          />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <i className="fas fa-edit text-purple-700 mr-2"></i>
+          <h2 className="text-xl font-semibold text-gray-800">
+            {editingResource ? 'Edit Content' : 'Add Content'}
+          </h2>
         </div>
-        <div class="mb-4">
-          <label
-            class="block text-gray-700 font-medium mb-1"
-            for="content-type"
+        {editingResource && (
+          <button
+            type="button"
+            onClick={() => {
+              setFormData({
+                class_section_id: '',
+                title: '',
+                description: '',
+                resource_type: '',
+                file: null
+              });
+              const fileInput = document.getElementById('content-file');
+              if (fileInput) fileInput.value = '';
+              if (onEditComplete) onEditComplete();
+            }}
+            className="text-sm text-gray-600 hover:text-gray-800 underline"
           >
-            Content Type <span class="text-red-500">*</span>
+            Cancel Edit
+          </button>
+        )}
+      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 font-medium mb-1"
+            htmlFor="class_section_id"
+          >
+            Class <span className="text-red-500">*</span>
           </label>
           <select
-            id="content-type"
-            class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            id="class_section_id"
+            name="class_section_id"
+            value={formData.class_section_id}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
             required
           >
-            <option value="">Select</option>
+            <option value="">Select Class</option>
+            {classes.map((cls) => (
+              <option key={cls.id} value={cls.id}>
+                {cls.class_name} - {cls.section_name}
+              </option>
+            ))}
           </select>
         </div>
-        <div class="mb-4">
-          <label class="block text-gray-700 font-medium mb-1">
-            Available For <span class="text-red-500">*</span>
-          </label>
-          <div class="flex items-center mb-2">
-            <input type="checkbox" id="all-staff-teacher" class="mr-2" />
-            <label for="all-staff-teacher" class="text-gray-700">
-              All staff Teacher
-            </label>
-          </div>
-          <div class="flex items-center mb-2">
-            <input type="checkbox" id="student" class="mr-2" />
-            <label for="student" class="text-gray-700">
-              Student
-            </label>
-          </div>
-          <div class="flex items-center">
-            <input type="checkbox" id="subject" class="mr-2" />
-            <label for="subject" class="text-gray-700">
-              Subject
-            </label>
-          </div>
-        </div>
-        <div class="mb-4">
-          <label class="block text-gray-700 font-medium mb-1" for="upload-date">
-            Upload Date <span class="text-red-500">*</span>
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 font-medium mb-1"
+            htmlFor="title"
+          >
+            Content Title <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            id="upload-date"
-            class="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500"
-            value="29-01-2025"
-            readonly
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            required
           />
         </div>
-        <div class="mb-4">
-          <label class="block text-gray-700 font-medium mb-1" for="description">
+        <div className="mb-4">
+          <label
+            className="block text-gray-700 font-medium mb-1"
+            htmlFor="resource_type"
+          >
+            Resource Type <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="resource_type"
+            name="resource_type"
+            value={formData.resource_type}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            required
+          >
+            <option value="">Select Type</option>
+            <option value="assignment">Assignment</option>
+            <option value="study_material">Study Material</option>
+            <option value="syllabus">Syllabus</option>
+            <option value="notes">Notes</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 font-medium mb-1" htmlFor="description">
             Description
           </label>
           <textarea
             id="description"
-            class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            rows="4"
           ></textarea>
         </div>
-        <div class="mb-4">
-          <label class="block text-gray-700 font-medium mb-1" for="privacy">
-            Privacy
-          </label>
-          <select
-            id="privacy"
-            class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
-          >
-            <option value="view-download">View and Download</option>
-          </select>
-        </div>
-        <div class="mb-4">
+        <div className="mb-4">
           <label
-            class="block text-gray-700 font-medium mb-1"
-            for="content-file"
+            className="block text-gray-700 font-medium mb-1"
+            htmlFor="content-file"
           >
-            Content File
+            Content File {editingResource && <span className="text-sm text-gray-500">(Leave empty to keep current file)</span>}
           </label>
           <input
             type="file"
             id="content-file"
-            class="w-full border border-gray-300 rounded-md p-2"
+            onChange={handleFileChange}
+            className="w-full border border-gray-300 rounded-md p-2"
           />
+          {editingResource && (
+            <p className="text-xs text-gray-500 mt-1">
+              Current file: <a href={editingResource.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View</a>
+            </p>
+          )}
         </div>
-        <div class="flex justify-between">
+        <div className="flex justify-between">
           <button
-            type="button"
-            class="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            type="submit"
+            disabled={loading}
+            className="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-600 disabled:opacity-50"
           >
-            Save
-          </button>
-          <button
-            type="button"
-            class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-600"
-          >
-            Save and Duplicate Details
+            {loading ? (editingResource ? 'Updating...' : 'Uploading...') : (editingResource ? 'Update' : 'Save')}
           </button>
         </div>
       </form>

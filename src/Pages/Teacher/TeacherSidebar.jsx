@@ -37,6 +37,11 @@ const SIDEBAR_ITEMS = [
     subItems: [{ name: "Assignment", href: "/teacher/assignment" }],
   },
   {
+    name: "Upload Content",
+    icon: Book,
+    subItems: [{ name: "Upload Content", href: "/teacher/upload-content" }],
+  },
+  {
     name: "Timetable",
     icon: Calendar,
     subItems: [{ name: "Timetable", href: "/teacher/timetable" }],

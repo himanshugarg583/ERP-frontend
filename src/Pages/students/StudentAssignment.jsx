@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchStudentAssignments } from '../../helper/requests-method/apiMethods';
 import StudentSidebar from './StudentSidebar';
 import Header from '../../components/comman_components/Header';
 import { FaChevronDown, FaExclamationTriangle, FaCalendarAlt, FaFileAlt, FaEnvelope, FaUpload, FaEye, FaTachometerAlt, FaTasks, FaCalendar, FaUser } from 'react-icons/fa';
@@ -8,15 +9,35 @@ const StudentAssignment = () => {
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [showTeacherInfo, setShowTeacherInfo] = useState(null);
   const [showMarks, setShowMarks] = useState({});
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const assignments = [
-    { id: 1, title: 'Calculus Problems', subject: 'Mathematics', status: 'Overdue', dueDate: 'May 10, 2023', description: 'Complete problems 1-20 from Chapter 5', color: 'red-500', teacher: { name: 'Mr. Smith', email: 'smith@school.com' } },
-    { id: 2, title: 'Lab Report', subject: 'Science', status: 'Due Soon', dueDate: 'May 15, 2023', description: 'Write up the lab experiment findings', color: 'yellow-500', teacher: { name: 'Ms. Johnson', email: 'johnson@school.com' } },
-    { id: 3, title: 'Programming Project', subject: 'Computer Science', status: 'Due Soon', dueDate: 'May 16, 2023', description: 'Create a simple web application', color: 'yellow-500', teacher: { name: 'Mr. Davis', email: 'davis@school.com' } },
-    { id: 4, title: 'Essay Analysis', subject: 'English', status: 'Submitted', dueDate: 'May 5, 2023', description: 'Literary analysis of "To Kill a Mockingbird"', color: 'green-500', grade: '92/100', feedback: 'Excellent analysis, good use of examples', teacher: { name: 'Mrs. Wilson', email: 'wilson@school.com' } },
-    { id: 5, title: 'History Research', subject: 'History', status: 'Submitted', dueDate: 'May 1, 2023', description: 'Research on World War II events', color: 'green-500', grade: '88/100', feedback: 'Good research, needs more primary sources', teacher: { name: 'Mr. Brown', email: 'brown@school.com' } },
-    { id: 6, title: 'Portfolio Project', subject: 'Art', status: 'Upcoming', dueDate: 'May 25, 2023', description: 'Create a portfolio of 5 original artworks', color: 'blue-500', teacher: { name: 'Ms. Taylor', email: 'taylor@school.com' } }
-  ];
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetchStudentAssignments();
+        // API returns assignments in res.data.assignments (pending, overdue)
+        let allAssignments = [];
+        if (res?.data?.assignments) {
+          if (Array.isArray(res.data.assignments.pending)) {
+            allAssignments = allAssignments.concat(res.data.assignments.pending.map(a => ({ ...a, status: 'Pending', color: 'yellow-500' })));
+          }
+          if (Array.isArray(res.data.assignments.overdue)) {
+            allAssignments = allAssignments.concat(res.data.assignments.overdue.map(a => ({ ...a, status: 'Overdue', color: 'red-500' })));
+          }
+        }
+        setAssignments(allAssignments);
+      } catch (err) {
+        setError('Failed to load assignments');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssignments();
+  }, []);
 
   const handleFileUpload = (assignmentId, event) => {
     const file = event.target.files[0];
@@ -26,10 +47,7 @@ const StudentAssignment = () => {
     }
   };
 
-  const handleOverdueClick = (assignment) => {
-    setShowTeacherInfo(assignment.id);
-    alert(`Assignment Overdue!\n\nThe assignment "${assignment.title}" is overdue. Please contact your teacher, ${assignment.teacher.name} (${assignment.teacher.email}), to discuss submission options.`);
-  };
+
 
   const toggleMarks = (id) => setShowMarks(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -37,6 +55,20 @@ const StudentAssignment = () => {
 
   const buttonClasses = "w-full flex justify-center items-center px-4 py-2 rounded-lg transition-all duration-300 cursor-pointer shadow-md";
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <span className="text-lg font-semibold">Loading assignments...</span>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <span className="text-lg font-semibold text-red-600">{error}</span>
+      </div>
+    );
+  }
   return (
     <div className="bg-gray-100 flex AddStudent">
       <StudentSidebar />
@@ -85,7 +117,7 @@ const StudentAssignment = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-4">
               {filteredAssignments.map(assignment => (
                 <div 
-                  key={assignment.id}
+                  key={assignment.assignment_id || assignment.id}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
                 >
                   <div className={`p-1 bg-${assignment.color}`}></div>
@@ -93,7 +125,7 @@ const StudentAssignment = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-xl font-bold text-gray-800 mb-1">{assignment.title}</h3>
-                        <p className="text-sm text-gray-500 mb-2">{assignment.subject}</p>
+                        <p className="text-sm text-gray-500 mb-2">{assignment.subject_name || assignment.subject}</p>
                       </div>
                       <span className={`bg-${assignment.color.split('-')[0]}-100 text-${assignment.color.split('-')[0]}-800 text-xs font-medium px-3 py-1 rounded-full`}>
                         {assignment.status}
@@ -126,15 +158,7 @@ const StudentAssignment = () => {
                     </div>
 
                     <div className="mt-6 space-y-3">
-                      {assignment.status === 'Overdue' && !uploadedFiles[assignment.id] ? (
-                        <button 
-                          onClick={() => handleOverdueClick(assignment)}
-                          className={`${buttonClasses} bg-red-400 text-white hover:from-red-700 hover:to-red-800`}
-                        >
-                          <FaExclamationTriangle className="mr-2" />
-                          Contact Teacher
-                        </button>
-                      ) : assignment.status !== 'Submitted' && !uploadedFiles[assignment.id] ? (
+                      {assignment.status !== 'Submitted' && !uploadedFiles[assignment.id] ? (
                         <label className={`${buttonClasses} bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700`}>
                           <FaUpload className="mr-2" />
                           Upload Assignment
@@ -154,12 +178,7 @@ const StudentAssignment = () => {
                         </button>
                       ) : null}
 
-                      {showTeacherInfo === assignment.id && assignment.status === 'Overdue' && (
-                        <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 animate-fade-in">
-                          <p className="text-sm font-medium">Teacher: {assignment.teacher.name}</p>
-                          <p className="text-sm">Email: {assignment.teacher.email}</p>
-                        </div>
-                      )}
+
                     </div>
                   </div>
                 </div>

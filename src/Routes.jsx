@@ -20,6 +20,7 @@ import TeacherResult from "./Pages/Teacher/TeacherResult";
 import TeacherTimetable from "./Pages/Teacher/TeacherTimetable";
 import TeacherTransportation from "./Pages/Teacher/TeacherTransportation";
 import TeacherAssignment from "./Pages/Teacher/TeacherAssignment";
+import TeacherUploadContent from "./Pages/Teacher/UploadContent";
 import TeacherNotice from "./Pages/Teacher/TeacherNotice";
 import TeacherProfile from "./Pages/Teacher/TeacherProfile";
 
@@ -120,7 +121,7 @@ import HRReports from "./Pages/admin/HR/HRReports.jsx";
 import TeacherCredentialsPage from "./Pages/admin/HR/TeacherCredentialsPage.jsx";
 import TeacherSalaryPage from "./Pages/admin/HR/TeacherSalaryPage.jsx";
 import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
-import StudyMaterial from "./Pages/admin/DownloadCenter/StudyMaterial.jsx";
+import Assignment from "./Pages/admin/DownloadCenter/Assignment.jsx";
 // Certificates
 import StudentIdPage from "./Pages/admin/Certificates/StudentIdPage.jsx";
 import StaffIdCard from "./Pages/admin/Certificates/StaffIdCard.jsx";
@@ -172,6 +173,7 @@ const routes = {
     { path: "/teacher/timetable", element: <TeacherTimetable /> },
     { path: "/teacher/transportation", element: <TeacherTransportation /> },
     { path: "/teacher/assignment", element: <TeacherAssignment /> },
+    { path: "/teacher/upload-content", element: <TeacherUploadContent /> },
     { path: "/teacher/notice", element: <TeacherNotice /> },
     { path: "/teacher/profile", element: <TeacherProfile /> },
   ],
@@ -274,7 +276,7 @@ const routes = {
     { path: "/admin/hr/teacher-credentials", element: <TeacherCredentialsPage/> },
     { path: "/admin/hr/teacher-salary", element: <TeacherSalaryPage/> },
     { path: "/admin/upload-content", element: <UploadContent /> },
-    { path: "/admin/study-material", element: <StudyMaterial /> },
+    { path: "/admin/assignment", element: <Assignment /> },
     { path: "/admin/payment-received", element: <PaymentReceivedPage /> },
     // Certificates
     { path: "/admin/student-id-page", element: <StudentIdPage /> },

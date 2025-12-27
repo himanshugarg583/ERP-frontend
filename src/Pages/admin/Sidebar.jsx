@@ -114,7 +114,7 @@ const SIDEBAR_ITEMS = [
     icon: Download,
     subItems: [
       { name: "Upload Content", href: "/admin/upload-content" },
-      { name: "Study Material", href: "/admin/study-material" },
+      { name: "Assignment", href: "/admin/assignment" },
     ],
   },
   {
@@ -382,7 +382,7 @@ const Sidebar = () => {
                 localStorage.removeItem("sidebar:isOpen");
                 window.location.href = '/login';
               }}
-              className={`group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 border border-red-600/20 hover:border-red-600/40 transition-all ${!isSidebarOpen ? 'justify-center' : ''
+              className={`group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 border border-red-600/20 hover:border-red-600/40 transition-all cursor-pointer ${!isSidebarOpen ? 'justify-center' : ''
                 }`}
             >
               <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-red-600/20 group-hover:bg-red-600/30 transition-all">

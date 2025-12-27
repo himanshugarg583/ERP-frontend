@@ -8,7 +8,7 @@ export const generateMultipleStaffIdCards = async (user_ids) => {
 };
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000'; // Backend base URL
+const API_BASE_URL = 'https://xd363v4j-5000.inc1.devtunnels.ms'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
@@ -220,6 +220,30 @@ export const API_ENDPOINTS = {
   //student notice endpoints
   GET_STUDENT_NOTICES: '/student/notice/getNoticesForMe',
   
+  // subject resource endpoints (assignments)
+  UPLOAD_SUBJECT_RESOURCE: '/admin/subjectResource/uploadSubjectResource',
+  GET_ALL_SUBJECT_RESOURCES: '/admin/subjectResource/getAllSubjectResources',
+  GET_SUBJECT_RESOURCE: (resourceId) => `/admin/subjectResource/getSubjectResource/${resourceId}`,
+  UPDATE_SUBJECT_RESOURCE: (resourceId) => `/admin/subjectResource/updateSubjectResource/${resourceId}`,
+  DELETE_SUBJECT_RESOURCE: (resourceId) => `/admin/subjectResource/deleteSubjectResource/${resourceId}`,
+  GET_SUBJECTS_BY_CLASS: (classId) => `/admin/dropdown/getSubjectsByClass?class_id=${classId}`,
+
+  // student assignments endpoint
+  GET_STUDENT_ASSIGNMENTS: '/student/resources/assignments',
+  
+  // teacher subject resource endpoints
+  TEACHER_UPLOAD_SUBJECT_RESOURCE: '/teacher/subjectResource/uploadSubjectResource',
+  GET_TEACHER_SUBJECT_RESOURCES: '/teacher/subjectResource/getMySubjectResources',
+  GET_TEACHER_SUBJECT_RESOURCE_BY_ID: (resourceId) => `/teacher/subjectResource/getSubjectResourceById/${resourceId}`,
+  UPDATE_TEACHER_SUBJECT_RESOURCE: (resourceId) => `/teacher/subjectResource/updateSubjectResource/${resourceId}`,
+  DELETE_TEACHER_SUBJECT_RESOURCE: (resourceId) => `/teacher/subjectResource/deleteSubjectResource/${resourceId}`,
+  
+  // teacher class resource endpoints
+  TEACHER_UPLOAD_CLASS_RESOURCE: '/teacher/classResource/uploadClassResource',
+  GET_TEACHER_CLASS_RESOURCES: '/teacher/classResource/getMyClassResources',
+  GET_TEACHER_CLASS_RESOURCE_BY_ID: (resourceId) => `/teacher/classResource/getClassResourceById/${resourceId}`,
+  UPDATE_TEACHER_CLASS_RESOURCE: (resourceId) => `/teacher/classResource/updateClassResource/${resourceId}`,
+  DELETE_TEACHER_CLASS_RESOURCE: (resourceId) => `/teacher/classResource/deleteClassResource/${resourceId}`,
 
 };
 
@@ -245,6 +269,31 @@ export const authorizedPostFormData = async (endpoint, formData) => {
     },
   });
   return response.data;
+};
+
+// Upload class resource
+export const uploadClassResource = async (formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.UPLOAD_CLASS_RESOURCE, formData);
+};
+
+// Get all class resources
+export const getAllClassResources = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_CLASS_RESOURCES);
+};
+
+// Get class resource by ID
+export const getClassResource = async (resourceId) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_RESOURCE(resourceId));
+};
+
+// Update class resource
+export const updateClassResource = async (resourceId, formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.UPDATE_CLASS_RESOURCE(resourceId), formData);
+};
+
+// Delete class resource
+export const deleteClassResource = async (resourceId) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_CLASS_RESOURCE(resourceId));
 };
 
 // Reusable authorized POST request
@@ -352,6 +401,11 @@ export const getStudentCompleteFeeDetails = async (studentId) => {
 // Fetch all admission enquiries
 export const fetchAllEnquiries = async () => {
   return authorizedGet(API_ENDPOINTS.GET_ALL_ENQUIRIES);
+};
+
+// Fetch assignments for student panel
+export const fetchStudentAssignments = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_ASSIGNMENTS);
 };
 
 // Create a new enquiry
@@ -831,6 +885,86 @@ export const deleteStudentLeave = async (leaveId) => {
 // Student Notice API functions
 export const getStudentNotices = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_NOTICES);
+};
+
+// Upload subject resource (assignment)
+export const uploadSubjectResource = async (formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.UPLOAD_SUBJECT_RESOURCE, formData);
+};
+
+// Get all subject resources (assignments)
+export const getAllSubjectResources = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_SUBJECT_RESOURCES);
+};
+
+// Get subject resource by ID
+export const getSubjectResource = async (resourceId) => {
+  return authorizedGet(API_ENDPOINTS.GET_SUBJECT_RESOURCE(resourceId));
+};
+
+// Update subject resource
+export const updateSubjectResource = async (resourceId, formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.UPDATE_SUBJECT_RESOURCE(resourceId), formData);
+};
+
+// Delete subject resource
+export const deleteSubjectResource = async (resourceId) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_SUBJECT_RESOURCE(resourceId));
+};
+
+// Get subjects by class
+export const getSubjectsByClass = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_SUBJECTS_BY_CLASS(classId));
+};
+
+// Teacher upload subject resource (assignment)
+export const uploadTeacherSubjectResource = async (formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.TEACHER_UPLOAD_SUBJECT_RESOURCE, formData);
+};
+
+// Get teacher's subject resources
+export const getTeacherSubjectResources = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_SUBJECT_RESOURCES);
+};
+
+// Get teacher subject resource by ID
+export const getTeacherSubjectResourceById = async (resourceId) => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_SUBJECT_RESOURCE_BY_ID(resourceId));
+};
+
+// Update teacher subject resource
+export const updateTeacherSubjectResource = async (resourceId, formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.UPDATE_TEACHER_SUBJECT_RESOURCE(resourceId), formData);
+};
+
+// Delete teacher subject resource
+export const deleteTeacherSubjectResource = async (resourceId) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_TEACHER_SUBJECT_RESOURCE(resourceId));
+};
+
+// Teacher upload class resource
+export const uploadTeacherClassResource = async (formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.TEACHER_UPLOAD_CLASS_RESOURCE, formData);
+};
+
+// Get teacher's class resources
+export const getTeacherClassResources = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_CLASS_RESOURCES);
+};
+
+// Get teacher class resource by ID
+export const getTeacherClassResourceById = async (resourceId) => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_CLASS_RESOURCE_BY_ID(resourceId));
+};
+
+// Update teacher class resource
+export const updateTeacherClassResource = async (resourceId, formData) => {
+  return authorizedPostFormData(API_ENDPOINTS.UPDATE_TEACHER_CLASS_RESOURCE(resourceId), formData);
+};
+
+// Delete teacher class resource
+export const deleteTeacherClassResource = async (resourceId) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_TEACHER_CLASS_RESOURCE(resourceId));
 };
 
 // Admin Notice API functions
