@@ -24,7 +24,7 @@ const Accountant_Setting = () => {
         { section: 'security', icon: <FaLock />, label: 'Security & Authentication' },
         { section: 'feePayment', icon: <FaMoneyBill />, label: 'Fee & Payment Settings' },
         { section: 'payroll', icon: <FaCalculator />, label: 'Salary & Payroll Settings' },
-        { section: 'expense', icon: <FaChartBar />, label: 'Expense Management Settings' },
+        { section: 'expense', icon: <FaChartBar />, label: 'Income & Expense Management Settings' },
         { section: 'notifications', icon: <FaBell />, label: 'Notification & Alerts Settings' },
         { section: 'support', icon: <FaHeadset />, label: 'Support & Help Center' }
     ], []);
@@ -69,7 +69,7 @@ const Accountant_Setting = () => {
             ]
         },
         expense: {
-            title: 'Expense Management Settings',
+            title: 'Income & Expense Management Settings',
             icon: <FaChartBar />,
             fields: [
                 { label: 'Approval Workflow', name: 'approval', value: tempData.expense.approval },

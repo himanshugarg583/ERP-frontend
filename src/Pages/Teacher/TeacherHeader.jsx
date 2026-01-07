@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaBars, FaSearch, FaBell, FaEnvelope, FaUser, FaCog, FaSignOutAlt, FaBook, FaCalendarAlt, FaBullhorn, FaReply } from 'react-icons/fa'; 
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const TeacherHeader = ({ setIsSidebarOpen }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -12,6 +13,7 @@ const TeacherHeader = ({ setIsSidebarOpen }) => {
    const [newMessage, setNewMessage] = useState({ to: '', subject: '', body: '' }); 
    const [replyTo, setReplyTo] = useState(null);
    const navigate=useNavigate();
+   const { logout } = useAuth();
 
    const handleNotificationClick = () => {
     setNotificationCount(0);
@@ -26,6 +28,12 @@ const TeacherHeader = ({ setIsSidebarOpen }) => {
     const handleProfileClick = () => {
       navigate('/TeacherProfile'); 
       setIsDropdownOpen(false); 
+    };
+
+    const handleLogout = () => {
+      setIsDropdownOpen(false);
+      logout();
+      navigate('/login', { replace: true });
     };
 const notifications = [
     { id: 1, type: 'assignment', icon: <FaBook />, message: 'New Science assignment due on March 20', time: '2 hours ago' },
@@ -233,7 +241,10 @@ const notifications = [
                   <FaCog className="mr-2 text-gray-600" />
                   Settings
                 </li>
-                <li className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors text-red-600">
+                <li 
+                  onClick={handleLogout}
+                  className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors text-red-600"
+                >
                   <FaSignOutAlt className="mr-2 text-red-600" />
                   Logout
                 </li>

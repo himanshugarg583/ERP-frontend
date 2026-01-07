@@ -1,19 +1,43 @@
 import React from 'react';
-import { FaHome, FaClipboardCheck, FaChartLine, FaCalendarAlt, FaClipboardList, FaMoneyBillWave, FaSchool } from 'react-icons/fa';
+import { FaHome, FaClipboardCheck, FaChartLine, FaCalendarAlt, FaClipboardList, FaMoneyBillWave, FaSchool, FaSignOutAlt, FaLock } from 'react-icons/fa';
 import { MdEvent } from 'react-icons/md';
 import './Sidebar.css'; // Import the CSS file for the scrollbar styles
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { logoutUser } from '../../helper/requests-method/apiMethods';
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            const response = await logoutUser();
+            console.log('Logout Response:', response);
+            
+            // Clear token from localStorage
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('user');
+            
+            // Navigate to login page
+            navigate('/login', { replace: true });
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if API fails, clear local storage and redirect
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('user');
+            navigate('/login', { replace: true });
+        }
+    };
+
     // Array of sidebar items with corresponding icons
     const sidebarItems = [
         { path: "/AccountantDashboard", label: "Dashboard", icon: <FaHome /> },
         { path: "/AccountantFeeManagement", label: "Fee Management", icon: <FaClipboardCheck /> },
         { path: "/AccountantStudentAccounts", label: "Student Accounts", icon: <FaChartLine /> },
-        { path: "/AccountantExpenseManagement", label: "Expense Management", icon: <FaCalendarAlt /> },
-        { path: "/AccountantSalary", label: "Salary & Payroll", icon: <FaClipboardList /> },
+        { path: "/AccountantExpenseManagement", label: "Income & Expense Management", icon: <FaCalendarAlt /> },
         { path: "/AccountantPayments", label: "Online Payments", icon: <FaMoneyBillWave /> },
-        { path: "/AccountantReports", label: "Reports & Analytics", icon: <MdEvent /> },
+        { path: "/AccountantChangePassword", label: "Change Password", icon: <FaLock /> },
     ];
 
     return (
@@ -55,6 +79,17 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         ))}
                     </ul>
                 </nav>
+            </div>
+
+            {/* Logout Button */}
+            <div className="mt-auto pt-4 border-t border-gray-700">
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center w-full p-3 rounded-lg hover:bg-red-600 transition-all duration-200 text-white cursor-pointer"
+                >
+                    <FaSignOutAlt className="mr-3" />
+                    <span>Logout</span>
+                </button>
             </div>
         </div>
     );

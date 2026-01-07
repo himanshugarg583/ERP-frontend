@@ -1,17 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
+import { 
+  createExamTimetable, 
+  getExamTermDropdown, 
+  getExamDropdown, 
+  fetchClassDropdown,
+  getSubjectsByClass 
+} from '../../helper/requests-method/apiMethods';
 
 const CreateExamTimetable = () => {
+  const [examTerms, setExamTerms] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [selectedExam, setSelectedExam] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Initialize React Hook Form
   const {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      examName: '',
-      timetable: [{ subject: '', date: '', startTime: '', endTime: '', description: '' }],
+      exam_id: '',
+      class_section_id: '',
+      remarks: '',
+      timetable: [{ subject_id: '', exam_date: '', max_marks: '', passing_marks: '' }],
     },
   });
 
@@ -21,17 +41,102 @@ const CreateExamTimetable = () => {
     name: 'timetable',
   });
 
-  // Handle form submission
-  const onSubmit = (data) => {
-    // Basic validation for timetable entries
-    for (const entry of data.timetable) {
-      if (new Date(`${entry.date} ${entry.startTime}`) >= new Date(`${entry.date} ${entry.endTime}`)) {
-        alert('Start Time must be before End Time for each subject.');
-        return;
+  // Fetch exam terms on mount
+  useEffect(() => {
+    const fetchExamTerms = async () => {
+      try {
+        const response = await getExamTermDropdown();
+        if (response?.data) {
+          setExamTerms(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching exam terms:', error);
       }
+    };
+    fetchExamTerms();
+  }, []);
+
+  // Fetch classes on mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await fetchClassDropdown();
+        if (response?.data) {
+          setClasses(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+      }
+    };
+    fetchClasses();
+  }, []);
+
+  // Fetch exams when term is selected
+  useEffect(() => {
+    if (selectedTerm) {
+      const fetchExams = async () => {
+        try {
+          const response = await getExamDropdown(selectedTerm);
+          if (response?.data) {
+            setExams(response.data);
+          }
+        } catch (error) {
+          console.error('Error fetching exams:', error);
+        }
+      };
+      fetchExams();
+    } else {
+      setExams([]);
+      setSelectedExam('');
     }
-    console.log('Timetable Data:', data);
-    alert('Exam Timetable created successfully!');
+  }, [selectedTerm]);
+
+  // Fetch subjects when class is selected
+  useEffect(() => {
+    if (selectedClass) {
+      const fetchSubjects = async () => {
+        try {
+          const response = await getSubjectsByClass(selectedClass);
+          if (response?.data) {
+            setSubjects(response.data);
+          }
+        } catch (error) {
+          console.error('Error fetching subjects:', error);
+        }
+      };
+      fetchSubjects();
+    } else {
+      setSubjects([]);
+    }
+  }, [selectedClass]);
+
+  // Handle form submission
+  const onSubmit = async (data) => {
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        exam_id: parseInt(data.exam_id),
+        class_section_id: parseInt(data.class_section_id),
+        remarks: data.remarks,
+        timetable: data.timetable.map(entry => ({
+          subject_id: parseInt(entry.subject_id),
+          exam_date: entry.exam_date,
+          max_marks: parseInt(entry.max_marks),
+          passing_marks: parseInt(entry.passing_marks)
+        }))
+      };
+
+      const response = await createExamTimetable(payload);
+      if (response?.success) {
+        alert('Exam Timetable created successfully!');
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error creating exam timetable:', error);
+      alert('Failed to create exam timetable. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -41,46 +146,103 @@ const CreateExamTimetable = () => {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-6">
-            {/* Exam Name */}
+            {/* Exam Term Dropdown */}
             <div className="space-y-2">
-              <label htmlFor="examName" className="block text-sm font-medium text-gray-700">
-                Exam Name <span className="text-red-500">*</span>
+              <label htmlFor="examTerm" className="block text-sm font-medium text-gray-700">
+                Exam Term <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M2 12l10 5 10-5" />
-                  </svg>
-                </span>
-                <input
-                  type="text"
-                  id="examName"
-                  {...register('examName', { required: 'Exam Name is required' })}
-                  className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200 ${
-                    errors.examName ? 'border-red-500' : ''
-                  }`}
-                  placeholder="e.g., Mid-Term Exam 2025"
-                />
-              </div>
-              {errors.examName && (
-                <p className="text-red-500 text-xs mt-1">{errors.examName.message}</p>
+              <select
+                id="examTerm"
+                value={selectedTerm}
+                onChange={(e) => setSelectedTerm(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200"
+                required
+              >
+                <option value="">Select Exam Term</option>
+                {examTerms.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {term.term_name} ({term.academic_year})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Exam Dropdown */}
+            <div className="space-y-2">
+              <label htmlFor="exam_id" className="block text-sm font-medium text-gray-700">
+                Exam <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="exam_id"
+                {...register('exam_id', { required: 'Exam is required' })}
+                value={selectedExam}
+                onChange={(e) => {
+                  setSelectedExam(e.target.value);
+                  setValue('exam_id', e.target.value);
+                }}
+                disabled={!selectedTerm}
+                className={`w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200 ${
+                  !selectedTerm ? 'bg-gray-100 cursor-not-allowed' : ''
+                } ${errors.exam_id ? 'border-red-500' : ''}`}
+              >
+                <option value="">Select Exam</option>
+                {exams.map((exam) => (
+                  <option key={exam.id} value={exam.id}>
+                    {exam.exam_name}
+                  </option>
+                ))}
+              </select>
+              {errors.exam_id && (
+                <p className="text-red-500 text-xs mt-1">{errors.exam_id.message}</p>
               )}
+            </div>
+
+            {/* Class Section Dropdown */}
+            <div className="space-y-2">
+              <label htmlFor="class_section_id" className="block text-sm font-medium text-gray-700">
+                Class - Section <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="class_section_id"
+                {...register('class_section_id', { required: 'Class section is required' })}
+                value={selectedClass}
+                onChange={(e) => {
+                  setSelectedClass(e.target.value);
+                  setValue('class_section_id', e.target.value);
+                }}
+                className={`w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200 ${
+                  errors.class_section_id ? 'border-red-500' : ''
+                }`}
+              >
+                <option value="">Select Class - Section</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.class_name} - {cls.section_name}
+                  </option>
+                ))}
+              </select>
+              {errors.class_section_id && (
+                <p className="text-red-500 text-xs mt-1">{errors.class_section_id.message}</p>
+              )}
+            </div>
+
+            {/* Remarks */}
+            <div className="space-y-2">
+              <label htmlFor="remarks" className="block text-sm font-medium text-gray-700">
+                Remarks
+              </label>
+              <textarea
+                id="remarks"
+                {...register('remarks')}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200"
+                placeholder="Enter any remarks or notes"
+                rows="3"
+              />
             </div>
 
             {/* Timetable Entries */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800">Timetable Entries</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Exam Schedule</h3>
               {fields.map((field, index) => (
                 <div
                   key={field.id}
@@ -89,22 +251,28 @@ const CreateExamTimetable = () => {
                   {/* Subject */}
                   <div className="space-y-2 md:col-span-3">
                     <label
-                      htmlFor={`timetable.${index}.subject`}
+                      htmlFor={`timetable.${index}.subject_id`}
                       className="block text-sm font-medium text-gray-700"
                     >
                       Subject <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      {...register(`timetable.${index}.subject`, { required: 'Subject is required' })}
+                    <select
+                      {...register(`timetable.${index}.subject_id`, { required: 'Subject is required' })}
+                      disabled={!selectedClass}
                       className={`w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200 ${
-                        errors.timetable?.[index]?.subject ? 'border-red-500' : ''
-                      }`}
-                      placeholder="e.g., Mathematics"
-                    />
-                    {errors.timetable?.[index]?.subject && (
+                        !selectedClass ? 'bg-gray-100 cursor-not-allowed' : ''
+                      } ${errors.timetable?.[index]?.subject_id ? 'border-red-500' : ''}`}
+                    >
+                      <option value="">Select Subject</option>
+                      {subjects.map((subject) => (
+                        <option key={subject.subject_id} value={subject.subject_id}>
+                          {subject.name} ({subject.subject_code})
+                        </option>
+                      ))}
+                    </select>
+                    {errors.timetable?.[index]?.subject_id && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.timetable[index].subject.message}
+                        {errors.timetable[index].subject_id.message}
                       </p>
                     )}
                   </div>
@@ -112,67 +280,73 @@ const CreateExamTimetable = () => {
                   {/* Date */}
                   <div className="space-y-2 md:col-span-3">
                     <label
-                      htmlFor={`timetable.${index}.date`}
+                      htmlFor={`timetable.${index}.exam_date`}
                       className="block text-sm font-medium text-gray-700"
                     >
-                      Date <span className="text-red-500">*</span>
+                      Exam Date <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
-                      {...register(`timetable.${index}.date`, { required: 'Date is required' })}
+                      {...register(`timetable.${index}.exam_date`, { required: 'Date is required' })}
                       className={`w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200 ${
-                        errors.timetable?.[index]?.date ? 'border-red-500' : ''
+                        errors.timetable?.[index]?.exam_date ? 'border-red-500' : ''
                       }`}
                     />
-                    {errors.timetable?.[index]?.date && (
+                    {errors.timetable?.[index]?.exam_date && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.timetable[index].date.message}
+                        {errors.timetable[index].exam_date.message}
                       </p>
                     )}
                   </div>
 
-                  {/* Start Time */}
+                  {/* Max Marks */}
                   <div className="space-y-2 md:col-span-2">
                     <label
-                      htmlFor={`timetable.${index}.startTime`}
+                      htmlFor={`timetable.${index}.max_marks`}
                       className="block text-sm font-medium text-gray-700"
                     >
-                      Start Time <span className="text-red-500">*</span>
+                      Max Marks <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="time"
-                      {...register(`timetable.${index}.startTime`, {
-                        required: 'Start Time is required',
+                      type="number"
+                      {...register(`timetable.${index}.max_marks`, {
+                        required: 'Max marks is required',
+                        min: { value: 1, message: 'Must be at least 1' }
                       })}
-                      className={`w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
-                        errors.timetable?.[index]?.startTime ? 'border-red-500' : ''
+                      className={`w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200 ${
+                        errors.timetable?.[index]?.max_marks ? 'border-red-500' : ''
                       }`}
+                      placeholder="100"
                     />
-                    {errors.timetable?.[index]?.startTime && (
+                    {errors.timetable?.[index]?.max_marks && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.timetable[index].startTime.message}
+                        {errors.timetable[index].max_marks.message}
                       </p>
                     )}
                   </div>
 
-                  {/* End Time */}
+                  {/* Passing Marks */}
                   <div className="space-y-2 md:col-span-2">
                     <label
-                      htmlFor={`timetable.${index}.endTime`}
+                      htmlFor={`timetable.${index}.passing_marks`}
                       className="block text-sm font-medium text-gray-700"
                     >
-                      End Time <span className="text-red-500">*</span>
+                      Passing Marks <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="time"
-                      {...register(`timetable.${index}.endTime`, { required: 'End Time is required' })}
-                      className={`w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${
-                        errors.timetable?.[index]?.endTime ? 'border-red-500' : ''
+                      type="number"
+                      {...register(`timetable.${index}.passing_marks`, { 
+                        required: 'Passing marks is required',
+                        min: { value: 1, message: 'Must be at least 1' }
+                      })}
+                      className={`w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 transition-all duration-200 ${
+                        errors.timetable?.[index]?.passing_marks ? 'border-red-500' : ''
                       }`}
+                      placeholder="33"
                     />
-                    {errors.timetable?.[index]?.endTime && (
+                    {errors.timetable?.[index]?.passing_marks && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.timetable[index].endTime.message}
+                        {errors.timetable[index].passing_marks.message}
                       </p>
                     )}
                   </div>
@@ -209,9 +383,14 @@ const CreateExamTimetable = () => {
               <button
                 type="button"
                 onClick={() =>
-                  append({ subject: '', date: '', startTime: '', endTime: '', description: '' })
+                  append({ subject_id: '', exam_date: '', max_marks: '', passing_marks: '' })
                 }
-                className="mt-2 px-4 py-2 bg-violet-100 text-violet-700 rounded-md font-medium hover:bg-violet-200 transition-all duration-200"
+                disabled={!selectedClass}
+                className={`mt-2 px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+                  !selectedClass 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+                }`}
               >
                 + Add Subject
               </button>
@@ -222,15 +401,19 @@ const CreateExamTimetable = () => {
               <button
                 type="button"
                 className="px-6 py-2.5 rounded-md border border-gray-300 font-medium hover:bg-gray-50 transition-all duration-200 transform hover:scale-105"
-                onClick={() => window.location.reload()} // Replace with reset() if needed
+                onClick={() => window.location.reload()}
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-violet-600 text-white rounded-md font-medium hover:bg-violet-700 transition-all duration-200 transform hover:scale-105 hover:shadow-md"
+                disabled={isSubmitting}
+                className={`px-6 py-2.5 bg-violet-600 text-white rounded-md font-medium transition-all duration-200 transform hover:scale-105 hover:shadow-md ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-violet-700'
+                }`}
               >
-                Create Timetable
+                {isSubmitting ? 'Creating...' : 'Create Timetable'}
               </button>
             </div>
           </div>

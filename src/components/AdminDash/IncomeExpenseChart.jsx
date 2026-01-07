@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { Box, Typography, Card, CardContent } from '@mui/material';
+import { Box, Typography, Card, CardContent, CircularProgress } from '@mui/material';
+import { getMonthlyIncomeExpense } from '../../helper/requests-method/apiMethods';
 
 // Define enhanced colors and gradients
 const colors = {
@@ -10,10 +11,54 @@ const colors = {
 };
 
 const IncomeExpenseLineChart = () => {
-  // Sample data
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const incomeData = [1200, 1500, 1300, 1700, 2000, 1800, 1600, 1900, 1750, 2100, 2200, 2500];
-  const expenseData = [800, 900, 850, 1000, 1200, 1100, 950, 1050, 1000, 1300, 1250, 1400];
+  const [chartData, setChartData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [year, setYear] = useState(2025);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await getMonthlyIncomeExpense();
+        if (response?.data?.success) {
+          setChartData(response.data.data);
+          setYear(response.data.data.year);
+        }
+      } catch (error) {
+        console.error('Error fetching income/expense data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Card
+        sx={{
+          maxWidth: 800,
+          maxHeight: 500,
+          margin: 'auto',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 400,
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: colors.primary[500] }} />
+      </Card>
+    );
+  }
+
+  // Extract data from API response
+  const months = chartData?.months?.map(m => m.month) || [];
+  const incomeData = chartData?.months?.map(m => m.income) || [];
+  const expenseData = chartData?.months?.map(m => m.expense) || [];
 
   return (
     <Card
@@ -41,7 +86,7 @@ const IncomeExpenseLineChart = () => {
             WebkitTextFillColor: 'transparent', // Gradient text effect
           }}
         >
-          Monthly Income vs Expenses - 2025
+          Monthly Income vs Expenses - {year}
         </Typography>
         <Box
           display="flex"

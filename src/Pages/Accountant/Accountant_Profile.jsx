@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Sidebar from './Accountant_Sidebar';
 import Header from './Accountant_Header';
 import { FaUser, FaIdCard, FaPhone, FaBuilding, FaCheckCircle, FaSave, FaTimes, FaLock, FaFileAlt } from 'react-icons/fa';
@@ -7,46 +7,94 @@ import Accountant_EditButtons from './Accountant_EditButtons';
 import Accountant_ProfileImage from './Accountant_ProfileImage';
 import Accountant_Navigation from './Accountant_Navigation';
 import Accountant_DocumentCard from './Accountant_DocumentCard';
+import { getAccountantProfile } from '../../helper/requests-method/apiMethods';
+import { toast } from 'react-toastify';
 
 const AccountantProfile = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeSection, setActiveSection] = useState('personal');
+    const [isLoading, setIsLoading] = useState(true);
     const [profileData, setProfileData] = useState({
         personal: {
-            fullName: 'Priya Sharma',
-            employeeId: 'FIN-EMP-1234',
-            role: 'Accountant',
-            department: 'Finance',
-            email: 'priya.sharma@financeportal.com',
-            phone: '+91 9876543210',
-            address: '456 Corporate Towers, Sector 21, Mumbai - 400021',
-            profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=774&q=80',
+            fullName: '',
+            userId: '',
+            email: '',
+            phone: '',
+            gender: '',
+            dob: '',
+            profileImage: '',
+            accountStatus: '',
         },
-        privileges: {
-            accessLevel: 'Edit',
-            assignedDepartments: ['Fee Management', 'Payroll'],
-            transactionApproval: 'Yes',
+        professional: {
+            role: '',
+            qualification: '',
+            joiningDate: '',
+            salary: '',
         },
-        documents: {
-            idProofFile: null,
-            idProofFileName: 'Aadhaar Card - Uploaded',
-            salarySlipFile: null,
-            salarySlipFileName: 'Salary Slip - March 2025',
-            taxDocFile: null,
-            taxDocFileName: 'Tax Document - FY 2024-25',
+        address: {
+            currentAddress: '',
+            permanentAddress: '',
         },
     });
     const [tempData, setTempData] = useState(profileData);
     const [isEditing, setIsEditing] = useState({
         personal: false,
-        privileges: false,
-        documents: false,
+        professional: false,
+        address: false,
         profileImage: false,
     });
 
+    // Fetch profile data on mount
+    useEffect(() => {
+        const fetchProfileData = async () => {
+            try {
+                setIsLoading(true);
+                const response = await getAccountantProfile();
+                console.log('Profile API Response:', response);
+
+                const data = response?.data || response;
+
+                // Map API response to profile state
+                const mappedData = {
+                    personal: {
+                        fullName: data.personal_info?.name || '',
+                        userId: data.personal_info?.user_id || '',
+                        email: data.personal_info?.email || '',
+                        phone: data.personal_info?.mobile_no || '',
+                        gender: data.personal_info?.gender || '',
+                        dob: data.personal_info?.dob || '',
+                        profileImage: data.personal_info?.image || '',
+                        accountStatus: data.personal_info?.account_status || '',
+                    },
+                    professional: {
+                        role: data.professional_info?.role || '',
+                        qualification: data.professional_info?.qualification || '',
+                        joiningDate: data.professional_info?.joining_date || '',
+                        salary: data.professional_info?.salary || '',
+                    },
+                    address: {
+                        currentAddress: data.address_info?.current_address || '',
+                        permanentAddress: data.address_info?.permanent_address || '',
+                    },
+                };
+                
+                console.log('Mapped Data:', mappedData);
+                setProfileData(mappedData);
+                setTempData(mappedData);
+            } catch (error) {
+                console.error('Error fetching profile:', error);
+                toast.error('Failed to load profile data');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProfileData();
+    }, []);
+
     const handleNavigationClick = (section) => {
         setActiveSection(section ?? 'personal');
-        setIsEditing({ personal: false, privileges: false, documents: false, profileImage: false });
+        setIsEditing({ personal: false, professional: false, address: false, profileImage: false });
     };
 
     const handleEdit = (section) => {
@@ -107,32 +155,50 @@ const AccountantProfile = () => {
 
     const personalFields = useMemo(() => [
         { label: 'Full Name', name: 'fullName', type: 'text', icon: <FaUser /> },
-        { label: 'Employee ID', name: 'employeeId', type: 'text', disabled: true, icon: <FaIdCard /> },
-        { label: 'Role', name: 'role', type: 'text', disabled: true, icon: <FaUser /> },
-        { label: 'Department', name: 'department', type: 'text', disabled: true, icon: <FaBuilding /> },
+        { label: 'User ID', name: 'userId', type: 'text', disabled: true, icon: <FaIdCard /> },
         { label: 'Email', name: 'email', type: 'email', icon: <FaPhone /> },
         { label: 'Phone', name: 'phone', type: 'tel', icon: <FaPhone /> },
-        { label: 'Address', name: 'address', isTextarea: true, icon: <FaBuilding /> },
+        { label: 'Gender', name: 'gender', type: 'text', icon: <FaUser /> },
+        { label: 'Date of Birth', name: 'dob', type: 'date', icon: <FaIdCard /> },
+        { label: 'Account Status', name: 'accountStatus', type: 'text', disabled: true, icon: <FaCheckCircle /> },
     ], []);
 
-    const privilegeFields = useMemo(() => [
-        { label: 'Access Level', name: 'accessLevel', type: 'text', disabled: true, icon: <FaLock /> },
-        {
-            label: 'Assigned Departments',
-            name: 'assignedDepartments',
-            type: 'text',
-            disabled: true,
-            value: (profileData.privileges?.assignedDepartments ?? []).join(', '),
-            icon: <FaBuilding />
-        },
-        { label: 'Transaction Approval', name: 'transactionApproval', type: 'text', disabled: true, icon: <FaCheckCircle /> },
-    ], [profileData.privileges]);
+    const professionalFields = useMemo(() => [
+        { label: 'Role', name: 'role', type: 'text', disabled: true, icon: <FaUser /> },
+        { label: 'Qualification', name: 'qualification', type: 'text', icon: <FaIdCard /> },
+        { label: 'Joining Date', name: 'joiningDate', type: 'date', icon: <FaBuilding /> },
+        { label: 'Salary', name: 'salary', type: 'text', icon: <FaBuilding /> },
+    ], []);
+
+    const addressFields = useMemo(() => [
+        { label: 'Current Address', name: 'currentAddress', type: 'text', icon: <FaBuilding /> },
+        { label: 'Permanent Address', name: 'permanentAddress', type: 'text', icon: <FaBuilding /> },
+    ], []);
 
     const navigationItems = [
         { section: 'personal', icon: <FaUser />, label: 'Personal Information' },
-        { section: 'privileges', icon: <FaLock />, label: 'Financial Privileges & Roles' },
-        { section: 'documents', icon: <FaFileAlt />, label: 'Document & ID Management' },
+        { section: 'professional', icon: <FaLock />, label: 'Professional Details' },
+        { section: 'address', icon: <FaFileAlt />, label: 'Address Information' },
     ];
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col min-h-screen bg-gray-50">
+                <div className="flex w-full">
+                    <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+                    <main className="flex-1 overflow-y-auto lg:ml-64">
+                        <Header setIsSidebarOpen={setIsSidebarOpen} />
+                        <div className="flex items-center justify-center h-screen">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+                                <p className="mt-4 text-gray-600">Loading profile...</p>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
@@ -193,52 +259,50 @@ const AccountantProfile = () => {
                                         </div>
                                     )}
 
-                                    {activeSection === 'privileges' && (
+                                    {activeSection === 'professional' && (
                                         <div className="bg-gray-50 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                                            <h2 className="text-2xl font-bold text-gray-800 mb-6">Financial Privileges & Roles</h2>
+                                            <div className="flex justify-between mb-6">
+                                                <h2 className="text-2xl font-bold text-gray-800">Professional Details</h2>
+                                                <Accountant_EditButtons
+                                                    isEditing={isEditing.professional ?? false}
+                                                    onEdit={() => handleEdit('professional')}
+                                                    onSave={() => handleSave('professional')}
+                                                    onCancel={() => handleCancel('professional')}
+                                                />
+                                            </div>
                                             <div className="grid grid-cols-1 gap-6">
-                                                {(privilegeFields ?? []).map((field) => (
+                                                {(professionalFields ?? []).map((field) => (
                                                     <Accountant_EditableInput
                                                         key={field.name ?? ''}
                                                         {...field}
-                                                        value={field.value ?? (profileData.privileges?.[field.name] ?? '')}
-                                                        isEditing={false}
+                                                        value={isEditing.professional ? (tempData.professional?.[field.name] ?? '') : (profileData.professional?.[field.name] ?? '')}
+                                                        onChange={(e) => handleInputChange('professional', e)}
+                                                        isEditing={isEditing.professional && !field.disabled}
                                                     />
                                                 ))}
                                             </div>
                                         </div>
                                     )}
 
-                                    {activeSection === 'documents' && (
+                                    {activeSection === 'address' && (
                                         <div className="bg-gray-50 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
                                             <div className="flex justify-between mb-6">
-                                                <h2 className="text-2xl font-bold text-gray-800">Document & ID Management</h2>
+                                                <h2 className="text-2xl font-bold text-gray-800">Address Information</h2>
                                                 <Accountant_EditButtons
-                                                    isEditing={isEditing.documents ?? false}
-                                                    onEdit={() => handleEdit('documents')}
-                                                    onSave={() => handleSave('documents')}
-                                                    onCancel={() => handleCancel('documents')}
+                                                    isEditing={isEditing.address ?? false}
+                                                    onEdit={() => handleEdit('address')}
+                                                    onSave={() => handleSave('address')}
+                                                    onCancel={() => handleCancel('address')}
                                                 />
                                             </div>
-                                            <div className="space-y-6">
-                                                {[
-                                                    { label: 'ID Proof', docType: 'idProofFile', fileName: 'idProofFileName' },
-                                                    { label: 'Salary Slip', docType: 'salarySlipFile', fileName: 'salarySlipFileName' },
-                                                    { label: 'Tax Document', docType: 'taxDocFile', fileName: 'taxDocFileName' },
-                                                ].map(({ label, docType, fileName }) => (
-                                                    <Accountant_DocumentCard
-                                                        key={docType ?? ''}
-                                                        label={label}
-                                                        docType={docType}
-                                                        fileName={fileName}
-                                                        fileDisplayName={
-                                                            isEditing.documents
-                                                                ? tempData.documents?.[fileName] ?? ''
-                                                                : profileData.documents?.[fileName] ?? 'No file uploaded'
-                                                        }
-                                                        isEditing={isEditing.documents}
-                                                        onFileChange={handleFileChange}
-                                                        onRemove={handleRemoveFile}
+                                            <div className="grid grid-cols-1 gap-6">
+                                                {(addressFields ?? []).map((field) => (
+                                                    <Accountant_EditableInput
+                                                        key={field.name ?? ''}
+                                                        {...field}
+                                                        value={isEditing.address ? (tempData.address?.[field.name] ?? '') : (profileData.address?.[field.name] ?? '')}
+                                                        onChange={(e) => handleInputChange('address', e)}
+                                                        isEditing={isEditing.address && !field.disabled}
                                                     />
                                                 ))}
                                             </div>

@@ -1,10 +1,96 @@
-import React, { useMemo, useState, memo } from 'react';
+import React, { useMemo, useState, memo, useEffect } from 'react';
 import StudentSidebar from './StudentSidebar';
 import Header from '../../components/comman_components/Header';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress } from '@mui/material';
+import { getStudentDashboardStats, getTodayClasses, getPendingAssignments, getAcademicPerformance, getExamTermDropdown, getExamDropdown, getStudentDashboardNotices } from '../../helper/requests-method/apiMethods';
 
 const Student = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getStudentDashboardStats();
+        
+        console.log('Student Dashboard Stats Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data) {
+          apiData = response.data;
+        }
+        
+        if (apiData) {
+          console.log('Dashboard Data:', apiData);
+          setDashboardData(apiData);
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setError('No dashboard data available');
+        }
+      } catch (error) {
+        console.error('Error fetching student dashboard stats:', error);
+        setError(error.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-100 flex AddStudent">
+        <StudentSidebar />
+        <div
+          className="overflow-auto relative z-1 flex-col"
+          style={{
+            height: "95vh",
+            width: "100vw",
+            gap: "10px",
+            display: "flex",
+            transition: "margin-left 0.3s ease",
+          }}
+        >
+          <Header />
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="70vh">
+            <CircularProgress size={60} sx={{ color: '#6366f1' }} />
+          </Box>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-100 flex AddStudent">
+        <StudentSidebar />
+        <div
+          className="overflow-auto relative z-1 flex-col"
+          style={{
+            height: "95vh",
+            width: "100vw",
+            gap: "10px",
+            display: "flex",
+            transition: "margin-left 0.3s ease",
+          }}
+        >
+          <Header />
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="70vh">
+            <Typography variant="h6" color="error">{error}</Typography>
+          </Box>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-100 flex AddStudent">
       <StudentSidebar />
@@ -23,10 +109,42 @@ const Student = () => {
 
         <main className="">
           <div className='p-4 md:p-6 lg:p-8'>
+            {/* Student Info */}
+            {dashboardData?.student && (
+              <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
+                <Typography variant="h6" fontWeight="bold" color="#6366f1">
+                  {dashboardData.student.class} - {dashboardData.student.section}
+                </Typography>
+              </div>
+            )}
+            
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-4">
-              <Card title="Attendance" percentage="92.5%" details="Present: 37 days | Absent: 3 days" color="green" />
-              <Card title="Assignments" percentage="75%" details="Completed: 6 | Pending: 2" color="blue" pending="2 Pending" />
-              <Card title="Overall Grade" percentage="88%" details="Current: 88% | Last Term: 84%" color="indigo" grade="A" />
+              {dashboardData?.attendance && (
+                <Card 
+                  title="Attendance" 
+                  percentage={`${dashboardData.attendance.attendance_percentage || 0}%`}
+                  details={`Present: ${dashboardData.attendance.present_days} days | Absent: ${dashboardData.attendance.absent_days} days | Leave: ${dashboardData.attendance.leave_days} days`}
+                  color="green" 
+                />
+              )}
+              {dashboardData?.assignments && (
+                <Card 
+                  title="Assignments" 
+                  percentage={`${Math.round((dashboardData.assignments.completed / dashboardData.assignments.total) * 100) || 0}%`}
+                  details={`Completed: ${dashboardData.assignments.completed} | Pending: ${dashboardData.assignments.pending}`}
+                  color="blue" 
+                  pending={`${dashboardData.assignments.pending} Pending`}
+                />
+              )}
+              {dashboardData?.overall_grade && (
+                <Card 
+                  title="Overall Grade" 
+                  percentage={`${dashboardData.overall_grade.current_percentage || 0}%`}
+                  details={`Current: ${dashboardData.overall_grade.current_percentage}% | Last Term: ${dashboardData.overall_grade.last_term_percentage}% | ${dashboardData.overall_grade.exam_name}`}
+                  color="indigo" 
+                  grade={dashboardData.overall_grade.current_grade}
+                />
+              )}
             </section>
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <UpcomingClasses />
@@ -107,124 +225,453 @@ const ListItem = ({ data, type, color }) => {
 // Upcoming Classes
 const UpcomingClasses = () => {
   const [showAll, setShowAll] = useState(false);
-  const classData = [
-    { subject: "Mathematics", teacher: "Prof. Anil Kumar", room: "Room 202", time: "10:30 AM", color: "indigo" },
-    { subject: "Physics", teacher: "Dr. Rakesh Sharma", room: "Lab 101", time: "11:45 AM", color: "green" },
-    { subject: "Computer Science", teacher: "Mr. Vikram Patel", room: "Lab 301", time: "2:15 PM", color: "purple" },
-    { subject: "English", teacher: "Ms. Shalini Verma", room: "Room 205", time: "9:00 AM", color: "blue" },
-    { subject: "Chemistry", teacher: "Dr. Priya Gupta", room: "Lab 102", time: "1:00 PM", color: "yellow" },
-  ];
+  const [classData, setClassData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dayInfo, setDayInfo] = useState({ day: '', total_classes: 0 });
+
+  useEffect(() => {
+    const fetchTodayClasses = async () => {
+      try {
+        setLoading(true);
+        const response = await getTodayClasses();
+        
+        console.log('Today Classes Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data) {
+          apiData = response.data;
+        }
+        
+        if (apiData?.classes && Array.isArray(apiData.classes)) {
+          // Add colors to classes
+          const colors = ['indigo', 'green', 'purple', 'blue', 'yellow', 'pink', 'orange'];
+          const classesWithColors = apiData.classes.map((cls, index) => ({
+            ...cls,
+            color: colors[index % colors.length],
+          }));
+          
+          console.log('Classes Data:', classesWithColors);
+          setClassData(classesWithColors);
+          setDayInfo({
+            day: apiData.day || '',
+            total_classes: apiData.total_classes || classesWithColors.length,
+          });
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setClassData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching today classes:', error);
+        setClassData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTodayClasses();
+  }, []);
+
   const displayedClasses = showAll ? classData : classData.slice(0, 3);
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
       <div className="flex justify-between mb-6">
-        <h3 className="text-lg font-semibold">Upcoming Classes</h3>
-        <button onClick={() => setShowAll(!showAll)} className="text-indigo-600 text-sm hover:underline">
-          {showAll ? "View Less" : "View All"}
-        </button>
+        <div>
+          <h3 className="text-lg font-semibold">Today's Classes</h3>
+          {dayInfo.day && (
+            <p className="text-sm text-gray-500">{dayInfo.day} - {dayInfo.total_classes} classes</p>
+          )}
+        </div>
+        {classData.length > 3 && (
+          <button onClick={() => setShowAll(!showAll)} className="text-indigo-600 text-sm hover:underline">
+            {showAll ? "View Less" : "View All"}
+          </button>
+        )}
       </div>
-      <div className="space-y-4">
-        {displayedClasses.map((item, index) => (
-          <ListItem key={index} data={item} type="class" color={item.color} />
-        ))}
-      </div>
+      {loading ? (
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress size={40} sx={{ color: '#6366f1' }} />
+        </Box>
+      ) : classData.length > 0 ? (
+        <div className="space-y-4">
+          {displayedClasses.map((item, index) => (
+            <ListItem key={index} data={item} type="class" color={item.color} />
+          ))}
+        </div>
+      ) : (
+        <Box display="flex" justifyContent="center" py={4}>
+          <Typography variant="body2" color="#666">No classes scheduled for today</Typography>
+        </Box>
+      )}
     </div>
   );
 };
 
 // Pending Assignments
 const PendingAssignments = () => {
-  const assignmentData = [
-    { title: "Physics Lab Report", due: "Tomorrow, 11:59 PM" },
-    { title: "Mathematics Problem Set", due: "Friday, 09:00 AM" },
-  ];
+  const [assignmentData, setAssignmentData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalPending, setTotalPending] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingAssignments = async () => {
+      try {
+        setLoading(true);
+        const response = await getPendingAssignments();
+        
+        console.log('Pending Assignments Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data) {
+          apiData = response.data;
+        }
+        
+        if (apiData?.assignments && Array.isArray(apiData.assignments)) {
+          console.log('Assignments Data:', apiData.assignments);
+          setAssignmentData(apiData.assignments);
+          setTotalPending(apiData.total_pending || apiData.assignments.length);
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setAssignmentData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching pending assignments:', error);
+        setAssignmentData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPendingAssignments();
+  }, []);
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
       <div className="flex justify-between mb-6">
-        <h3 className="text-lg font-semibold">Pending Assignments</h3>
+        <div>
+          <h3 className="text-lg font-semibold">Pending Assignments</h3>
+          {totalPending > 0 && (
+            <p className="text-sm text-gray-500">{totalPending} pending</p>
+          )}
+        </div>
         <a href="#assignments" className="text-indigo-600 text-sm hover:underline">View All</a>
       </div>
-      <div className="space-y-4">
-        {assignmentData.map((item, index) => (
-          <ListItem key={index} data={item} type="assignment" />
-        ))}
-      </div>
+      {loading ? (
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress size={40} sx={{ color: '#6366f1' }} />
+        </Box>
+      ) : assignmentData.length > 0 ? (
+        <div className="space-y-4">
+          {assignmentData.map((item, index) => (
+            <ListItem key={item.id || index} data={item} type="assignment" />
+          ))}
+        </div>
+      ) : (
+        <Box display="flex" justifyContent="center" py={4}>
+          <Typography variant="body2" color="#666">No pending assignments</Typography>
+        </Box>
+      )}
     </div>
   );
 };
 
 // Academic Performance
 const AcademicPerformance = () => {
-  const [selectedExam, setSelectedExam] = useState('Unit');
-  const performanceData = {
-    'Unit': [
-      { subject: "Mathematics", score: 90 },
-      { subject: "Physics", score: 75 },
-      { subject: "Chemistry", score: 85 },
-      { subject: "English", score: 100 },
-      { subject: "Computer Science", score: 80 },
-    ],
-    'Half Yearly Exam': [
-      { subject: "Mathematics", score: 85 },
-      { subject: "Physics", score: 80 },
-      { subject: "Chemistry", score: 90 },
-      { subject: "English", score: 95 },
-      { subject: "Computer Science", score: 75 },
-    ],
-  };
+  const [terms, setTerms] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [selectedExam, setSelectedExam] = useState('');
+  const [performanceData, setPerformanceData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingExams, setLoadingExams] = useState(false);
+  const [loadingPerformance, setLoadingPerformance] = useState(false);
 
-  const subjects = useMemo(() => performanceData[selectedExam].map(item => item.subject), [selectedExam]);
-  const scores = useMemo(() => performanceData[selectedExam].map(item => item.score), [selectedExam]);
+  // Fetch exam terms on component mount
+  useEffect(() => {
+    const fetchTerms = async () => {
+      try {
+        setLoading(true);
+        const response = await getExamTermDropdown();
+        
+        console.log('Exam Terms Response:', response);
+        
+        let apiData = null;
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+          apiData = response.data.data;
+        } else if (response?.data && Array.isArray(response.data)) {
+          apiData = response.data;
+        }
+        
+        if (apiData && apiData.length > 0) {
+          setTerms(apiData);
+          // Auto-select first term
+          setSelectedTerm(apiData[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching exam terms:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTerms();
+  }, []);
+
+  // Fetch exams when term changes
+  useEffect(() => {
+    if (!selectedTerm) return;
+
+    const fetchExams = async () => {
+      try {
+        setLoadingExams(true);
+        setSelectedExam(''); // Reset exam selection
+        setPerformanceData(null); // Clear performance data
+        
+        const response = await getExamDropdown(selectedTerm);
+        
+        console.log('Exams Response:', response);
+        
+        let apiData = null;
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+          apiData = response.data.data;
+        } else if (response?.data && Array.isArray(response.data)) {
+          apiData = response.data;
+        }
+        
+        if (apiData && apiData.length > 0) {
+          setExams(apiData);
+          // Auto-select first exam
+          setSelectedExam(apiData[0].id);
+        } else {
+          setExams([]);
+        }
+      } catch (error) {
+        console.error('Error fetching exams:', error);
+        setExams([]);
+      } finally {
+        setLoadingExams(false);
+      }
+    };
+
+    fetchExams();
+  }, [selectedTerm]);
+
+  // Fetch performance data when exam changes
+  useEffect(() => {
+    if (!selectedExam) return;
+
+    const fetchPerformance = async () => {
+      try {
+        setLoadingPerformance(true);
+        const response = await getAcademicPerformance(selectedExam);
+        
+        console.log('Academic Performance Response:', response);
+        
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data) {
+          apiData = response.data;
+        }
+        
+        if (apiData) {
+          console.log('Performance Data:', apiData);
+          setPerformanceData(apiData);
+        }
+      } catch (error) {
+        console.error('Error fetching academic performance:', error);
+        setPerformanceData(null);
+      } finally {
+        setLoadingPerformance(false);
+      }
+    };
+
+    fetchPerformance();
+  }, [selectedExam]);
+
+  const subjects = useMemo(() => {
+    if (!performanceData?.subjects || performanceData.subjects.length === 0) return [];
+    return performanceData.subjects.map(item => item.subject);
+  }, [performanceData]);
+
+  const scores = useMemo(() => {
+    if (!performanceData?.subjects || performanceData.subjects.length === 0) return [];
+    return performanceData.subjects.map(item => parseFloat(item.percentage) || 0);
+  }, [performanceData]);
+
+  if (loading) {
+    return (
+      <Box sx={{ bgcolor: 'white', p: 3, borderRadius: 2, boxShadow: 1, flexGrow: 2 }} className="col-span-2">
+        <Typography variant="h6" fontWeight="bold" mb={2}>Academic Performance</Typography>
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress size={50} sx={{ color: '#6366f1' }} />
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ bgcolor: 'white', p: 3, borderRadius: 2, boxShadow: 1, flexGrow: 2 }} className="col-span-2">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h6" fontWeight="bold">Academic Performance</Typography>
-        <FormControl sx={{ minWidth: 120 }} size="small">
-          <InputLabel id="exam-select-label">Exam</InputLabel>
-          <Select
-            labelId="exam-select-label"
-            value={selectedExam}
-            label="Exam"
-            onChange={(e) => setSelectedExam(e.target.value)}
-          >
-            <MenuItem value="Unit">Unit</MenuItem>
-            <MenuItem value="Half Yearly Exam">Half Yearly Exam</MenuItem>
-          </Select>
-        </FormControl>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControl sx={{ minWidth: 150 }} size="small">
+            <InputLabel id="term-select-label">Term</InputLabel>
+            <Select
+              labelId="term-select-label"
+              value={selectedTerm}
+              label="Term"
+              onChange={(e) => setSelectedTerm(e.target.value)}
+            >
+              {terms.map((term) => (
+                <MenuItem key={term.id} value={term.id}>
+                  {term.term_name} ({term.academic_year})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: 150 }} size="small" disabled={loadingExams || exams.length === 0}>
+            <InputLabel id="exam-select-label">Exam</InputLabel>
+            <Select
+              labelId="exam-select-label"
+              value={selectedExam}
+              label="Exam"
+              onChange={(e) => setSelectedExam(e.target.value)}
+            >
+              {exams.map((exam) => (
+                <MenuItem key={exam.id} value={exam.id}>
+                  {exam.exam_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
       </Box>
-      <BarChart
-        xAxis={[{ scaleType: 'band', data: subjects, label: 'Subjects' }]}
-        yAxis={[{ label: 'Score (out of 100)', min: 0, max: 100 }]}
-        series={[{ data: scores, color: '#3f51b5', label: 'Score' }]}
-        height={300}
-        tooltip={{ trigger: 'item' }}
-      />
+      
+      {loadingPerformance ? (
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress size={40} sx={{ color: '#6366f1' }} />
+        </Box>
+      ) : performanceData && subjects.length > 0 ? (
+        <Box>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="#666">
+              {performanceData.exam_name} - {performanceData.total_subjects} subject(s)
+            </Typography>
+          </Box>
+          <BarChart
+            xAxis={[{ scaleType: 'band', data: subjects, label: 'Subjects' }]}
+            yAxis={[{ label: 'Percentage (%)', min: 0, max: 100 }]}
+            series={[{ data: scores, color: '#3f51b5', label: 'Percentage' }]}
+            height={300}
+            tooltip={{ trigger: 'item' }}
+          />
+        </Box>
+      ) : (
+        <Box display="flex" justifyContent="center" py={4}>
+          <Typography variant="body2" color="#666">
+            {exams.length === 0 ? 'No exams available for selected term' : 'No performance data available'}
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };
 
 // Upcoming Events
 const UpcomingEvents = () => {
-  const eventData = [
-    { date: "15", month: "May", title: "Science Exhibition", time: "10:00 AM", color: "indigo" },
-    { date: "22", month: "May", title: "Math Quiz Competition", time: "9:00 AM", color: "green" },
-    { date: "30", month: "May", title: "Career Counseling", time: "2:30 PM", color: "purple" },
-  ];
+  const [eventData, setEventData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalNotices, setTotalNotices] = useState(0);
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        setLoading(true);
+        const response = await getStudentDashboardNotices();
+        
+        console.log('Student Dashboard Notices Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data) {
+          apiData = response.data;
+        }
+        
+        if (apiData?.notices && Array.isArray(apiData.notices)) {
+          // Transform notices to event format
+          const colors = ['indigo', 'green', 'purple', 'blue', 'yellow', 'pink', 'orange'];
+          const eventsWithColors = apiData.notices.map((notice, index) => {
+            // Parse the date if available
+            let date = '';
+            let month = '';
+            if (notice.date) {
+              const noticeDate = new Date(notice.date);
+              date = noticeDate.getDate().toString();
+              month = noticeDate.toLocaleString('en-US', { month: 'short' });
+            }
+            
+            return {
+              date: date || '--',
+              month: month || '---',
+              title: notice.title || 'Untitled',
+              time: notice.time || '',
+              color: colors[index % colors.length],
+            };
+          });
+          
+          console.log('Events Data:', eventsWithColors);
+          setEventData(eventsWithColors);
+          setTotalNotices(apiData.total_notices || eventsWithColors.length);
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setEventData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching student notices:', error);
+        setEventData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotices();
+  }, []);
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
       <div className="flex justify-between mb-6">
-        <h3 className="text-lg font-semibold">Upcoming Events</h3>
+        <div>
+          <h3 className="text-lg font-semibold">Upcoming Events</h3>
+          {totalNotices > 0 && (
+            <p className="text-sm text-gray-500">{totalNotices} events</p>
+          )}
+        </div>
         <a href="#events" className="text-indigo-600 text-sm hover:underline">View All</a>
       </div>
-      <div className="space-y-4">
-        {eventData.map((item, index) => (
-          <ListItem key={index} data={item} type="event" color={item.color} />
-        ))}
-      </div>
+      {loading ? (
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress size={40} sx={{ color: '#6366f1' }} />
+        </Box>
+      ) : eventData.length > 0 ? (
+        <div className="space-y-4">
+          {eventData.map((item, index) => (
+            <ListItem key={index} data={item} type="event" color={item.color} />
+          ))}
+        </div>
+      ) : (
+        <Box display="flex" justifyContent="center" py={4}>
+          <Typography variant="body2" color="#666">No upcoming events</Typography>
+        </Box>
+      )}
     </div>
   );
 };

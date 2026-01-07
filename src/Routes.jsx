@@ -51,6 +51,8 @@ import Student from './Pages/students/Student';
 import StudentAttendance from './Pages/students/StudentAttendance';
 import StudentSubject from './Pages/students/StudentSubject';
 import StudentAssignment from './Pages/students/StudentAssignment';
+import ClassResources from './Pages/students/Resources/ClassResources';
+import SubjectResources from './Pages/students/Resources/SubjectResources';
 import StudentResult from './Pages/students/StudentResult';
 import StudentProgress from './Pages/students/StudentProgress';
 import StudentTransport from "./Pages/students/StudentTransport";
@@ -78,7 +80,7 @@ import AccountantSalary from "./Pages/Accountant/Accountant_Salary";
 import AccountantPayments from "./Pages/Accountant/Accountant_Payments";
 import AccountantReport from "./Pages/Accountant/Accountant_ReportAnalytics";
 import AccountantProfile from "./Pages/Accountant/Accountant_Profile.jsx";
-import AccountantSetting from "./Pages/Accountant/Accountant_Setting.jsx";
+import AccountantChangePassword from "./Pages/Accountant/Accountant_ChangePassword.jsx";
 
 
 // **Admin Routes**
@@ -111,7 +113,10 @@ import ViewAssignSubPage from "./Pages/admin/Academics/ViewAssignSubPage.jsx";
 import AdmitCardPage from "./Pages/admin/examination/AdmitCardPage.jsx";
 import ExamAttendancePage from "./Pages/admin/examination/ExamAttendancePage.jsx";
 import ExamTimeTablePage from "./Pages/admin/examination/ExamTimeTablePage.jsx";
+import ViewExamTimeTablePage from "./Pages/admin/examination/ViewExamTimeTablePage.jsx";
+import ViewClassAdmitCardsPage from "./Pages/admin/examination/ViewClassAdmitCardsPage.jsx";
 import MarksRegisterPage from "./Pages/admin/examination/MarksRegisterPage.jsx";
+import EnterMarks from "./components/examanitaion/EnterMarks.jsx";
 import ReportCardPage from "./Pages/admin/examination/ReportCardPage.jsx";
 import TermListPage from "./Pages/admin/examination/TermListPage.jsx";
 import ExamListPage from "./Pages/admin/examination/ExamListPage.jsx";
@@ -208,13 +213,15 @@ const routes = {
     { path: "/AccountantPayments", element: <AccountantPayments /> },
     { path: "/AccountantReports", element: <AccountantReport /> },
     { path: "/AccountantProfile", element: <AccountantProfile /> },
-    { path: "/AccountantSetting", element: <AccountantSetting /> },
+    { path: "/AccountantChangePassword", element: <AccountantChangePassword /> },
   ],
   student: [
     { path: "/student/dashboard", element: <Student /> },
     { path: "/student/attendance", element: <StudentAttendance /> },
     { path: "/student/subjects", element: <StudentSubject /> },
     { path: "/student/assignments", element: <StudentAssignment /> },
+    { path: "/student/class-resources", element: <ClassResources /> },
+    { path: "/student/subject-resources", element: <SubjectResources /> },
     { path: "/student/results", element: <StudentResult /> },
     { path: "/student/progress", element: <StudentProgress /> },
     { path: "/student/transport", element: <StudentTransport /> },
@@ -263,9 +270,12 @@ const routes = {
 
     // exam routes
     { path: "/admin/admit-card-page", element: <AdmitCardPage/> },
+    { path: "/admin/view-class-admit-cards", element: <ViewClassAdmitCardsPage/> },
     { path: "/admin/exam-attendance-page", element: <ExamAttendancePage/> },
     { path: "/admin/exam-time-table-page", element: <ExamTimeTablePage/> },
+    { path: "/admin/view-exam-time-table-page", element: <ViewExamTimeTablePage/> },
     { path: "/admin/marks-register-page", element: <MarksRegisterPage/> },
+    { path: "/admin/enter-marks", element: <EnterMarks/> },
     { path: "/admin/report-card-page", element: <ReportCardPage/> },
     { path: "/admin/term-list-page", element: <TermListPage/> },
     { path: "/admin/exam-list-page", element: <ExamListPage/> },

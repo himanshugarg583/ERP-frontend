@@ -1,134 +1,229 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { FaMoneyBillWave, FaUsers, FaBus, FaBuilding, FaChartPie, FaDownload, FaHistory, FaFileInvoiceDollar, FaRedo, FaCog, FaWallet, FaCreditCard, FaQrcode, FaCheckCircle } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaMoneyBillWave, FaReceipt, FaRupeeSign, FaPlus, FaCheckCircle } from 'react-icons/fa';
 import Sidebar from './Accountant_Sidebar';
 import Header from './Accountant_Header';
-import Accountant_Section from './Accountant_Section';
-import Accountant_Table from './Accountant_Table';
-import Accountant_PieChartCard from './Accountant_PieChartCard';
-import Accountant_SearchInput from './Accountant_SearchInput';
-import Accountant_PaymentMethod from './Accountant_PaymentMethod';
-import Accountant_SettingsModal from './Accountant_SettingsModal';
+import { getFeePayments, getClassDropdown, getStudentsByClass, getStudentInstallments, fillPayment } from '../../helper/requests-method/apiMethods';
+import { toast } from 'react-toastify';
 
 const OnlinePaymentPage = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [searchQueries, setSearchQueries] = useState({ student: '', employee: '', vendor: '', transaction: '' });
-    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-    const [paymentSettings, setPaymentSettings] = useState({ upi: true, cards: true, netBanking: true, wallets: true, transactionFee: 2, reminders: true });
-    const [selectedDepartment, setSelectedDepartment] = useState('');
-    const [selectedEmployee, setSelectedEmployee] = useState(null);
-    const [bankDetails, setBankDetails] = useState({ accountNo: '', ifsc: '', name: '' });
-    const [leaves, setLeaves] = useState({ full: 0, half: 0 });
-
-    const paymentData = useMemo(() => ({
-        overview: { todayCollected: 15000, monthlyCollected: 450000, yearlyCollected: 5400000, pendingPayments: 120000, successfulTx: 85, failedTx: 15, paymentMethods: [{ label: 'UPI', value: 60 }, { label: 'Cards', value: 25 }, { label: 'Net Banking', value: 10 }, { label: 'Wallets', value: 5 }] },
-        students: [{ id: 1, name: 'John Doe', class: '10A', rollNo: 'A001', totalFee: 5000, paid: 3000, date: '2025-03-15', mode: 'UPI', status: 'Successful', lateFee: 0 }, { id: 2, name: 'Jane Smith', class: '9B', rollNo: 'B002', totalFee: 4500, paid: 0, date: '2025-03-10', mode: 'Cards', status: 'Failed', lateFee: 225 }],
-        employees: [
-            { id: 'E001', name: 'Mr. Sharma', dept: 'Teaching', salary: 50000, paid: 50000, deductions: 5000, bonus: 2000, mode: 'Bank Transfer', status: 'Paid', date: '2025-03-01', fullDayLeaves: 2, halfDayLeaves: 1, bankDetails: { accountNo: '1234567890', ifsc: 'SBIN0001234', name: 'Mr. Sharma' } },
-            { id: 'E002', name: 'Ms. Patel', dept: 'Admin', salary: 35000, paid: 0, deductions: 3000, bonus: 0, mode: 'UPI', status: 'Pending', date: '2025-03-05', fullDayLeaves: 1, halfDayLeaves: 3, bankDetails: { accountNo: '0987654321', ifsc: 'HDFC0005678', name: 'Ms. Patel' } },
-            { id: 'E003', name: 'Mr. Kumar', dept: 'IT', salary: 45000, paid: 0, deductions: 4000, bonus: 1000, mode: 'Net Banking', status: 'Pending', date: '2025-03-10', fullDayLeaves: 0, halfDayLeaves: 2, bankDetails: { accountNo: '4567891230', ifsc: 'ICIC0009012', name: 'Mr. Kumar' } }
-        ],
-        vendors: [{ id: 'V001', name: 'Transport Co.', invoice: 'INV001', due: 20000, paid: 20000, mode: 'Net Banking', status: 'Paid', date: '2025-03-10' }, { id: 'V002', name: 'Book Supplier', invoice: 'INV002', due: 15000, paid: 0, mode: 'Cards', status: 'Pending', date: '2025-03-15' }],
-        transport: [{ id: 'T001', student: 'John Doe', total: 1500, paid: 1500, mode: 'UPI', status: 'Paid', date: '2025-03-12' }, { id: 'T002', student: 'Jane Smith', total: 1500, paid: 0, mode: 'Wallets', status: 'Pending', date: '2025-03-14' }],
-        expenses: [{ type: 'Electricity', total: 50000, spent: 45000, budget: 60000, date: '2025-03-01' }, { type: 'Canteen', total: 30000, spent: 25000, budget: 35000, date: '2025-03-05' }],
-        transactions: [{ id: 'TX001', type: 'Student Fee', amount: 3000, mode: 'UPI', status: 'Successful', date: '2025-03-15' }, { id: 'TX002', type: 'Salary', amount: 50000, mode: 'Bank Transfer', status: 'Paid', date: '2025-03-01' }],
-        refunds: [{ id: 'R001', requester: 'John Doe', amount: 500, reason: 'Overpayment', status: 'Approved', date: '2025-03-10' }, { id: 'R002', requester: 'Vendor Co.', amount: 1000, reason: 'Cancellation', status: 'Pending', date: '2025-03-12' }]
-    }), []);
-
-    const filters = {
-        students: (paymentData.students ?? []).filter(s => [s.name ?? '', s.class ?? '', s.rollNo ?? ''].some(v => v.toLowerCase().includes((searchQueries.student ?? '').toLowerCase()))),
-        employees: (paymentData.employees ?? []).filter(e => [e.name ?? '', e.id ?? ''].some(v => v.toLowerCase().includes((searchQueries.employee ?? '').toLowerCase()))),
-        vendors: (paymentData.vendors ?? []).filter(v => [v.name ?? '', v.invoice ?? ''].some(v => v.toLowerCase().includes((searchQueries.vendor ?? '').toLowerCase()))),
-        transactions: (paymentData.transactions ?? []).filter(t => [t.id ?? '', t.type ?? ''].some(v => v.toLowerCase().includes((searchQueries.transaction ?? '').toLowerCase())))
-    };
-
-    const departments = ['Teaching', 'Admin', 'IT', 'Security', 'Vendor'];
-    const employeesByDept = (paymentData.employees ?? []).filter(e => (e.dept ?? '') === (selectedDepartment ?? ''));
-    const workingDays = 30 - 4 - 2;
-
-    const calculateSalaryBreakdown = () => {
-        if (!selectedEmployee) return null;
-        const salary = selectedEmployee.salary ?? 0;
-        const components = { basic: 0.5, hra: 0.15, da: 0.1, special: 0.15, conveyance: 0.1 };
-        const grossSalary = Object.values(components).reduce((sum, rate) => sum + salary * rate, 0);
-        const dailySalary = salary / workingDays;
-        const leaveDeduction = (leaves.full ?? 0) * dailySalary + (leaves.half ?? 0) * dailySalary * 0.5;
-        const deductions = { 
-            pf: components.basic * salary * 0.12, 
-            pt: 200, 
-            tds: (grossSalary - components.hra * salary - components.basic * salary * 0.12) * 0.1, 
-            leave: leaveDeduction 
-        };
-        const totalDeductions = Object.values(deductions ?? {}).reduce((sum, val) => sum + (val ?? 0), 0);
-        return { 
-            ...Object.fromEntries(Object.entries(components).map(([k, v]) => [k + 'Salary', salary * v])), 
-            grossSalary, 
-            ...deductions, 
-            totalDeductions, 
-            netSalary: grossSalary - totalDeductions 
-        };
-    };
-
-    const salaryBreakdown = calculateSalaryBreakdown();
+    const [payments, setPayments] = useState([]);
+    const [summary, setSummary] = useState(null);
+    const [totalRecords, setTotalRecords] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // New states for payment form
+    const [showPaymentForm, setShowPaymentForm] = useState(false);
+    const [classes, setClasses] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [installments, setInstallments] = useState([]);
+    const [selectedClass, setSelectedClass] = useState('');
+    const [selectedStudent, setSelectedStudent] = useState('');
+    const [selectedInstallments, setSelectedInstallments] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Payment form data
+    const [paymentData, setPaymentData] = useState({
+        amount_paid: '',
+        late_fee_paid: '',
+        payment_method: 'cash',
+        transaction_id: '',
+        cheque_number: '',
+        bank_name: '',
+        remarks: ''
+    });
 
     useEffect(() => {
-        setLeaves(selectedEmployee ? { full: selectedEmployee.fullDayLeaves ?? 0, half: selectedEmployee.halfDayLeaves ?? 0 } : { full: 0, half: 0 });
-        setBankDetails(selectedEmployee ? {
-            accountNo: selectedEmployee.bankDetails?.accountNo ?? '',
-            ifsc: selectedEmployee.bankDetails?.ifsc ?? '',
-            name: selectedEmployee.bankDetails?.name ?? ''
-        } : { accountNo: '', ifsc: '', name: '' });
-    }, [selectedEmployee]);
+        fetchPayments();
+        fetchClasses();
+    }, []);
 
-    const handlers = {
-        download: (type, id) => alert(`Downloading ${type ?? 'N/A'} for ${id ?? 'unknown'}`),
-        retry: id => alert(`Retrying transaction ${id ?? 'unknown'}`),
-        saveSettings: () => setIsSettingsModalOpen(false) || alert('Settings saved!'),
-        paySalary: () => !selectedEmployee || !Object.values(bankDetails ?? {}).every(Boolean) ? alert('Please fill all bank details and select an employee.') : alert(`Paying ₹${(salaryBreakdown?.netSalary ?? 0).toLocaleString()} to ${selectedEmployee.name ?? 'N/A'}`),
-        search: (type) => e => setSearchQueries(q => ({ ...q, [type]: e.target.value ?? '' }))
+    useEffect(() => {
+        if (selectedClass) {
+            fetchStudents(selectedClass);
+        }
+    }, [selectedClass]);
+
+    useEffect(() => {
+        if (selectedStudent) {
+            fetchInstallments(selectedStudent);
+        }
+    }, [selectedStudent]);
+
+    // Auto-fill payment amounts when installments are selected
+    useEffect(() => {
+        if (selectedInstallments.length > 0) {
+            const totalDue = calculateTotalDue();
+            const totalLateFee = calculateTotalLateFee();
+            
+            setPaymentData(prev => ({
+                ...prev,
+                amount_paid: totalDue.toString(),
+                late_fee_paid: totalLateFee.toString()
+            }));
+        }
+    }, [selectedInstallments]);
+
+    const fetchClasses = async () => {
+        try {
+            const response = await getClassDropdown();
+            if (response?.success) {
+                setClasses(response.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+            toast.error('Failed to fetch classes');
+        }
     };
 
-    const tableConfigs = {
-        students: { 
-            headers: ['Name', 'Class', 'Roll No', 'Total', 'Paid', 'Pending', 'Date', 'Mode', 'Status', 'Action'], 
-            data: filters.students, 
-            row: s => [s.name ?? 'N/A', s.class ?? 'N/A', s.rollNo ?? 'N/A', s.totalFee ?? 0, s.paid ?? 0, (s.totalFee ?? 0) - (s.paid ?? 0), s.date ?? 'N/A', s.mode ?? 'N/A', s.status ?? 'N/A', <button className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm flex items-center gap-1 mx-auto" onClick={() => handlers.download('receipt', s.id)}><FaDownload />Receipt</button>], 
-            statusColor: { Successful: 'green-600', Failed: 'red-600', Pending: 'yellow-600' } 
-        },
-        employees: { 
-            headers: ['Name', 'ID', 'Dept', 'Salary', 'Paid', 'Deductions', 'Bonus', 'Mode', 'Status', 'Action'], 
-            data: filters.employees, 
-            row: e => [e.name ?? 'N/A', e.id ?? 'N/A', e.dept ?? 'N/A', e.salary ?? 0, e.paid ?? 0, e.deductions ?? 0, e.bonus ?? 0, e.mode ?? 'N/A', e.status ?? 'N/A', <button className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs sm:text-sm flex items-center gap-1 mx-auto" onClick={() => handlers.download('slip', e.id)}><FaDownload />Slip</button>], 
-            statusColor: { Paid: 'green-600', Pending: 'yellow-600' } 
-        },
-        vendors: { 
-            headers: ['Vendor', 'Invoice', 'Due', 'Paid', 'Mode', 'Status', 'Date', 'Action'], 
-            data: filters.vendors, 
-            row: v => [v.name ?? 'N/A', v.invoice ?? 'N/A', v.due ?? 0, v.paid ?? 0, v.mode ?? 'N/A', v.status ?? 'N/A', v.date ?? 'N/A', <button className="px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 text-xs sm:text-sm flex items-center gap-1 mx-auto" onClick={() => handlers.download('receipt', v.id)}><FaDownload />Receipt</button>], 
-            statusColor: { Paid: 'green-600', Pending: 'yellow-600' } 
-        },
-        transport: { 
-            headers: ['Student', 'Total', 'Paid', 'Pending', 'Mode', 'Status', 'Date', 'Action'], 
-            data: paymentData.transport ?? [], 
-            row: t => [t.student ?? 'N/A', t.total ?? 0, t.paid ?? 0, (t.total ?? 0) - (t.paid ?? 0), t.mode ?? 'N/A', t.status ?? 'N/A', t.date ?? 'N/A', <button className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs sm:text-sm flex items-center gap-1 mx-auto" onClick={() => handlers.download('receipt', t.id)}><FaDownload />Receipt</button>], 
-            statusColor: { Paid: 'green-600', Pending: 'yellow-600' } 
-        },
-        expenses: { 
-            headers: ['Type', 'Total', 'Spent', 'Budget', 'Date'], 
-            data: paymentData.expenses ?? [], 
-            row: e => [e.type ?? 'N/A', e.total ?? 0, e.spent ?? 0, e.budget ?? 0, e.date ?? 'N/A'] 
-        },
-        transactions: { 
-            headers: ['ID', 'Type', 'Amount', 'Mode', 'Status', 'Date', 'Action'], 
-            data: filters.transactions, 
-            row: t => [t.id ?? 'N/A', t.type ?? 'N/A', t.amount ?? 0, t.mode ?? 'N/A', t.status ?? 'N/A', t.date ?? 'N/A', (t.status ?? '') === 'Failed' && <button className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs sm:text-sm flex items-center gap-1 mx-auto" onClick={() => handlers.retry(t.id)}><FaRedo />Retry</button>], 
-            statusColor: { Successful: 'green-600', Paid: 'green-600', Pending: 'yellow-600' } 
-        },
-        refunds: { 
-            headers: ['Requester', 'Amount', 'Reason', 'Status', 'Date'], 
-            data: paymentData.refunds ?? [], 
-            row: r => [r.requester ?? 'N/A', r.amount ?? 0, r.reason ?? 'N/A', r.status ?? 'N/A', r.date ?? 'N/A'], 
-            statusColor: { Approved: 'green-600', Pending: 'yellow-600' } 
+    const fetchStudents = async (classId) => {
+        try {
+            const response = await getStudentsByClass(classId);
+            if (response?.success) {
+                setStudents(response.data || []);
+                setSelectedStudent('');
+                setInstallments([]);
+                setSelectedInstallments([]);
+            }
+        } catch (error) {
+            console.error('Error fetching students:', error);
+            toast.error('Failed to fetch students');
         }
+    };
+
+    const fetchInstallments = async (studentId) => {
+        try {
+            const response = await getStudentInstallments(studentId);
+            if (response?.success) {
+                setInstallments(response.data?.installments || []);
+                setSelectedInstallments([]);
+            }
+        } catch (error) {
+            console.error('Error fetching installments:', error);
+            toast.error('Failed to fetch installments');
+        }
+    };
+
+    const fetchPayments = async () => {
+        setIsLoading(true);
+        try {
+            const response = await getFeePayments();
+            if (response?.success) {
+                setPayments(response.data?.payments || []);
+                setSummary(response.data?.summary || null);
+                setTotalRecords(response.data?.total_records || 0);
+            } else {
+                toast.error('Failed to fetch payments');
+            }
+        } catch (error) {
+            console.error('Error fetching payments:', error);
+            toast.error('Failed to fetch fee payments');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const getPaymentMethodBadge = (method) => {
+        const methodConfig = {
+            online: { bg: 'bg-blue-100', text: 'text-blue-800' },
+            cash: { bg: 'bg-green-100', text: 'text-green-800' },
+            cheque: { bg: 'bg-purple-100', text: 'text-purple-800' },
+            bank_transfer: { bg: 'bg-indigo-100', text: 'text-indigo-800' }
+        };
+        const config = methodConfig[method] || { bg: 'bg-gray-100', text: 'text-gray-800' };
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+                {method?.replace('_', ' ').toUpperCase()}
+            </span>
+        );
+    };
+
+    const handleInstallmentSelection = (installmentId) => {
+        setSelectedInstallments(prev => {
+            const newSelection = prev.includes(installmentId)
+                ? prev.filter(id => id !== installmentId)
+                : [...prev, installmentId];
+            return newSelection;
+        });
+    };
+
+    const handlePaymentSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!selectedStudent) {
+            toast.error('Please select a student');
+            return;
+        }
+
+        if (selectedInstallments.length === 0) {
+            toast.error('Please select at least one installment');
+            return;
+        }
+
+        if (!paymentData.amount_paid || parseFloat(paymentData.amount_paid) <= 0) {
+            toast.error('Please enter a valid amount');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const submitData = {
+                student_id: parseInt(selectedStudent),
+                amount_paid: parseFloat(paymentData.amount_paid),
+                late_fee_paid: parseFloat(paymentData.late_fee_paid) || 0,
+                payment_method: paymentData.payment_method,
+                transaction_id: paymentData.transaction_id || null,
+                cheque_number: paymentData.cheque_number || null,
+                bank_name: paymentData.bank_name || null,
+                remarks: paymentData.remarks,
+                installment_ids: selectedInstallments
+            };
+
+            const response = await fillPayment(submitData);
+            
+            if (response?.success) {
+                toast.success('Payment submitted successfully!');
+                setShowPaymentForm(false);
+                resetForm();
+                fetchPayments();
+            } else {
+                toast.error(response?.message || 'Failed to submit payment');
+            }
+        } catch (error) {
+            console.error('Error submitting payment:', error);
+            toast.error('Failed to submit payment');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const resetForm = () => {
+        setSelectedClass('');
+        setSelectedStudent('');
+        setSelectedInstallments([]);
+        setStudents([]);
+        setInstallments([]);
+        setPaymentData({
+            amount_paid: '',
+            late_fee_paid: '',
+            payment_method: 'cash',
+            transaction_id: '',
+            cheque_number: '',
+            bank_name: '',
+            remarks: ''
+        });
+    };
+
+    const calculateTotalDue = () => {
+        return installments
+            .filter(inst => selectedInstallments.includes(inst.installment_id))
+            .reduce((sum, inst) => sum + parseFloat(inst.due_amount || 0), 0);
+    };
+
+    const calculateTotalLateFee = () => {
+        return installments
+            .filter(inst => selectedInstallments.includes(inst.installment_id))
+            .reduce((sum, inst) => sum + parseFloat(inst.late_fee || 0), 0);
     };
 
     return (
@@ -136,208 +231,396 @@ const OnlinePaymentPage = () => {
             <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
             <main className="flex-1 overflow-y-auto lg:ml-64">
                 <Header setIsSidebarOpen={setIsSidebarOpen} />
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-6 sm:mb-8 text-gray-800">Online Payment Management</h1>
-
-                <Accountant_Section title="Payment Overview" icon={FaChartPie} defaultOpen bgColor="teal">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">{[
-                        ['Today Collected', paymentData.overview?.todayCollected ?? 0, 'teal-600'], 
-                        ['Monthly Collected', paymentData.overview?.monthlyCollected ?? 0, 'teal-600'],
-                        ['Yearly Collected', paymentData.overview?.yearlyCollected ?? 0, 'teal-600'], 
-                        ['Pending Payments', paymentData.overview?.pendingPayments ?? 0, 'red-600']
-                    ].map(([title, value, color], i) => (
-                        <div key={i} className="bg-teal-50 p-4 rounded-lg text-center">
-                            <h3 className="text-sm sm:text-base font-medium">{title}</h3>
-                            <p className={`text-lg sm:text-xl font-bold text-${color}`}>₹{value.toLocaleString()}</p>
-                        </div>
-                    ))}</div>
-                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Accountant_PieChartCard title="Payment Methods" data={paymentData.overview?.paymentMethods ?? []} />
-                        <Accountant_PieChartCard title="Transaction Status" data={[
-                            { label: 'Successful', value: paymentData.overview?.successfulTx ?? 0 }, 
-                            { label: 'Failed', value: paymentData.overview?.failedTx ?? 0 }
-                        ]} />
+                <div className="p-4 md:p-6">
+                    <div className="flex justify-between items-center mb-8">
+                        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-indigo-700">
+                            Fee Payments
+                        </h1>
+                        <button
+                            onClick={() => setShowPaymentForm(!showPaymentForm)}
+                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+                        >
+                            <FaPlus />
+                            {showPaymentForm ? 'View Payments' : 'Fill Payment'}
+                        </button>
                     </div>
-                </Accountant_Section>
 
-                <Accountant_Section title="Online Payment" icon={FaMoneyBillWave} bgColor="blue">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                        <h3 className="text-base sm:text-lg font-medium mb-4">Pay Staff, Teachers, Admins, Vendors</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Select Department</label>
-                                <select 
-                                    value={selectedDepartment ?? ''} 
-                                    onChange={e => setSelectedDepartment(e.target.value ?? '')} 
-                                    className="w-full p-2 border rounded-md mb-4"
-                                >
-                                    <option value="">-- Select --</option>
-                                    {(departments ?? []).map(d => <option key={d ?? ''} value={d ?? ''}>{d ?? 'N/A'}</option>)}
-                                </select>
-                                {selectedDepartment && (
-                                    <>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Employee</label>
-                                        <select 
-                                            value={selectedEmployee?.id ?? ''} 
-                                            onChange={e => setSelectedEmployee((paymentData.employees ?? []).find(emp => emp.id === e.target.value) ?? null)} 
-                                            className="w-full p-2 border rounded-md mb-4"
+                    {showPaymentForm ? (
+                        /* Payment Form */
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6">Fill Student Fee Payment</h2>
+                            
+                            <form onSubmit={handlePaymentSubmit}>
+                                {/* Class and Student Selection */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Select Class *
+                                        </label>
+                                        <select
+                                            value={selectedClass}
+                                            onChange={(e) => setSelectedClass(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            required
                                         >
-                                            <option value="">-- Select --</option>
-                                            {(employeesByDept ?? []).map(emp => <option key={emp.id ?? ''} value={emp.id ?? ''}>{emp.name ?? 'N/A'}</option>)}
+                                            <option value="">Select Class</option>
+                                            {classes.map((cls) => (
+                                                <option key={cls.id} value={cls.id}>
+                                                    {cls.class_name} - {cls.section_name}
+                                                </option>
+                                            ))}
                                         </select>
-                                    </>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Select Student *
+                                        </label>
+                                        <select
+                                            value={selectedStudent}
+                                            onChange={(e) => setSelectedStudent(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            disabled={!selectedClass}
+                                            required
+                                        >
+                                            <option value="">Select Student</option>
+                                            {students.map((student) => (
+                                                <option key={student.id} value={student.id}>
+                                                    {student.name} ({student.roll_number})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Installments Selection */}
+                                {installments.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Installments</h3>
+                                        <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                            <table className="min-w-full divide-y divide-gray-200">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Select</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Installment</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Amount</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Paid</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Due</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Late Fee</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Due Date</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {installments.map((inst) => (
+                                                        <tr key={inst.installment_id} className={inst.status === 'paid' ? 'bg-green-50' : ''}>
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedInstallments.includes(inst.installment_id)}
+                                                                    onChange={() => handleInstallmentSelection(inst.installment_id)}
+                                                                    disabled={inst.status === 'paid'}
+                                                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm text-gray-900">{inst.installment_name}</td>
+                                                            <td className="px-4 py-3 text-sm text-gray-900">₹{parseFloat(inst.amount).toLocaleString()}</td>
+                                                            <td className="px-4 py-3 text-sm text-green-600">₹{parseFloat(inst.paid_amount).toLocaleString()}</td>
+                                                            <td className="px-4 py-3 text-sm text-red-600">₹{parseFloat(inst.due_amount).toLocaleString()}</td>
+                                                            <td className="px-4 py-3 text-sm text-orange-600">₹{parseFloat(inst.late_fee || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3 text-sm text-gray-600">{new Date(inst.due_date).toLocaleDateString()}</td>
+                                                            <td className="px-4 py-3">
+                                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                                    inst.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                                }`}>
+                                                                    {inst.status.toUpperCase()}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Total Summary */}
+                                        {selectedInstallments.length > 0 && (
+                                            <div className="mt-4 bg-indigo-50 p-4 rounded-lg">
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Total Due Amount</p>
+                                                        <p className="text-xl font-bold text-indigo-700">₹{calculateTotalDue().toLocaleString()}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Total Late Fee</p>
+                                                        <p className="text-xl font-bold text-orange-600">₹{calculateTotalLateFee().toLocaleString()}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Installments Selected</p>
+                                                        <p className="text-xl font-bold text-gray-700">{selectedInstallments.length}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Grand Total</p>
+                                                        <p className="text-xl font-bold text-green-600">
+                                                            ₹{(calculateTotalDue() + calculateTotalLateFee()).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
-                                {selectedEmployee && (
-                                    <>
-                                        <h4 className="text-sm font-medium mb-2">Bank Details</h4>
-                                        {['accountNo', 'ifsc', 'name'].map((field, i) => (
-                                            <input 
-                                                key={i} 
-                                                type="text" 
-                                                placeholder={field === 'accountNo' ? 'Account Number' : field === 'ifsc' ? 'IFSC Code' : 'Account Holder Name'} 
-                                                value={bankDetails[field] ?? ''} 
-                                                onChange={e => setBankDetails({ ...bankDetails, [field]: e.target.value ?? '' })} 
-                                                className="w-full p-2 border rounded-md mb-2" 
+
+                                {/* Payment Details */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Amount Paid *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={paymentData.amount_paid}
+                                            onChange={(e) => setPaymentData({...paymentData, amount_paid: e.target.value})}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Late Fee Paid
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={paymentData.late_fee_paid}
+                                            onChange={(e) => setPaymentData({...paymentData, late_fee_paid: e.target.value})}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Payment Method *
+                                        </label>
+                                        <select
+                                            value={paymentData.payment_method}
+                                            onChange={(e) => setPaymentData({...paymentData, payment_method: e.target.value})}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            required
+                                        >
+                                            <option value="cash">Cash</option>
+                                            <option value="online">Online</option>
+                                            <option value="cheque">Cheque</option>
+                                            <option value="bank_transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+
+                                    {(paymentData.payment_method === 'online' || paymentData.payment_method === 'bank_transfer') && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Transaction ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={paymentData.transaction_id}
+                                                onChange={(e) => setPaymentData({...paymentData, transaction_id: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                             />
-                                        ))}
-                                        <h4 className="text-sm font-medium mb-2">Leave Details</h4>
-                                        {['full', 'half'].map((type, i) => (
-                                            <div key={i} className="mb-2">
-                                                <label className="block text-sm text-gray-600">{type === 'full' ? 'Full' : 'Half'} Day Leaves</label>
-                                                <input 
-                                                    type="number" 
-                                                    value={leaves[type] ?? 0} 
-                                                    onChange={e => setLeaves({ ...leaves, [type]: Number(e.target.value ?? 0) })} 
-                                                    className="w-full p-2 border rounded-md" 
-                                                    min="0" 
+                                        </div>
+                                    )}
+
+                                    {paymentData.payment_method === 'cheque' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Cheque Number
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={paymentData.cheque_number}
+                                                    onChange={(e) => setPaymentData({...paymentData, cheque_number: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                                 />
                                             </div>
-                                        ))}
-                                    </>
-                                )}
-                            </div>
-                            {salaryBreakdown && (
-                                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                                    <h3 className="text-lg sm:text-xl font-semibold mb-6 text-gray-800 flex items-center gap-2"><FaWallet className="text-indigo-600" />Salary Breakdown</h3>
-                                    <div className="space-y-4">
-                                        <div className="bg-gray-50 p-3 rounded-md text-sm text-gray-600 flex items-center justify-between">
-                                            <span>Working Days</span>
-                                            <span className="font-medium">{workingDays} (Excl. 4 Sundays, 2 Holidays)</span>
-                                        </div>
-                                        {[['Earnings', { basicSalary: 'Basic Salary', hra: 'HRA', da: 'DA', specialSalary: 'Special Allowance', conveyanceSalary: 'Conveyance' }, 'green', '+'], ['Deductions', { pf: 'PF (12%)', pt: 'Professional Tax', tds: 'TDS', leaveDeduction: 'Leave Deduction' }, 'red', '-']].map(([title, fields, color, sign], i) => (
-                                            <div key={i} className="border-b pb-4">
-                                                <h4 className="text-sm font-medium text-gray-700 mb-2">{title}</h4>
-                                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                                    {Object.entries(fields).map(([k, v]) => (
-                                                        <div key={k} className={`flex justify-between items-center p-2 bg-${color}-50 rounded-md hover:bg-${color}-100 transition-colors`}>
-                                                            <span className="text-gray-600">{v}</span>
-                                                            <span className={`font-semibold text-${color}-700`}>{sign}₹{(salaryBreakdown[k] ?? 0).toLocaleString()}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className={`flex justify-between items-center mt-3 p-2 bg-${color}-100 rounded-md`}>
-                                                    <span className="text-gray-700 font-medium">Total {title}</span>
-                                                    <span className={`text-lg font-bold text-${color}-800`}>{sign}₹{(salaryBreakdown[i === 0 ? 'grossSalary' : 'totalDeductions'] ?? 0).toLocaleString()}</span>
-                                                </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Bank Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={paymentData.bank_name}
+                                                    onChange={(e) => setPaymentData({...paymentData, bank_name: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                />
                                             </div>
-                                        ))}
-                                        <div className="flex justify-between items-center p-3 bg-indigo-100 rounded-md">
-                                            <span className="text-gray-700 font-medium">Net Salary</span>
-                                            <span className="text-xl font-bold text-indigo-800">₹{(salaryBreakdown.netSalary ?? 0).toLocaleString()}</span>
-                                        </div>
+                                        </>
+                                    )}
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Remarks
+                                        </label>
+                                        <textarea
+                                            value={paymentData.remarks}
+                                            onChange={(e) => setPaymentData({...paymentData, remarks: e.target.value})}
+                                            rows="3"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            placeholder="Add any additional remarks..."
+                                        />
                                     </div>
-                                    <div className="mt-6">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-3">Payment Method</h4>
-                                        <Accountant_PaymentMethod icon={<FaCreditCard className="mr-3 text-indigo-600" />} title="Credit / Debit Card">
-                                            <form>
-                                                <input type="text" placeholder="Card Number" className="w-full p-2 border rounded-md mb-2" />
-                                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                                    <input type="text" placeholder="MM/YY" className="w-full p-2 border rounded-md" />
-                                                    <input type="text" placeholder="CVV" className="w-full p-2 border rounded-md" />
-                                                </div>
-                                                <input type="text" placeholder="Card Holder Name" className="w-full p-2 border rounded-md" />
-                                            </form>
-                                        </Accountant_PaymentMethod>
-                                        <Accountant_PaymentMethod icon={<FaQrcode className="mr-3 text-indigo-600" />} title="UPI Payment">
-                                            <input type="text" placeholder="username@upi" className="w-full p-2 border rounded-md mb-2" />
-                                            <img src="https://cdn-icons-png.flaticon.com/128/4903/4903482.png" alt="QR Code" className="h-24 mx-auto" />
-                                        </Accountant_PaymentMethod>
-                                    </div>
-                                    <button 
-                                        className="w-full mt-6 bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-700 flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg" 
-                                        onClick={handlers.paySalary}
+                                </div>
+
+                                {/* Submit Button */}
+                                <div className="flex justify-end gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowPaymentForm(false);
+                                            resetForm();
+                                        }}
+                                        className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                                     >
-                                        <FaCheckCircle className="text-lg" />Pay Now (₹{(salaryBreakdown.netSalary ?? 0).toLocaleString()})
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting || selectedInstallments.length === 0}
+                                        className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FaCheckCircle />
+                                                Submit Payment
+                                            </>
+                                        )}
                                     </button>
                                 </div>
-                            )}
+                            </form>
                         </div>
-                    </div>
-                </Accountant_Section>
-
-                {Object.entries({
-                    'Student Fee Payments': { icon: FaMoneyBillWave, bgColor: 'blue', search: 'student' },
-                    'Employee Salary Payments': { icon: FaUsers, bgColor: 'green', search: 'employee' },
-                    'Vendor & Supplier Payments': { icon: FaFileInvoiceDollar, bgColor: 'purple', search: 'vendor' },
-                    'Transport Payments': { icon: FaBus, bgColor: 'yellow' },
-                    'Expense & Maintenance Payments': { icon: FaBuilding, bgColor: 'red' },
-                    'Transaction History & Logs': { icon: FaHistory, bgColor: 'purple', search: 'transaction' },
-                    'Refunds & Chargebacks': { icon: FaRedo, bgColor: 'yellow' }
-                }).map(([title, { icon, bgColor, search }], i) => {
-                    const key = title.toLowerCase().replace(/ & /g, ' ').split(' ')[0] + 's';
-                    const config = tableConfigs[key];
-
-                    return (
-                        <Accountant_Section key={i} title={title} icon={icon} bgColor={bgColor}>
-                            {search && (
-                                <Accountant_SearchInput 
-                                    value={searchQueries[search] ?? ''} 
-                                    onChange={handlers.search(search)} 
-                                    placeholder={`Search by ${search === 'student' ? 'name, class, or roll number' : search === 'employee' ? 'name or ID' : search === 'vendor' ? 'vendor name or invoice' : 'ID or type'}`} 
-                                />
+                    ) : (
+                        <>
+                            {/* Summary Cards */}
+                            {summary && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 rounded-lg shadow">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-600 mb-1">Total Amount Paid</p>
+                                                <p className="text-2xl font-bold text-blue-700">₹{parseFloat(summary.total_amount_paid).toLocaleString()}</p>
+                                            </div>
+                                            <FaRupeeSign className="text-4xl text-blue-600 opacity-50" />
+                                        </div>
+                                    </div>
+                                    <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-5 rounded-lg shadow">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-600 mb-1">Total Late Fee Paid</p>
+                                                <p className="text-2xl font-bold text-orange-700">₹{parseFloat(summary.total_late_fee_paid).toLocaleString()}</p>
+                                            </div>
+                                            <FaMoneyBillWave className="text-4xl text-orange-600 opacity-50" />
+                                        </div>
+                                    </div>
+                                    <div className="bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-lg shadow">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-600 mb-1">Total Collected</p>
+                                                <p className="text-2xl font-bold text-green-700">₹{parseFloat(summary.total_paid).toLocaleString()}</p>
+                                            </div>
+                                            <FaReceipt className="text-4xl text-green-600 opacity-50" />
+                                        </div>
+                                    </div>
+                                </div>
                             )}
-                            {config ? (
-                                <Accountant_Table 
-                                    headers={config.headers} 
-                                    data={config.data} 
-                                    renderRow={item => (
-                                        <tr key={item.id ?? item.type ?? ''} className="hover:bg-gray-50">
-                                            {config.row(item).map((cell, j) => (
-                                                <td 
-                                                    key={j} 
-                                                    className={`p-2 text-center ${j === 8 && config.statusColor?.[item.status ?? ''] ? `text-${config.statusColor[item.status ?? '']}` : ''}`}
-                                                >
-                                                    {typeof cell === 'number' ? `₹${cell.toLocaleString()}` : cell}
-                                                </td>
-                                            ))}
+
+                    {/* Payments Table */}
+                    <div className="bg-white rounded-lg shadow p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <FaMoneyBillWave className="text-indigo-600 text-2xl" />
+                                <h2 className="text-xl font-semibold text-gray-800">Payment Records</h2>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                                Total Records: <span className="font-semibold text-indigo-600">{totalRecords}</span>
+                            </div>
+                        </div>
+
+                        {isLoading ? (
+                            <div className="text-center py-12">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                                <p className="mt-4 text-gray-600">Loading payments...</p>
+                            </div>
+                        ) : payments.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-indigo-50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">S.No</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Receipt Number</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Student Name</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Roll Number</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Class</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Amount Paid</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Late Fee</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Total Paid</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Payment Method</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Payment Date</th>
                                         </tr>
-                                    )} 
-                                />
-                            ) : (
-                                <p>No data available for {title}</p> // Fallback message
-                            )}
-                        </Accountant_Section>
-                    );
-                })}
-
-                <Accountant_Section title="Settings & Configurations" icon={FaCog} bgColor="blue">
-                    <button 
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm sm:text-base" 
-                        onClick={() => setIsSettingsModalOpen(true)}
-                    >
-                        Configure Payment Settings
-                    </button>
-                </Accountant_Section>
-
-                <Accountant_SettingsModal 
-                    isOpen={isSettingsModalOpen ?? false} 
-                    onClose={() => setIsSettingsModalOpen(false)} 
-                    settings={paymentSettings ?? {}} 
-                    onSettingsChange={setPaymentSettings} 
-                    onSave={handlers.saveSettings} 
-                />
-            </main>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {payments.map((payment, index) => (
+                                            <tr key={payment.id} className="hover:bg-gray-50">
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600">
+                                                    {payment.receipt_number}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                    {payment.student?.User?.name || 'N/A'}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                                                    {payment.student?.roll_number || 'N/A'}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                                                    {payment.student?.ClassSection?.class_name} - {payment.student?.ClassSection?.section_name}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600">
+                                                    ₹{parseFloat(payment.amount_paid).toLocaleString()}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-orange-600">
+                                                    ₹{parseFloat(payment.late_fee_paid).toLocaleString()}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
+                                                    ₹{parseFloat(payment.total_paid).toLocaleString()}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                                    {getPaymentMethodBadge(payment.payment_method)}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                                                    {new Date(payment.payment_date).toLocaleDateString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 text-gray-500">
+                                <FaMoneyBillWave className="mx-auto text-5xl text-gray-300 mb-4" />
+                                <p className="text-lg">No payment records found</p>
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
-    );
+    </main>
+</div>
+);
 };
 
 export default OnlinePaymentPage;

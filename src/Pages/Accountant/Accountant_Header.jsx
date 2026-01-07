@@ -1,11 +1,35 @@
 import React, { useState } from 'react';
-import { FaBell, FaEnvelope, FaUser, FaCog, FaSignOutAlt, FaSearch, FaBars } from 'react-icons/fa';
-import { Link } from 'react-router';
+import { FaBell, FaEnvelope, FaUser, FaLock, FaSignOutAlt, FaSearch, FaBars } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { logoutUser } from '../../helper/requests-method/apiMethods';
 
 const Header = ({ setIsSidebarOpen }) => {
+    const navigate = useNavigate();
     const [notificationCount, setNotificationCount] = useState(3);
     const [mailCount, setMailCount] = useState(5);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const handleLogout = async () => {
+        try {
+            const response = await logoutUser();
+            console.log('Logout Response:', response);
+            
+            // Clear token from localStorage
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('user');
+            
+            // Navigate to login page
+            navigate('/login', { replace: true });
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if API fails, clear local storage and redirect
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('user');
+            navigate('/login', { replace: true });
+        }
+    };
 
     const handleNotificationClick = () => {
         setNotificationCount(0);
@@ -82,15 +106,15 @@ const Header = ({ setIsSidebarOpen }) => {
                         </div>
                     </summary>
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                        <Link to="/AccountantProfile" className="flex items-center px-4 py-2 text-sm hover:bg-gray-100">
+                        <Link to="/AccountantProfile" className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer">
                             <FaUser className="mr-2" /> My Profile
                         </Link>
-                        <Link to="/AccountantSetting" className="flex items-center px-4 py-2 text-sm hover:bg-gray-100">
-                            <FaCog className="mr-2" /> Settings
+                        <Link to="/AccountantChangePassword" className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer">
+                            <FaLock className="mr-2" /> Change Password
                         </Link>
-                        <a href="#logout" className="flex items-center px-4 py-2 text-sm hover:bg-gray-100">
+                        <button onClick={handleLogout} className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-left">
                             <FaSignOutAlt className="mr-2" /> Logout
-                        </a>
+                        </button>
                     </div>
                 </details>
             </div>

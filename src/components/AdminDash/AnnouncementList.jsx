@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -10,55 +10,145 @@ import {
   Divider,
   Box,
   Chip,
+  CircularProgress,
+  IconButton,
 } from '@mui/material';
-import { Announcement as AnnouncementIcon } from '@mui/icons-material';
+import { Announcement as AnnouncementIcon, AttachFile } from '@mui/icons-material';
+import { getNotices } from '../../helper/requests-method/apiMethods';
 
 const AnnouncementList = () => {
-  // Sample announcement data
-  const announcements = [
-    {
-      id: 1,
-      title: 'School Holiday Notice',
-      description: 'School will remain closed on April 5th for Spring Break.',
-      date: '2025-03-25',
-      priority: 'High',
-    },
-    {
-      id: 2,
-      title: 'Parent-Teacher Meeting',
-      description: 'Scheduled on April 10th at 3:00 PM in the auditorium.',
-      date: '2025-03-26',
-      priority: 'Medium',
-    },
-    {
-      id: 3,
-      title: 'Science Fair',
-      description: 'Join us on April 15th to showcase student projects!',
-      date: '2025-03-27',
-      priority: 'Low',
-    },
-    {
-      id: 4,
-      title: 'Fee Reminder',
-      description: 'Last date for fee submission is April 30th.',
-      date: '2025-03-28',
-      priority: 'High',
-    },
-  ];
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Priority color mapping
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'High':
-        return '#f44336'; // Red
-      case 'Medium':
-        return '#ff9800'; // Orange
-      case 'Low':
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getNotices();
+        
+        console.log('Notices Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+          apiData = response.data.data;
+        } else if (response?.data && Array.isArray(response.data)) {
+          apiData = response.data;
+        }
+        
+        if (apiData && apiData.length > 0) {
+          // Transform API data to component format
+          const transformedData = apiData.map((notice, index) => ({
+            id: index + 1,
+            title: notice.title,
+            description: notice.message,
+            target: notice.target,
+            attachment: notice.attachment,
+          }));
+          
+          console.log('Transformed Notices:', transformedData);
+          setAnnouncements(transformedData);
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setError('No notices available');
+        }
+      } catch (error) {
+        console.error('Error fetching notices:', error);
+        setError(error.message || 'Failed to load notices');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotices();
+  }, []);
+
+  // Target color mapping (replaces priority)
+  const getTargetColor = (target) => {
+    switch (target?.toLowerCase()) {
+      case 'student':
         return '#4caf50'; // Green
+      case 'parent':
+        return '#ff9800'; // Orange
+      case 'teacher':
+        return '#2196f3'; // Blue
+      case 'all':
+        return '#9c27b0'; // Purple
       default:
         return '#757575'; // Gray
     }
   };
+
+  const handleAttachmentClick = (attachmentUrl) => {
+    if (attachmentUrl) {
+      // Open attachment in new tab
+      const baseUrl = 'https://xd363v4j-5000.inc1.devtunnels.ms';
+      window.open(`${baseUrl}/${attachmentUrl}`, '_blank');
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'stretch', width: '100%' }}>
+        <Card
+          sx={{
+            width: '100%',
+            maxWidth: 'none',
+            height: '100%',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
+            borderRadius: '12px',
+          }}
+        >
+          <CardContent>
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+              <CircularProgress size={50} sx={{ color: '#7c3aed' }} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  if (error || announcements.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'stretch', width: '100%' }}>
+        <Card
+          sx={{
+            width: '100%',
+            maxWidth: 'none',
+            height: '100%',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
+            borderRadius: '12px',
+          }}
+        >
+          <CardHeader
+            avatar={<AnnouncementIcon sx={{ color: '#7c3aed' }} />}
+            title={
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  color: '#7c3aed',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Announcements
+              </Typography>
+            }
+          />
+          <CardContent>
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <Typography variant="body1" color="#666">
+                {error || 'No announcements available'}
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'stretch', width: '100%' }}>
@@ -118,39 +208,49 @@ const AnnouncementList = () => {
                       </Typography>
                     }
                     secondary={
-                      <Box>
+                      <Box component="div">
                         <Typography
                           variant="body2"
+                          component="div"
                           sx={{ color: '#666', mb: 0.5 }}
                         >
                           {announcement.description}
                         </Typography>
                         <Box
+                          component="div"
                           sx={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
+                            gap: 1,
                           }}
                         >
-                          <Typography
-                            variant="caption"
-                            sx={{ color: '#888' }}
-                          >
-                            {new Date(announcement.date).toLocaleDateString()}
-                          </Typography>
                           <Chip
-                            label={announcement.priority}
+                            label={announcement.target?.charAt(0).toUpperCase() + announcement.target?.slice(1)}
                             size="small"
                             sx={{
-                              bgcolor: getPriorityColor(announcement.priority),
+                              bgcolor: getTargetColor(announcement.target),
                               color: '#fff',
                               fontWeight: 500,
                               fontSize: '0.75rem',
                             }}
                           />
+                          {announcement.attachment && (
+                            <IconButton
+                              size="small"
+                              onClick={() => handleAttachmentClick(announcement.attachment)}
+                              sx={{
+                                color: '#7c3aed',
+                                '&:hover': { bgcolor: '#f0e7ff' },
+                              }}
+                            >
+                              <AttachFile fontSize="small" />
+                            </IconButton>
+                          )}
                         </Box>
                       </Box>
                     }
+                    secondaryTypographyProps={{ component: 'div' }}
                   />
                 </ListItem>
                 {index < announcements.length - 1 && (

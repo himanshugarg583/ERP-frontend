@@ -7,7 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from '../../context/AuthContext';
 import { 
   getTeacherClasses, 
-  getStudentsByClass, 
+  getStudentsByClassForAttendance, 
   markClassAttendance, 
   getClassAttendanceByDate 
 } from '../../helper/requests-method/apiMethods';
@@ -335,7 +335,7 @@ const TeacherAttendance = () => {
   const fetchStudentsByClass = useCallback(async (classId) => {
     try {
       setLoading(true);
-      const response = await getStudentsByClass(classId);
+      const response = await getStudentsByClassForAttendance(classId);
       if (response.success && response.data?.students) {
         const mappedStudents = response.data.students.map(student => ({
           user_id: student.user_id,

@@ -1,12 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
-import { Card, CardContent, CardHeader, Typography, Box } from '@mui/material';
+import { Card, CardContent, CardHeader, Typography, Box, CircularProgress } from '@mui/material';
+import { getClassWiseAttendance } from '../../helper/requests-method/apiMethods';
 
 const ClassAttendanceBarChart = () => {
-  // Sample data: Present and Absent percentages for each class
-  const classData = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5','Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10'];
-  const presentData = [85, 92, 78, 95, 88,85, 92, 78, 95, 88]; // Present percentages
-  const absentData = [15, 8, 22, 5, 12,15, 8, 22, 5, 12]; // Absent percentages (100 - present)
+  const [classData, setClassData] = useState([]);
+  const [presentData, setPresentData] = useState([]);
+  const [absentData, setAbsentData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchAttendanceData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getClassWiseAttendance();
+        
+        console.log('Class-wise Attendance Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+          apiData = response.data.data;
+        } else if (response?.data && Array.isArray(response.data)) {
+          apiData = response.data;
+        }
+        
+        if (apiData && apiData.length > 0) {
+          const classes = apiData.map(item => item.class);
+          const present = apiData.map(item => item.present);
+          const absent = apiData.map(item => item.absent);
+          
+          console.log('Classes:', classes);
+          console.log('Present:', present);
+          console.log('Absent:', absent);
+          
+          setClassData(classes);
+          setPresentData(present);
+          setAbsentData(absent);
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setError('No attendance data available');
+        }
+      } catch (error) {
+        console.error('Error fetching class-wise attendance:', error);
+        setError(error.message || 'Failed to load attendance data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttendanceData();
+  }, []);
 
   // Chart options with enhanced styling
   const options = {
@@ -37,7 +83,7 @@ const ClassAttendanceBarChart = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => `${val}%`,
+      formatter: (val) => Math.round(val),
       style: {
         fontSize: '12px',
         fontFamily: 'Roboto, sans-serif',
@@ -76,7 +122,7 @@ const ClassAttendanceBarChart = () => {
     },
     yaxis: {
       title: {
-        text: 'Attendance (%)',
+        text: 'Number of Students',
         style: {
           fontSize: '14px',
           fontFamily: 'Roboto, sans-serif',
@@ -84,10 +130,8 @@ const ClassAttendanceBarChart = () => {
           color: '#666',
         },
       },
-      min: 0,
-      max: 100,
       labels: {
-        formatter: (val) => `${val}%`,
+        formatter: (val) => Math.round(val),
         style: {
           fontSize: '12px',
           fontFamily: 'Roboto, sans-serif',
@@ -115,7 +159,7 @@ const ClassAttendanceBarChart = () => {
         fontFamily: 'Roboto, sans-serif',
       },
       y: {
-        formatter: (val) => `${val}%`,
+        formatter: (val) => `${Math.round(val)} students`,
       },
     },
     legend: {
@@ -146,6 +190,65 @@ const ClassAttendanceBarChart = () => {
       data: absentData,
     },
   ];
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Card
+          sx={{
+            maxWidth: 900,
+            width: '100%',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
+          }}
+        >
+          <CardContent>
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="350px">
+              <CircularProgress size={60} sx={{ color: '#1976d2' }} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  if (error || classData.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Card
+          sx={{
+            maxWidth: 900,
+            width: '100%',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
+          }}
+        >
+          <CardHeader
+            title={
+              <Typography
+                variant="h6"
+                sx={{
+                  textAlign: 'center',
+                  fontWeight: 600,
+                  color: '#1976d2',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Class-wise Attendance
+              </Typography>
+            }
+          />
+          <CardContent>
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <Typography variant="body1" color="#666">
+                {error || 'No attendance data available'}
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>

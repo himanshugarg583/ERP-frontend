@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState, memo } from 'react';
 import { FaUsers, FaCheckCircle, FaChartLine, FaClipboardList, FaArrowRight, FaChevronLeft, FaChevronRight, FaBell, FaFileAlt, FaSync, FaCalendarAlt, FaExclamationCircle } from 'react-icons/fa';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import TeacherSidebar from './TeacherSidebar';
 import Header from '../../components/comman_components/Header';
+import { getTeacherDashboardStats, getTeacherTodayClasses } from '../../helper/requests-method/apiMethods';
 
 const TeacherPortal = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [todayClasses, setTodayClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
   const [leaveApplications, setLeaveApplications] = useState([
     { type: 'Sick Leave', reason: 'Fever and Flu', date: '2025-03-07 to 2025-03-09', status: 'Pending' },
     { type: 'Personal Leave', reason: 'Family Event', date: '2025-03-10 to 2025-03-11', status: 'Approved' },
@@ -45,6 +51,72 @@ const TeacherPortal = () => {
   };
 
   const last7Days = useMemo(() => getLast7Days(), []);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        setLoading(true);
+        const response = await getTeacherDashboardStats();
+        
+        console.log('Teacher Dashboard Stats Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data) {
+          apiData = response.data;
+        }
+        
+        if (apiData) {
+          console.log('Teacher Stats Data:', apiData);
+          setDashboardStats(apiData);
+        } else {
+          console.error('Invalid data structure:', apiData);
+        }
+      } catch (error) {
+        console.error('Error fetching teacher dashboard stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
+
+  useEffect(() => {
+    const fetchTodayClasses = async () => {
+      try {
+        setLoadingClasses(true);
+        const response = await getTeacherTodayClasses();
+        
+        console.log('Teacher Today Classes Response:', response);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data) {
+          apiData = response.data;
+        }
+        
+        if (apiData?.classes && Array.isArray(apiData.classes)) {
+          console.log('Today Classes Data:', apiData.classes);
+          setTodayClasses(apiData.classes);
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setTodayClasses([]);
+        }
+      } catch (error) {
+        console.error('Error fetching teacher today classes:', error);
+        setTodayClasses([]);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+
+    fetchTodayClasses();
+  }, []);
 
   const getDayColor = (isoDate) => {
     if ((attendanceData?.[0]?.value ?? 0) > 0 && isoDate <= '2025-03-21') return 'bg-green-500';
@@ -137,12 +209,46 @@ const TeacherPortal = () => {
 
         <main className="w-full px-4 md:px-6">
           <div className="p-2 sm:p-4 md:p-6">
+            {loading ? (
+              <Box display="flex" justifyContent="center" py={8}>
+                <CircularProgress size={50} sx={{ color: '#6366f1' }} />
+              </Box>
+            ) : (
+              <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-6 md:mb-8">
               {[
-                { title: 'Total Students', value: '156', change: '+2.5%', icon: <FaUsers />, color: 'bg-blue-100', textColor: 'text-blue-500' },
-                { title: 'Attendance Rate', value: '94 %', change: '-1.2%', icon: <FaCheckCircle />, color: 'bg-green-100', textColor: 'text-green-500' },
-                { title: 'Class Average', value: 'B+', change: '+0.5', icon: <FaChartLine />, color: 'bg-purple-100', textColor: 'text-purple-500' },
-                { title: 'Pending Tasks', value: '24', change: '5 urgent', icon: <FaClipboardList />, color: 'bg-amber-100', textColor: 'text-amber-500' },
+                { 
+                  title: 'Total Students', 
+                  value: dashboardStats?.stats?.total_students?.toString() || '0', 
+                  change: `${dashboardStats?.stats?.total_subjects || 0} subjects`, 
+                  icon: <FaUsers />, 
+                  color: 'bg-blue-100', 
+                  textColor: 'text-blue-500' 
+                },
+                { 
+                  title: 'Attendance Rate', 
+                  value: `${dashboardStats?.today_attendance?.attendance_percentage?.toFixed(2) || 0}%`, 
+                  change: `${dashboardStats?.today_attendance?.present || 0}/${dashboardStats?.today_attendance?.total_marked || 0} present`, 
+                  icon: <FaCheckCircle />, 
+                  color: 'bg-green-100', 
+                  textColor: 'text-green-500' 
+                },
+                { 
+                  title: "Today's Classes", 
+                  value: dashboardStats?.stats?.total_classes_today?.toString() || '0', 
+                  change: 'Scheduled', 
+                  icon: <FaChartLine />, 
+                  color: 'bg-purple-100', 
+                  textColor: 'text-purple-500' 
+                },
+                { 
+                  title: 'Pending Assignments', 
+                  value: dashboardStats?.stats?.pending_assignments?.toString() || '0', 
+                  change: 'To review', 
+                  icon: <FaClipboardList />, 
+                  color: 'bg-amber-100', 
+                  textColor: 'text-amber-500' 
+                },
               ].map((card, index) => (
                 <div key={index} className={`bg-white p-3 sm:p-4 md:p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow ${card?.color ?? 'bg-gray-100'}`}>
                   <div className="flex justify-between items-start">
@@ -170,29 +276,41 @@ const TeacherPortal = () => {
                     View All <FaArrowRight className="ml-1 text-xs sm:text-sm" />
                   </button>
                 </div>
-                <div className="space-y-2 sm:space-y-3">
-                  {[
-                    { time: '08:30 AM', duration: '45 min', subject: 'Mathematics - Grade 10A', description: 'Complex Numbers & Quadratic Equations', status: 'Ongoing', statusColor: 'bg-green-500', bgColor: 'bg-blue-100' },
-                    { time: '10:15 AM', duration: '45 min', subject: 'Physics - Grade 11B', description: 'Electromagnetic Induction', status: 'Upcoming', statusColor: 'bg-gray-300', bgColor: 'bg-green-100' },
-                    { time: '12:00 PM', duration: '60 min', subject: 'Faculty Meeting', description: 'Discussion on Upcoming Examinations', status: 'Upcoming', statusColor: 'bg-gray-300', bgColor: 'bg-purple-100' },
-                    { time: '02:30 PM', duration: '45 min', subject: 'Chemistry - Grade 10C', description: 'Chemical Reactions & Equations', status: 'Upcoming', statusColor: 'bg-gray-300', bgColor: 'bg-amber-100' },
-                  ].map((schedule, index) => (
-                    <div key={index} className={`flex flex-col sm:flex-row p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors ${schedule?.bgColor ?? 'bg-gray-100'}`}>
-                      <div className="w-full sm:w-20 md:w-24 text-center sm:text-left mb-1 sm:mb-0">
-                        <p className="text-xs text-gray-500">{schedule?.time ?? ''}</p>
-                        <p className="text-xs text-gray-400">{schedule?.duration ?? ''}</p>
-                      </div>
-                      <div className="ml-0 sm:ml-3 md:ml-4 flex-1">
-                        <h4 className="font-semibold text-xs sm:text-sm md:text-base">{schedule?.subject ?? ''}</h4>
-                        <p className="text-xs text-gray-500">{schedule?.description ?? ''}</p>
-                      </div>
-                      <div className="flex items-center mt-1 sm:mt-0">
-                        <span className={`inline-block w-2 h-2 ${schedule?.statusColor ?? 'bg-gray-300'} rounded-full mr-1 sm:mr-2`}></span>
-                        <span className="text-gray-500 text-xs">{schedule?.status ?? ''}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {loadingClasses ? (
+                  <Box display="flex" justifyContent="center" py={4}>
+                    <CircularProgress size={40} sx={{ color: '#6366f1' }} />
+                  </Box>
+                ) : todayClasses.length > 0 ? (
+                  <div className="space-y-2 sm:space-y-3">
+                    {todayClasses.map((schedule, index) => {
+                      const bgColors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-amber-100', 'bg-pink-100', 'bg-indigo-100'];
+                      const bgColor = bgColors[index % bgColors.length];
+                      
+                      return (
+                        <div key={index} className={`flex flex-col sm:flex-row p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors ${bgColor}`}>
+                          <div className="w-full sm:w-20 md:w-24 text-center sm:text-left mb-1 sm:mb-0">
+                            <p className="text-xs text-gray-500">{schedule?.start_time || ''}</p>
+                            <p className="text-xs text-gray-400">{schedule?.duration || ''}</p>
+                          </div>
+                          <div className="ml-0 sm:ml-3 md:ml-4 flex-1">
+                            <h4 className="font-semibold text-xs sm:text-sm md:text-base">
+                              {schedule?.subject_name || ''} - {schedule?.class_name || ''} {schedule?.section_name || ''}
+                            </h4>
+                            <p className="text-xs text-gray-500">{schedule?.room_number || 'Room TBA'}</p>
+                          </div>
+                          <div className="flex items-center mt-1 sm:mt-0">
+                            <span className={`inline-block w-2 h-2 ${schedule?.status === 'Ongoing' ? 'bg-green-500' : 'bg-gray-300'} rounded-full mr-1 sm:mr-2`}></span>
+                            <span className="text-gray-500 text-xs">{schedule?.status || 'Scheduled'}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Box display="flex" justifyContent="center" py={4}>
+                    <Typography variant="body2" color="#666">No classes scheduled for today</Typography>
+                  </Box>
+                )}
               </div>
               <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 md:p-5 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-center mb-4 md:mb-5">
@@ -491,8 +609,8 @@ const TeacherPortal = () => {
                   </form>
                 </div>
               </div>
-            )}
-          </div>
+            )}            </>
+            )}          </div>
         </main>
       </div>
     </div>

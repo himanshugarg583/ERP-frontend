@@ -3,8 +3,20 @@ export const generateStaffIdCard = async (user_id) => {
   return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
 };
 
-export const generateMultipleStaffIdCards = async (user_ids) => {
-  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
+export const getAccountantDashboardStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_DASHBOARD_STATS);
+};
+
+export const getAccountantMonthlyCollection = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_MONTHLY_COLLECTION);
+};
+
+export const getAccountantIncomeExpenseChart = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_INCOME_EXPENSE_CHART);
+};
+
+export const getAccountantRecentPayments = async (limit = 10) => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_RECENT_PAYMENTS(limit));
 };
 import axios from 'axios';
 
@@ -35,6 +47,19 @@ export const API_ENDPOINTS = {
     GET_PAYMENT_DETAILS: (id) => `/admin/feePayment/getPaymentDetails/${id}`,
     GET_PAYMENT_BY_ID: (id) => `/admin/fees_collection/getPayment/${id}`,
     CREATE_PAYMENT: '/admin/feePayment/createPayment',
+    GET_STUDENT_FEE_DETAILS: (studentId) => `/api/accountant/student-fee-details/${studentId}`,
+    GET_FEE_PAYMENTS: '/api/accountant/fee-payments',
+    GET_ACCOUNTANT_PROFILE: '/api/accountant/profile/me',
+    CHANGE_ACCOUNTANT_PASSWORD: '/api/accountant/profile/change-password',
+    
+    // Accountant Payment endpoints
+    FILL_PAYMENT: '/api/accountant/fees/fill-payment',
+    GET_ACCOUNTANT_STUDENT_INSTALLMENTS: (studentId) => `/api/accountant/fees/student-installments/${studentId}`,
+    GET_ACCOUNTANT_DASHBOARD_STATS: '/api/accountant/dashboard/stats',
+    GET_ACCOUNTANT_MONTHLY_COLLECTION: '/api/accountant/dashboard/monthly-collection',
+    GET_ACCOUNTANT_INCOME_EXPENSE_CHART: '/api/accountant/dashboard/income-expense-chart',
+    GET_ACCOUNTANT_RECENT_PAYMENTS: (limit) => `/api/accountant/dashboard/recent-payments?limit=${limit}`,
+    
   LOGIN: '/api/auth/login',
   SIGNUP: '/api/auth/signup',
   REQUEST_PASSWORD_RESET: '/api/auth/request-password-reset',
@@ -57,6 +82,38 @@ export const API_ENDPOINTS = {
   GET_INCOME_BY_ID: (id) => `/admin/income/getSingleIncome/${id}`,  
   UPDATE_INCOME: (id) => `/admin/income/updateIncome/${id}`,
   DELETE_INCOME: (id) => `/admin/income/deleteIncome/${id}`,
+  
+  // Accountant Income endpoints
+  ADD_ACCOUNTANT_INCOME: '/api/accountant/income',
+  GET_ACCOUNTANT_INCOME_LIST: '/api/accountant/income-list',
+  UPDATE_ACCOUNTANT_INCOME_EXPENSE: (id) => `/api/accountant/income-expense/${id}`,
+  DELETE_ACCOUNTANT_INCOME_EXPENSE: (id) => `/api/accountant/income-expense/${id}`,
+  
+  // Accountant Expense endpoints
+  ADD_ACCOUNTANT_EXPENSE: '/api/accountant/expense',
+  GET_ACCOUNTANT_EXPENSE_LIST: '/api/accountant/expense-list',
+  GET_ACCOUNTANT_INCOME_EXPENSE_GRAPH: '/api/accountant/income-expense-graph',
+  GET_ACCOUNTANT_MONTHLY_EXPENSE: '/api/accountant/monthly-expense',
+
+  // Accountant Fee Head endpoints
+  ADD_ACCOUNTANT_FEE_HEAD: '/api/accountant/fees/fee-head',
+  GET_ACCOUNTANT_FEE_HEADS: '/api/accountant/fees/fee-head',
+  UPDATE_ACCOUNTANT_FEE_HEAD: (id) => `/api/accountant/fees/fee-head/${id}`,
+  DELETE_ACCOUNTANT_FEE_HEAD: (id) => `/api/accountant/fees/fee-head/${id}`,
+
+  // Accountant Fee Structure endpoints
+  ADD_ACCOUNTANT_FEE_STRUCTURE: '/api/accountant/fees/fee-structure',
+  GET_ACCOUNTANT_FEE_STRUCTURES: '/api/accountant/fees/fee-structure',
+  GET_ACCOUNTANT_FEE_STRUCTURE_BY_ID: (id) => `/api/accountant/fees/fee-structure/${id}`,
+  UPDATE_ACCOUNTANT_FEE_STRUCTURE: (id) => `/api/accountant/fees/fee-structure/${id}`,
+  DELETE_ACCOUNTANT_FEE_STRUCTURE: (id) => `/api/accountant/fees/fee-structure/${id}`,
+
+  // Class Section Dropdown
+  GET_CLASS_SECTION_DROPDOWN: '/admin/dropdown/getClassDropdown',
+
+  // Assign Fee
+  ASSIGN_FEE: '/api/accountant/assign-fee',
+  GET_ASSIGNED_FEES_BY_CLASS: (class_section_id) => `/api/accountant/assigned-fees/${class_section_id}`,
 
   // Expense endpoints
   GET_ALL_EXPENSE: '/admin/expense/getAllExpense',
@@ -99,16 +156,33 @@ export const API_ENDPOINTS = {
   // admit card related endpoints
   GET_ALL_EXAM_TERMS_FOR_ADMIT_CARD: '/admin/dropdown/getExamTermDropdown',
   GET_EXAM_BY_TERM: (examTermId) => `/admin/dropdown/getExamDropdown?term_id=${examTermId}`,
+  GET_EXAM_DROPDOWN: (termId) => `/admin/dropdown/getExamDropdown?term_id=${termId}`,
   GET_EXAM_SCHEDULE_BY_EXAM: (examId) => `/admin/dropdown/getExamScheduleByExam?exam_id=${examId}`,
-  GET_STUDENT_ADMIT_CARD: (studentId, examTermId) => `/admin/admitCard/getStudentAdmitCard?student_id=${studentId}&exam_schedule_id=${examTermId}`,
-  GET_CLASS_ADMIT_CARDS: (classId) => `/admin/admitCard/getClassAdmitCards/${classId}`,
+  GET_STUDENT_ADMIT_CARD: (studentId, examId) => `/admin/admitCard/getStudentAdmitCard?student_id=${studentId}&exam_id=${examId}`,
+  GET_CLASS_ADMIT_CARDS: (classId, examId, classSectionId) => `/admin/admitCard/getClassAdmitCards/${classId}?exam_id=${examId}&class_section_id=${classSectionId}`,
   GET_STUDENTS_EXAM_LIST: (classId, examTermId,classSectionId) => `/admin/admitCard/getExamStudentList?term_id=${classId}&exam_id=${examTermId}&class_section_id=${classSectionId}`,
  
   // exam timetable endpoints
   CREATE_EXAM_TIMETABLE: '/admin/examTimetable/createExamTimetable',
   GET_CLASS_SCHEDULED_EXAMS: (classSectionId) => `/admin/examTimetable/getClassScheduledExams/${classSectionId}`,
+  GET_EXAM_TIMETABLE_BY_CLASS_AND_EXAM: (examId, classSectionId) => `/admin/examTimetable/getExamTimetableByClassAndExam?exam_id=${examId}&class_section_id=${classSectionId}`,
   
-
+  // dashboard endpoints
+  GET_DASHBOARD_STATS: '/admin/dashboard/stats',
+  GET_MONTHLY_INCOME_EXPENSE: '/admin/dashboard/monthly-income-expense',
+  GET_PAYMENT_MODE_COLLECTION: '/admin/dashboard/payment-mode-collection',
+  GET_CLASS_WISE_ATTENDANCE: '/admin/dashboard/class-wise-attendance',
+  GET_NOTICES: '/admin/dashboard/notices',
+  GET_MONTHLY_FEE_COLLECTION: '/admin/dashboard/monthly-fee-collection',
+  GET_FEE_ASSIGNMENT_COLLECTION: '/admin/dashboard/fee-assignment-collection',
+  GET_STUDENT_DASHBOARD_STATS: '/student/dashboard/stats',
+  GET_TODAY_CLASSES: '/student/dashboard/today-classes',
+  GET_PENDING_ASSIGNMENTS: '/student/dashboard/pending-assignments',
+  GET_STUDENT_NOTICES: '/student/dashboard/notices',
+  GET_ACADEMIC_PERFORMANCE: (examId) => `/student/dashboard/academic-performance?exam_id=${examId}`,
+  GET_TEACHER_DASHBOARD_STATS: '/teacher/dashboard/stats',
+  GET_TEACHER_TODAY_CLASSES: '/teacher/dashboard/today-classes',
+  LOGOUT: '/api/auth/logout',
 
   // student report endpoints
   GET_STUDENT_REPORT_BY_DATE: (className, sectionName, date) => `admin/studentsAttendance/attendanceReportByDate?class_name=${className}&section_name=${sectionName}&date=${date}`,
@@ -153,6 +227,13 @@ export const API_ENDPOINTS = {
   CREATE_EXAM: '/admin/exam/createExam',
   UPDATE_EXAM: (id) => `/admin/exam/updateExam/${id}`,
   DELETE_EXAM: (id) => `/admin/exam/deleteExam/${id}`,
+
+  // Exam Marks endpoints
+  REGISTER_STUDENT_MARKS: '/admin/exam-marks/registerStudent',
+  GET_COMPLETE_MARKSHEET: (examId, classSectionId) => `/admin/examMark/getCompleteMarksheet?exam_id=${examId}&class_section_id=${classSectionId}`,
+  GET_STUDENTS_BY_SUBJECT: (examId, classSectionId, subjectId) => `/admin/examMark/getStudentsBySubject?exam_id=${examId}&class_section_id=${classSectionId}&subject_id=${subjectId}`,
+  UPDATE_SUBJECT_MARKS: '/admin/examMark/updateSubject',
+  GET_STUDENT_EXAM_HISTORY: (studentId) => `/admin/examMark/getStudentExamHistory?student_id=${studentId}`,
   
   // Admin profile endpoints
   GET_ADMIN_PROFILE: '/admin/setting/profile',
@@ -218,7 +299,10 @@ export const API_ENDPOINTS = {
   DELETE_STUDENT_LEAVE: (id) => `/student/leave/deleteLeave/${id}`,
 
   //student notice endpoints
-  GET_STUDENT_NOTICES: '/student/notice/getNoticesForMe',
+  GET_STUDENT_NOTICES_LIST: '/student/notice/getNoticesForMe',
+  
+  // Student exam endpoints
+  GET_STUDENT_EXAM_RESULT: (examId) => `/student/exam/myExam?exam_id=${examId}`,
   
   // subject resource endpoints (assignments)
   UPLOAD_SUBJECT_RESOURCE: '/admin/subjectResource/uploadSubjectResource',
@@ -230,6 +314,12 @@ export const API_ENDPOINTS = {
 
   // student assignments endpoint
   GET_STUDENT_ASSIGNMENTS: '/student/resources/assignments',
+  
+  // student class resources endpoint
+  GET_STUDENT_CLASS_RESOURCES: '/student/resources/classResources',
+  
+  // student subject resources endpoint
+  GET_STUDENT_SUBJECT_RESOURCES: '/student/resources/subjectResources',
   
   // teacher subject resource endpoints
   TEACHER_UPLOAD_SUBJECT_RESOURCE: '/teacher/subjectResource/uploadSubjectResource',
@@ -408,6 +498,16 @@ export const fetchStudentAssignments = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_ASSIGNMENTS);
 };
 
+// Fetch class resources for student panel
+export const fetchStudentClassResources = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_CLASS_RESOURCES);
+};
+
+// Fetch subject resources for student panel
+export const fetchStudentSubjectResources = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_SUBJECT_RESOURCES);
+};
+
 // Create a new enquiry
 export const createEnquiry = async (enquiryData) => {
   return authorizedPost(API_ENDPOINTS.CREATE_ENQUIRY, enquiryData);
@@ -514,6 +614,9 @@ export const fetchClassDropdown = async () => {
   return authorizedGet(API_ENDPOINTS.GET_CLASS_DROPDOWN);
 };
 
+// Alias for getClassDropdown
+export const getClassDropdown = fetchClassDropdown;
+
 // Fetch teacher dropdown data
 export const fetchTeacherDropdown = async () => {
   return authorizedGet(API_ENDPOINTS.GET_TEACHER_DROPDOWN);
@@ -551,6 +654,136 @@ export const updateIncome = async (id, data) => {
 // add income
 export const addIncome = async (data) => {
   return authorizedPost(API_ENDPOINTS.ADD_INCOME, data);
+};
+
+// add accountant income
+export const addAccountantIncome = async (data) => {
+  return authorizedPost(API_ENDPOINTS.ADD_ACCOUNTANT_INCOME, data);
+};
+
+// get accountant income list
+export const getAccountantIncomeList = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_INCOME_LIST);
+};
+
+// update accountant income/expense
+export const updateAccountantIncomeExpense = async (id, data) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_ACCOUNTANT_INCOME_EXPENSE(id), data);
+};
+
+// delete accountant income/expense
+export const deleteAccountantIncomeExpense = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_ACCOUNTANT_INCOME_EXPENSE(id));
+};
+
+// add accountant expense
+export const addAccountantExpense = async (data) => {
+  return authorizedPost(API_ENDPOINTS.ADD_ACCOUNTANT_EXPENSE, data);
+};
+
+// get accountant expense list
+export const getAccountantExpenseList = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_EXPENSE_LIST);
+};
+
+// get accountant income vs expense graph data
+export const getAccountantIncomeExpenseGraph = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_INCOME_EXPENSE_GRAPH);
+};
+
+// get accountant monthly expense data
+export const getAccountantMonthlyExpense = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_MONTHLY_EXPENSE);
+};
+
+// add accountant fee head
+export const addAccountantFeeHead = async (data) => {
+  return authorizedPost(API_ENDPOINTS.ADD_ACCOUNTANT_FEE_HEAD, data);
+};
+
+// get accountant fee heads
+export const getAccountantFeeHeads = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_FEE_HEADS);
+};
+
+// update accountant fee head
+export const updateAccountantFeeHead = async (id, data) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_ACCOUNTANT_FEE_HEAD(id), data);
+};
+
+// delete accountant fee head
+export const deleteAccountantFeeHead = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_ACCOUNTANT_FEE_HEAD(id));
+};
+
+// add accountant fee structure
+export const addAccountantFeeStructure = async (data) => {
+  return authorizedPost(API_ENDPOINTS.ADD_ACCOUNTANT_FEE_STRUCTURE, data);
+};
+
+// get accountant fee structures
+export const getAccountantFeeStructures = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_FEE_STRUCTURES);
+};
+
+// get accountant fee structure by id
+export const getAccountantFeeStructureById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_FEE_STRUCTURE_BY_ID(id));
+};
+
+// update accountant fee structure
+export const updateAccountantFeeStructure = async (id, data) => {
+  return authorizedPut(API_ENDPOINTS.UPDATE_ACCOUNTANT_FEE_STRUCTURE(id), data);
+};
+
+// delete accountant fee structure
+export const deleteAccountantFeeStructure = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_ACCOUNTANT_FEE_STRUCTURE(id));
+};
+
+// get class section dropdown
+export const getClassSectionDropdown = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_SECTION_DROPDOWN);
+};
+
+// get students by class for accounts page
+export const getStudentsByClass = async (classId) => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_STUDENTS_BY_CLASS(classId));
+};
+
+// get student fee details
+export const getStudentFeeDetails = async (studentId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_FEE_DETAILS(studentId));
+};
+
+// get all fee payments
+export const getFeePayments = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_FEE_PAYMENTS);
+};
+
+// get accountant profile
+export const getAccountantProfile = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_PROFILE);
+};
+
+// change accountant password
+export const changeAccountantPassword = async (data) => {
+  return authorizedPut(API_ENDPOINTS.CHANGE_ACCOUNTANT_PASSWORD, data);
+};
+
+// fill payment
+export const fillPayment = async (data) => {
+  return authorizedPost(API_ENDPOINTS.FILL_PAYMENT, data);
+};
+
+// assign fee
+export const assignFee = async (data) => {
+  return authorizedPost(API_ENDPOINTS.ASSIGN_FEE, data);
+};
+
+// get assigned fees by class section
+export const getAssignedFeesByClass = async (class_section_id) => {
+  return authorizedGet(API_ENDPOINTS.GET_ASSIGNED_FEES_BY_CLASS(class_section_id));
 };
 
 // delete income
@@ -785,8 +1018,8 @@ export const getTeacherClasses = async () => {
   return authorizedGet(API_ENDPOINTS.GET_TEACHER_CLASSES);
 };
 
-// Get students by class
-export const getStudentsByClass = async (classId) => {
+// Get students by class for attendance
+export const getStudentsByClassForAttendance = async (classId) => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS(classId));
 };
 
@@ -860,7 +1093,11 @@ export const getStudentFeesDetails = async () => {
 };
 
 // Get student installments
-export const getStudentInstallments = async () => {
+export const getStudentInstallments = async (studentId) => {
+  // If studentId is provided, use accountant endpoint, otherwise use student endpoint
+  if (studentId) {
+    return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_STUDENT_INSTALLMENTS(studentId));
+  }
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_INSTALLMENTS);
 };
 
@@ -1162,11 +1399,118 @@ export const getExamScheduleByExam = async (examId) => {
   return authorizedGet(API_ENDPOINTS.GET_EXAM_SCHEDULE_BY_EXAM(examId));
 };
 
-export const getStudentAdmitCard = async (studentId, examTermId) => {
-  return authorizedGet(API_ENDPOINTS.GET_STUDENT_ADMIT_CARD(studentId, examTermId));
+export const getStudentAdmitCard = async (studentId, examId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_ADMIT_CARD(studentId, examId));
 };
 
-export const getClassAdmitCards = async (classId) => {
-  return authorizedGet(API_ENDPOINTS.GET_CLASS_ADMIT_CARDS(classId));
+export const getClassAdmitCards = async (classId, examId, classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_ADMIT_CARDS(classId, examId, classSectionId));
 };
 
+// EXAM TIMETABLE ENDPOINTS
+export const createExamTimetable = async (timetableData) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_EXAM_TIMETABLE, timetableData);
+};
+
+export const getExamTimetableByClassAndExam = async (examId, classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXAM_TIMETABLE_BY_CLASS_AND_EXAM(examId, classSectionId));
+};
+
+export const getExamTermDropdown = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_EXAM_TERMS_FOR_ADMIT_CARD);
+};
+
+export const getExamDropdown = async (termId) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXAM_DROPDOWN(termId));
+};
+
+export const getClassScheduledExams = async (classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_SCHEDULED_EXAMS(classSectionId));
+};
+
+// DASHBOARD ENDPOINTS
+export const getDashboardStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_DASHBOARD_STATS);
+};
+
+export const getMonthlyIncomeExpense = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_MONTHLY_INCOME_EXPENSE);
+};
+
+export const getPaymentModeCollection = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_PAYMENT_MODE_COLLECTION);
+};
+
+export const getClassWiseAttendance = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_WISE_ATTENDANCE);
+};
+
+export const getNotices = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_NOTICES);
+};
+
+export const getMonthlyFeeCollection = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_MONTHLY_FEE_COLLECTION);
+};
+
+export const getFeeAssignmentCollection = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_FEE_ASSIGNMENT_COLLECTION);
+};
+
+export const getStudentDashboardStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_DASHBOARD_STATS);
+};
+
+export const getTodayClasses = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TODAY_CLASSES);
+};
+
+export const getPendingAssignments = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_PENDING_ASSIGNMENTS);
+};
+
+export const getStudentDashboardNotices = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_NOTICES);
+};
+
+export const getAcademicPerformance = async (examId) => {
+  return authorizedGet(API_ENDPOINTS.GET_ACADEMIC_PERFORMANCE(examId));
+};
+
+export const getTeacherDashboardStats = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_DASHBOARD_STATS);
+};
+
+export const getTeacherTodayClasses = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_TEACHER_TODAY_CLASSES);
+};
+
+export const logoutUser = async () => {
+  return authorizedPost(API_ENDPOINTS.LOGOUT, {});
+};
+
+// Exam Marks endpoints
+export const registerStudentMarks = async (marksData) => {
+  return authorizedPost(API_ENDPOINTS.REGISTER_STUDENT_MARKS, marksData);
+};
+
+export const getCompleteMarksheet = async (examId, classSectionId) => {
+  return authorizedGet(API_ENDPOINTS.GET_COMPLETE_MARKSHEET(examId, classSectionId));
+};
+
+export const getStudentsBySubject = async (examId, classSectionId, subjectId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_SUBJECT(examId, classSectionId, subjectId));
+};
+
+export const updateSubjectMarks = async (marksData) => {
+  return authorizedPost(API_ENDPOINTS.UPDATE_SUBJECT_MARKS, marksData);
+};
+
+export const getStudentExamHistory = async (studentId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_EXAM_HISTORY(studentId));
+};
+
+// Student exam result endpoint
+export const getStudentExamResult = async (examId) => {
+  return authorizedGet(API_ENDPOINTS.GET_STUDENT_EXAM_RESULT(examId));
+};

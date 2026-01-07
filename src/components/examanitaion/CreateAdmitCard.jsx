@@ -133,7 +133,7 @@ const CreateAdmitCard = () => {
       setError('');
       
       // Call the admit card API to get dynamic data
-      const response = await getStudentAdmitCard(selectedStudent, selectedExamTerm);
+      const response = await getStudentAdmitCard(selectedStudent, selectedExam);
       
       if (response.success && response.data) {
         // Prepare search results with the admit card data
@@ -478,24 +478,6 @@ const CreateAdmitCard = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
-
-            {/* Generate Button */}
-            {searchResults.length > 0 && (
-              <div className="mt-6 flex justify-center">
-                <button 
-                  onClick={handleGenerate}
-                  disabled={selectedCount === 0}
-                  className={`flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-white transition ${
-                    selectedCount === 0
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
-                >
-                  <Download size={20} />
-                  Generate Admit Card ({selectedCount} selected)
-                </button>
               </div>
             )}
           </div>

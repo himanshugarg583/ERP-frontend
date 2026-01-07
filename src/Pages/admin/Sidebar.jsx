@@ -17,8 +17,10 @@ import {
   LogOut,
   X
 } from "lucide-react";
+// eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import "./Admin.css";
 
 const SIDEBAR_ITEMS = [
@@ -96,7 +98,9 @@ const SIDEBAR_ITEMS = [
       { name: "Exam Term", href: "/admin/term-list-page" },
       { name: "Exam List", href: "/admin/exam-list-page" },
       { name: "Exam Timetable", href: "/admin/exam-time-table-page" },
+      { name: "View Exam Timetable", href: "/admin/view-exam-time-table-page" },
       { name: "Admit Card", href: "/admin/admit-card-page" },
+      { name: "Class Admit Cards", href: "/admin/view-class-admit-cards" },
       { name: "Marks Register", href: "/admin/marks-register-page" },
       { name: "Report Card", href: "/admin/report-card-page" },
       { name: "Examination Report", href: "/admin/exam-report-page" },
@@ -144,6 +148,8 @@ const SIDEBAR_ITEMS = [
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebar:isOpen');
     return saved ? JSON.parse(saved) : true;
@@ -371,16 +377,8 @@ const Sidebar = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                localStorage.removeItem("authToken");
-                localStorage.removeItem("userData");
-                localStorage.removeItem("rememberEmail");
-                localStorage.removeItem("studentSidebar:openDropdown");
-                localStorage.removeItem("teacherSidebar:openDropdown");
-                localStorage.removeItem("sidebar:openDropdown");
-                localStorage.removeItem("studentSidebar:isOpen");
-                localStorage.removeItem("teacherSidebar:isOpen");
-                localStorage.removeItem("sidebar:isOpen");
-                window.location.href = '/login';
+                logout();
+                navigate('/login', { replace: true });
               }}
               className={`group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 border border-red-600/20 hover:border-red-600/40 transition-all cursor-pointer ${!isSidebarOpen ? 'justify-center' : ''
                 }`}

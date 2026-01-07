@@ -12,9 +12,12 @@ import {
   Bell,
   ChevronRight,
   ChevronsRight,
+  FolderOpen,
 } from "lucide-react";
+// eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const SIDEBAR_ITEMS = [
   {
@@ -36,6 +39,14 @@ const SIDEBAR_ITEMS = [
     name: "Assignments",
     icon: ClipboardList,
     subItems: [{ name: "Assignments", href: "/student/assignments" }],
+  },
+  {
+    name: "Resources",
+    icon: FolderOpen,
+    subItems: [
+      { name: "Class Resources", href: "/student/class-resources" },
+      { name: "Subject Resources", href: "/student/subject-resources" }
+    ],
   },
   {
     name: "Results",
@@ -76,6 +87,8 @@ const SIDEBAR_ITEMS = [
 
 const StudentSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('studentSidebar:isOpen');
     return saved ? JSON.parse(saved) : true;
@@ -279,18 +292,10 @@ const StudentSidebar = () => {
           <div className={`mt-auto pt-4 flex ${isSidebarOpen ? '' : 'justify-center'}`}>
             <button
               onClick={() => { 
-                localStorage.removeItem("authToken");
-                localStorage.removeItem("userData");
-                localStorage.removeItem("rememberEmail");
-                localStorage.removeItem("studentSidebar:openDropdown");
-                localStorage.removeItem("teacherSidebar:openDropdown");
-                localStorage.removeItem("sidebar:openDropdown");
-                localStorage.removeItem("studentSidebar:isOpen");
-                localStorage.removeItem("teacherSidebar:isOpen");
-                localStorage.removeItem("sidebar:isOpen");
-                window.location.href = '/login'; 
+                logout();
+                navigate('/login', { replace: true });
               }}
-              className={`group flex items-center gap-2 py-2 px-4 rounded-xl bg-white text-slate-800 font-semibold shadow hover:shadow-md border border-slate-200 hover:border-violet-500 transition-colors w-full ${isSidebarOpen ? '' : 'justify-center px-2'}`}
+              className={`group flex items-center gap-2 py-2 px-4 rounded-xl bg-white text-slate-800 font-semibold shadow hover:shadow-md border border-slate-200 hover:border-violet-500 transition-colors w-full cursor-pointer ${isSidebarOpen ? '' : 'justify-center px-2'}`}
               style={{ minWidth: isSidebarOpen ? '100%' : '48px' }}
             >
               <span className="flex items-center justify-center rounded-full min-w-[32px] min-h-[32px] bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white">

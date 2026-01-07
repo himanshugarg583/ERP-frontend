@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
-import { Box, Typography, Card, CardContent } from '@mui/material';
+import { Box, Typography, Card, CardContent, CircularProgress } from '@mui/material';
+import { getPaymentModeCollection } from '../../helper/requests-method/apiMethods';
 
 // Define colors (Material Design-inspired)
 const colors = {
@@ -13,13 +14,104 @@ const colors = {
 };
 
 const EarningsPieChart = () => {
-  // Sample data for payment modes
-  const paymentData = [
-    { id: 0, value: 1200, label: 'Cash', color: colors.greenAccent[500] },
-    { id: 1, value: 1800, label: 'Online', color: colors.blueAccent[500] },
-    { id: 2, value: 900, label: 'Cheque', color: colors.redAccent[500] },
-    { id: 3, value: 1500, label: 'App', color: colors.yellowAccent[500] },
-  ];
+  const [paymentData, setPaymentData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [summary, setSummary] = useState({ total_transactions: 0, grand_total: 0 });
+
+  // Map payment modes to colors
+  const colorMap = {
+    cash: colors.greenAccent[500],
+    online: colors.blueAccent[500],
+    upi: colors.primary[500],
+    card: colors.redAccent[500],
+    cheque: colors.yellowAccent[500],
+    bank_transfer: '#9C27B0', // Purple
+  };
+
+  useEffect(() => {
+    const fetchPaymentData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getPaymentModeCollection();
+        
+        console.log('Payment Mode Collection Response:', response);
+        console.log('Response data:', response?.data);
+        console.log('Response data.data:', response?.data?.data);
+        
+        // Handle both response formats
+        let apiData = null;
+        if (response?.data?.data) {
+          apiData = response.data.data;
+        } else if (response?.data && response?.success) {
+          apiData = response.data;
+        }
+        
+        if (apiData && apiData.payment_modes && Array.isArray(apiData.payment_modes)) {
+          // Transform API data to chart format
+          const chartData = apiData.payment_modes.map((mode, index) => ({
+            id: index,
+            value: mode.total_amount,
+            label: mode.payment_mode.charAt(0).toUpperCase() + mode.payment_mode.slice(1).replace('_', ' '),
+            color: colorMap[mode.payment_mode] || colors.grey[700],
+            transactions: mode.total_transactions,
+          }));
+          
+          console.log('Chart Data:', chartData);
+          console.log('Chart Data Length:', chartData.length);
+          
+          setPaymentData(chartData);
+          setSummary(apiData.summary || { total_transactions: 0, grand_total: 0 });
+        } else {
+          console.error('Invalid data structure:', apiData);
+          setError('Invalid data structure received');
+        }
+      } catch (error) {
+        console.error('Error fetching payment mode collection:', error);
+        setError(error.message || 'Failed to load payment data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+            <CircularProgress size={60} sx={{ color: colors.primary[500] }} />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || paymentData.length === 0) {
+    return (
+      <Card>
+        <CardContent>
+          <Typography
+            variant="h5"
+            fontWeight="600"
+            color={colors.primary[500]}
+            gutterBottom
+            textAlign="center"
+          >
+            Earnings by Payment Mode - 2025
+          </Typography>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <Typography variant="body1" color={colors.grey[700]}>
+              {error || 'No payment data available'}
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -42,7 +134,15 @@ const EarningsPieChart = () => {
         >
           Earnings by Payment Mode - 2025
         </Typography>
-        <Box display="flex" justifyContent="center">
+        <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+          <Box display="flex" justifyContent="center" gap={3}>
+            <Typography variant="body2" color={colors.grey[700]}>
+              <strong>Total Transactions:</strong> {summary.total_transactions.toLocaleString()}
+            </Typography>
+            <Typography variant="body2" color={colors.grey[700]}>
+              <strong>Grand Total:</strong> ₹{summary.grand_total.toLocaleString()}
+            </Typography>
+          </Box>
           <PieChart
             series={[
               {
@@ -72,6 +172,13 @@ const EarningsPieChart = () => {
               },
             }}
           />
+          {paymentData.length > 0 && (
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="caption" color={colors.grey[700]} textAlign="center" display="block">
+                Hover over slices to see transaction count
+              </Typography>
+            </Box>
+          )}
         </Box>
       </CardContent>
     </Card>

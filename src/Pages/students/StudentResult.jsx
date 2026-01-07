@@ -1,82 +1,128 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import StudentSidebar from './StudentSidebar';
 import Header from '../../components/comman_components/Header';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { getExamTermDropdown, getExamDropdown, getStudentExamResult } from '../../helper/requests-method/apiMethods';
+import { toast } from 'react-toastify';
 
 const StudentResult = () => {
-  const studentData = {
-    name: "Ms. Riya Sharma",
-    class: "10",
-    rollNo: "23",
-    yearOfStudy: "2022-23",
-    registrationNumber: "2022-123",
-    enrollmentNumber: "2022-456",
-    schoolName: "XYZ High School",
-    examMonthYear: "May 2023",
-    fatherName: "Mr. Ram Sharma",
-    motherName: "Mrs. Mina Sharma",
-    guardianContact: "+91 9874563210",
-    results: [
-      { subjectCode: "101", subject: "Mathematics", maxMarks: 100, unitTest: { theory: 85 }, halfYearly: { theory: 90 }, finalExam: { theory: 95 } },
-      { subjectCode: "102", subject: "Science", maxMarks: 100, unitTest: { theory: 90 }, halfYearly: { theory: 85 }, finalExam: { theory: 80 } },
-      { subjectCode: "103", subject: "English", maxMarks: 100, unitTest: { theory: 75 }, halfYearly: { theory: 80 }, finalExam: { theory: 70 } },
-      { subjectCode: "104", subject: "Social Studies", maxMarks: 100, unitTest: { theory: 80 }, halfYearly: { theory: 85 }, finalExam: { theory: 90 } },
-      { subjectCode: "105", subject: "Physical Education", maxMarks: 100, unitTest: { theory: 95 }, halfYearly: { theory: 90 }, finalExam: { theory: 100 } },
-      { subjectCode: "106", subject: "Hindi", maxMarks: 100, unitTest: { theory: 88 }, halfYearly: { theory: 92 }, finalExam: { theory: 85 } },
-      { subjectCode: "107", subject: "Computer Science", maxMarks: 100, unitTest: { theory: 90 }, halfYearly: { theory: 87 }, finalExam: { theory: 93 } },
-      { subjectCode: "108", subject: "Art", maxMarks: 100, unitTest: { theory: 82 }, halfYearly: { theory: 88 }, finalExam: { theory: 90 } },
-    ],
+  const [terms, setTerms] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [selectedExam, setSelectedExam] = useState('');
+  const [examData, setExamData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch terms on component mount
+  useEffect(() => {
+    fetchTerms();
+  }, []);
+
+  // Fetch exams when term is selected
+  useEffect(() => {
+    if (selectedTerm) {
+      fetchExams(selectedTerm);
+    } else {
+      setExams([]);
+      setSelectedExam('');
+      setExamData(null);
+    }
+  }, [selectedTerm]);
+
+  // Fetch exam result when exam is selected
+  useEffect(() => {
+    if (selectedExam) {
+      fetchExamResult(selectedExam);
+    } else {
+      setExamData(null);
+    }
+  }, [selectedExam]);
+
+  const fetchTerms = async () => {
+    try {
+      const response = await getExamTermDropdown();
+      if (response.success) {
+        setTerms(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching terms:', error);
+      toast.error('Failed to fetch exam terms');
+    }
   };
 
-  const calculateTotalMarks = (subject) => subject.unitTest.theory + subject.halfYearly.theory + subject.finalExam.theory;
-  const calculateMaxTotalMarks = (subject) => subject.maxMarks * 3;
-  const grandTotal = studentData.results.reduce((acc, subject) => acc + calculateTotalMarks(subject), 0);
-  const maxTotal = studentData.results.length * 300; // 8 subjects * 300 max marks
-  const percentage = ((grandTotal / maxTotal) * 100).toFixed(2);
-  const grade = percentage >= 90 ? "A+" : percentage >= 80 ? "A" : percentage >= 70 ? "B" : percentage >= 60 ? "C" : percentage >= 50 ? "D" : "F";
-  const result = percentage >= 50 ? "Passed" : "Failed";
+  const fetchExams = async (termId) => {
+    try {
+      const response = await getExamDropdown(termId);
+      if (response.success) {
+        setExams(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+      toast.error('Failed to fetch exams');
+    }
+  };
+
+  const fetchExamResult = async (examId) => {
+    setLoading(true);
+    try {
+      const response = await getStudentExamResult(examId);
+      if (response.success) {
+        setExamData(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching exam result:', error);
+      toast.error('Failed to fetch exam result');
+      setExamData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTermChange = (e) => {
+    setSelectedTerm(e.target.value);
+    setSelectedExam('');
+  };
+
+  const handleExamChange = (e) => {
+    setSelectedExam(e.target.value);
+  };
 
   const downloadReportCard = () => {
+    if (!examData) {
+      toast.error('No exam data available to download');
+      return;
+    }
+
     const doc = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 10;
     let y = margin;
 
     // Header
-    doc.setFontSize(16).setTextColor(0, 0, 255).text(studentData.schoolName, margin, y);
-    doc.setFontSize(14).text("Annual Examination Results", margin, (y += 7));
-    doc.setFontSize(10).setTextColor(100).text("Affiliated with ABC Education Board", margin, (y += 5));
-    doc.text("An Institution Committed to Excellence", margin, (y += 5));
+    doc.setFontSize(16).setTextColor(0, 0, 255).text("School Name", margin, y);
+    doc.setFontSize(14).text(`${examData.exam.exam_name} Results`, margin, (y += 7));
+    doc.setFontSize(10).setTextColor(100).text(`Academic Year: ${examData.exam.term.academic_year}`, margin, (y += 5));
 
-    // Student & Parent Info
-    doc.setFontSize(12).setTextColor(0).text("Parent/Guardian Information", margin, (y += 10));
-    doc.setFontSize(10).text(`Father's Name: ${studentData.fatherName}`, margin, (y += 5));
-    doc.text(`Mother's Name: ${studentData.motherName}`, margin, (y += 5));
-    doc.text(`Contact: ${studentData.guardianContact}`, margin, (y += 5));
-    doc.setFontSize(12).text(studentData.name, pageWidth - margin, y - 15, { align: "right" });
-    doc.setFontSize(10).text(`Class: ${studentData.class}`, pageWidth - margin, y - 5, { align: "right" });
-    doc.text(`Roll No: ${studentData.rollNo}`, pageWidth - margin, y, { align: "right" });
-
-    // Additional Info
-    doc.text(`Year of Study: ${studentData.yearOfStudy}`, margin, (y += 10));
-    doc.text(`Registration No: ${studentData.registrationNumber}`, pageWidth / 3, y);
-    doc.text(`Enrollment No: ${studentData.enrollmentNumber}`, (2 * pageWidth) / 3, y);
+    // Student Info
+    doc.setFontSize(12).setTextColor(0).text("Student Information", margin, (y += 10));
+    doc.setFontSize(10).text(`Class: ${examData.student.class}`, margin, (y += 5));
+    doc.text(`Section: ${examData.student.section}`, margin, (y += 5));
+    doc.text(`Roll No: ${examData.student.roll_number}`, margin, (y += 5));
 
     // Marks Table
     doc.setFontSize(12).text("Marks Details", margin, (y += 10));
     doc.autoTable({
       startY: (y += 5),
-      head: [["S.No", "Subject Code", "Subject Name", "Max. Marks", "Unit Test", "Half Yearly", "Final Exam", "Total"]],
-      body: studentData.results.map((subject, index) => [
+      head: [["S.No", "Subject Code", "Subject Name", "Marks Obtained", "Total Marks", "Percentage", "Grade", "Status"]],
+      body: examData.subjects.map((subject, index) => [
         index + 1,
-        subject.subjectCode,
-        subject.subject,
-        subject.maxMarks,
-        subject.unitTest.theory,
-        subject.halfYearly.theory,
-        subject.finalExam.theory,
-        calculateTotalMarks(subject),
+        subject.subject_code,
+        subject.subject_name,
+        subject.marks_obtained,
+        subject.total_marks,
+        `${subject.percentage.toFixed(2)}%`,
+        subject.grade,
+        subject.status,
       ]),
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 2 },
@@ -86,31 +132,13 @@ const StudentResult = () => {
     // Summary
     y = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(10);
-    doc.text(`Grand Total: ${grandTotal} / ${maxTotal}`, margin, y);
-    doc.text(`Percentage: ${percentage}%`, margin, (y += 5));
-    doc.text(`Result: ${result}`, margin, (y += 5));
-    doc.text(`Exam Date: ${studentData.examMonthYear}`, margin, (y += 5));
-    doc.text(`Grade: ${grade}`, pageWidth - margin, y - 10, { align: "right" });
+    doc.text(`Total Marks: ${examData.summary.total_marks_obtained} / ${examData.summary.total_maximum_marks}`, margin, y);
+    doc.text(`Percentage: ${examData.summary.overall_percentage.toFixed(2)}%`, margin, (y += 5));
+    doc.text(`Result: ${examData.summary.overall_result}`, margin, (y += 5));
+    doc.text(`Subjects Passed: ${examData.summary.subjects_passed}`, margin, (y += 5));
+    doc.text(`Subjects Failed: ${examData.summary.subjects_failed}`, margin, (y += 5));
 
-    // Signatures
-    doc.text(`Date of Result: ${studentData.dateOfResult}`, margin, (y += 10));
-    doc.setFont("times", "italic").setTextColor(0, 0, 255).text("Mr. Robert Smith", pageWidth - 60, y, { align: "right" });
-    doc.setFont("helvetica", "normal").setTextColor(0).text("(Principal)", pageWidth - 60, y + 5, { align: "right" });
-    doc.setFont("times", "italic").setTextColor(0, 0, 255).text("Ms. Jane Doe", pageWidth - 20, y, { align: "right" });
-    doc.setFont("helvetica", "normal").setTextColor(0).text("(Class Teacher)", pageWidth - 20, y + 5, { align: "right" });
-
-    // Grading System
-    doc.setFontSize(12).text("GRADING SYSTEM", pageWidth / 2, (y += 15), { align: "center" });
-    doc.autoTable({
-      startY: (y += 5),
-      head: [["Percentage", "Grade"]],
-      body: [["90% and above", "A+"], ["80% - 89%", "A"], ["70% - 79%", "B"], ["60% - 69%", "C"], ["50% - 59%", "D"], ["Below 50%", "F"]],
-      theme: "grid",
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [173, 216, 230] },
-    });
-
-    doc.save(`${studentData.name}_ReportCard.pdf`);
+    doc.save(`${examData.exam.exam_name}_ReportCard.pdf`);
   };
 
   const gradingSystem = [
@@ -140,152 +168,234 @@ const StudentResult = () => {
 
         <main className="w-full px-4 md:px-6">
           <div className="p-4">
-          <div className="w-full mx-auto bg-white shadow-lg rounded-lg p-6">
-            {/* Header */}
-            <div className="flex justify-between items-start border-b border-gray-300 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
-                  <div className="w-14 h-14 border-2 border-yellow-400 rounded-full flex items-center justify-center">
-                    <span className="text-xs text-white text-center leading-tight">SCHOOL<br />MARKSHEET</span>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <h1 className="text-blue-600 font-bold text-xl">{studentData.schoolName}</h1>
-                  <h2 className="text-blue-600 font-semibold text-lg">Annual Examination Results</h2>
-                  <p className="text-xs text-gray-700">Affiliated with ABC Education Board</p>
-                  <p className="text-xs text-gray-700 italic">An Institution Committed to Excellence</p>
-                </div>
-              </div>
-              <div className="w-24 h-24 border border-gray-300 rounded overflow-hidden">
-                <img src="images/stu1.jpeg" alt="Student" className="w-full h-full object-cover" />
-              </div>
-            </div>
-
-            {/* Student & Parent Info */}
-            <div className="py-4 border-b border-gray-300 flex justify-between px-4">
-              <div>
-                <p className="text-sm font-semibold text-gray-600">Parent/Guardian Information</p>
-                {[
-                  `Father's Name: ${studentData.fatherName}`,
-                  `Mother's Name: ${studentData.motherName}`,
-                  `Contact: ${studentData.guardianContact}`,
-                ].map((info, idx) => (
-                  <p key={idx} className="text-xs text-gray-600">{info}</p>
-                ))}
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">{studentData.name}</p>
-                <p className="font-semibold text-sm mt-2">Class {studentData.class}</p>
-                <p className="text-xs text-gray-600">Roll No: {studentData.rollNo}</p>
-              </div>
-            </div>
-
-            {/* Additional Info */}
-            <div className="flex justify-between text-sm px-4 py-3 border-b border-gray-300">
-              {[
-                { label: "Year of Study", value: studentData.yearOfStudy },
-                { label: "Registration No", value: studentData.registrationNumber },
-                { label: "Enrollment No", value: studentData.enrollmentNumber },
-                { label: "School", value: studentData.schoolName },
-              ].map((item, idx) => (
-                <div key={idx}><span className="font-semibold">{item.label}:</span> {item.value}</div>
-              ))}
-            </div>
-
-            {/* Results Table */}
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold text-gray-800">Marks Details</h3>
-              <table className="w-full border-collapse text-sm mb-4">
-                <thead>
-                  <tr className="bg-blue-100 text-gray-800">
-                    {["S.No", "Subject Code", "Subject Name", "Max. Marks", "Unit Test", "Half Yearly", "Final Exam", "Total Marks"].map((header) => (
-                      <th key={header} className="border border-gray-300 p-2 text-center">{header}</th>
+            {/* Dropdowns for Term and Exam Selection */}
+            <div className="bg-white shadow-md rounded-lg p-6 mb-4">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Select Exam</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Term Dropdown */}
+                <div>
+                  <label htmlFor="term" className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Term
+                  </label>
+                  <select
+                    id="term"
+                    value={selectedTerm}
+                    onChange={handleTermChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select Term --</option>
+                    {terms.map((term) => (
+                      <option key={term.id} value={term.id}>
+                        {term.term_name} ({term.academic_year})
+                      </option>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {studentData.results.map((subject, index) => (
-                    <tr key={index} className="hover:bg-blue-50 transition-colors">
-                      <td className="border border-gray-300 p-2 text-center">{index + 1}</td>
-                      <td className="border border-gray-300 p-2">{subject.subjectCode}</td>
-                      <td className="border border-gray-300 p-2">{subject.subject}</td>
-                      <td className="border border-gray-300 p-2 text-center">{subject.maxMarks}</td>
-                      <td className="border border-gray-300 p-2 text-center">{subject.unitTest.theory}</td>
-                      <td className="border border-gray-300 p-2 text-center">{subject.halfYearly.theory}</td>
-                      <td className="border border-gray-300 p-2 text-center">{subject.finalExam.theory}</td>
-                      <td className="border border-gray-300 p-2 text-center">{calculateTotalMarks(subject)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </select>
+                </div>
 
-            {/* Summary */}
-            <div className="flex justify-between px-4 py-3 text-sm border-t border-gray-300">
-              <div>
-                {[
-                  { label: "Grand Total", value: `${grandTotal} / ${maxTotal}` },
-                  { label: "Percentage", value: `${percentage}%` },
-                  { label: "Result", value: result },
-                  { label: "Exam Date", value: studentData.examMonthYear },
-                ].map((item, idx) => (
-                  <p key={idx}><span className="font-semibold">{item.label}:</span> {item.value}</p>
-                ))}
-              </div>
-              <div className="text-right">
-                <p><span className="font-semibold">Grade:</span> {grade}</p>
+                {/* Exam Dropdown */}
+                <div>
+                  <label htmlFor="exam" className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Exam
+                  </label>
+                  <select
+                    id="exam"
+                    value={selectedExam}
+                    onChange={handleExamChange}
+                    disabled={!selectedTerm}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">-- Select Exam --</option>
+                    {exams.map((exam) => (
+                      <option key={exam.id} value={exam.id}>
+                        {exam.exam_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Signatures */}
-            <div className="flex justify-between px-4 py-3 text-xs border-t border-gray-300">
-              <div>
-                <p><span className="font-semibold">Date of Result:</span> {studentData.dateOfResult}</p>
+            {/* Loading State */}
+            {loading && (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-gray-600">Loading exam results...</p>
               </div>
-              <div className="text-right flex gap-8">
-                {[
-                  { name: "Mr. Robert Smith", role: "(Principal)" },
-                  { name: "Ms. Jane Doe", role: "(Class Teacher)" },
-                ].map((sign, idx) => (
-                  <div key={idx}>
-                    <p className="font-semibold italic text-blue-600">{sign.name}</p>
-                    <p>{sign.role}</p>
+            )}
+
+            {/* Exam Result Card */}
+            {!loading && examData && (
+              <div className="w-full mx-auto bg-white shadow-lg rounded-lg p-6">
+                {/* Header */}
+                <div className="border-b border-gray-300 pb-4">
+                  <div className="text-center">
+                    <h1 className="text-blue-600 font-bold text-2xl">{examData.exam.exam_name}</h1>
+                    <h2 className="text-blue-600 font-semibold text-lg">Examination Results</h2>
+                    <p className="text-sm text-gray-700">Term: {examData.exam.term.term_name}</p>
+                    <p className="text-sm text-gray-700">Academic Year: {examData.exam.term.academic_year}</p>
+                    {examData.exam.exam_description && (
+                      <p className="text-xs text-gray-600 italic mt-2">{examData.exam.exam_description}</p>
+                    )}
                   </div>
-                ))}
+                </div>
+
+                {/* Student Info */}
+                <div className="py-4 border-b border-gray-300">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-700">Class:</span>
+                      <p className="text-gray-600">{examData.student.class}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Section:</span>
+                      <p className="text-gray-600">{examData.student.section}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Roll Number:</span>
+                      <p className="text-gray-600">{examData.student.roll_number}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Exam Period:</span>
+                      <p className="text-gray-600">{examData.exam.start_date} to {examData.exam.end_date}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary Cards */}
+                <div className="py-4 border-b border-gray-300">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Overall Summary</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg text-center">
+                      <p className="text-sm text-gray-600">Total Subjects</p>
+                      <p className="text-2xl font-bold text-blue-600">{examData.summary.total_subjects}</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg text-center">
+                      <p className="text-sm text-gray-600">Passed</p>
+                      <p className="text-2xl font-bold text-green-600">{examData.summary.subjects_passed}</p>
+                    </div>
+                    <div className="bg-red-50 p-4 rounded-lg text-center">
+                      <p className="text-sm text-gray-600">Failed</p>
+                      <p className="text-2xl font-bold text-red-600">{examData.summary.subjects_failed}</p>
+                    </div>
+                    <div className={`${examData.summary.overall_result === 'Pass' ? 'bg-green-50' : 'bg-red-50'} p-4 rounded-lg text-center`}>
+                      <p className="text-sm text-gray-600">Overall Result</p>
+                      <p className={`text-2xl font-bold ${examData.summary.overall_result === 'Pass' ? 'text-green-600' : 'text-red-600'}`}>
+                        {examData.summary.overall_result}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Results Table */}
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Subject-wise Marks</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-blue-100 text-gray-800">
+                          <th className="border border-gray-300 p-2 text-center">S.No</th>
+                          <th className="border border-gray-300 p-2 text-left">Subject Code</th>
+                          <th className="border border-gray-300 p-2 text-left">Subject Name</th>
+                          <th className="border border-gray-300 p-2 text-center">Marks Obtained</th>
+                          <th className="border border-gray-300 p-2 text-center">Total Marks</th>
+                          <th className="border border-gray-300 p-2 text-center">Passing Marks</th>
+                          <th className="border border-gray-300 p-2 text-center">Percentage</th>
+                          <th className="border border-gray-300 p-2 text-center">Grade</th>
+                          <th className="border border-gray-300 p-2 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {examData.subjects.map((subject, index) => (
+                          <tr key={subject.subject_id} className="hover:bg-blue-50 transition-colors">
+                            <td className="border border-gray-300 p-2 text-center">{index + 1}</td>
+                            <td className="border border-gray-300 p-2">{subject.subject_code}</td>
+                            <td className="border border-gray-300 p-2">{subject.subject_name}</td>
+                            <td className="border border-gray-300 p-2 text-center font-semibold">{subject.marks_obtained}</td>
+                            <td className="border border-gray-300 p-2 text-center">{subject.total_marks}</td>
+                            <td className="border border-gray-300 p-2 text-center">{subject.passing_marks}</td>
+                            <td className="border border-gray-300 p-2 text-center">{subject.percentage.toFixed(2)}%</td>
+                            <td className="border border-gray-300 p-2 text-center font-semibold">{subject.grade}</td>
+                            <td className={`border border-gray-300 p-2 text-center font-semibold ${subject.status === 'Pass' ? 'text-green-600' : 'text-red-600'}`}>
+                              {subject.status}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Final Summary */}
+                <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-700">Total Marks Obtained:</span>
+                      <p className="text-lg font-bold text-blue-600">{examData.summary.total_marks_obtained} / {examData.summary.total_maximum_marks}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Overall Percentage:</span>
+                      <p className="text-lg font-bold text-blue-600">{examData.summary.overall_percentage.toFixed(2)}%</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Final Result:</span>
+                      <p className={`text-lg font-bold ${examData.summary.overall_result === 'Pass' ? 'text-green-600' : 'text-red-600'}`}>
+                        {examData.summary.overall_result}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grading System */}
+                <div className="mt-6 border-t-4 border-b-4 border-blue-600 p-4">
+                  <h3 className="text-center font-bold text-lg mb-3">GRADING SYSTEM</h3>
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-blue-100 text-gray-800">
+                        <th className="border border-gray-300 p-2 text-center">Percentage</th>
+                        <th className="border border-gray-300 p-2 text-center">Grade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gradingSystem.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-blue-50">
+                          <td className="border border-gray-300 p-2 text-center">{item.range}</td>
+                          <td className="border border-gray-300 p-2 text-center">{item.grade}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Download Button */}
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={downloadReportCard}
+                    className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                  >
+                    Download Report Card
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Grading System */}
-            <div className="mt-6 border-t-4 border-b-4 border-blue-600 p-4">
-              <h3 className="text-center font-bold text-lg mb-3">GRADING SYSTEM</h3>
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="bg-blue-100 text-gray-800">
-                    <th className="border border-gray-300 p-2 text-center">Percentage</th>
-                    <th className="border border-gray-300 p-2 text-center">Grade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {gradingSystem.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50">
-                      <td className="border border-gray-300 p-2 text-center">{item.range}</td>
-                      <td className="border border-gray-300 p-2 text-center">{item.grade}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {/* No Data Message */}
+            {!loading && !examData && selectedExam && (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No exam results found for the selected exam.</p>
+              </div>
+            )}
 
-            {/* Download Button */}
-            <div className="mt-6 text-center">
-              <button
-                onClick={downloadReportCard}
-                className="bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition-colors"
-              >
-                Download Report Card
-              </button>
-            </div>
-          </div>
+            {/* Initial Message */}
+            {!loading && !selectedExam && (
+              <div className="text-center py-8 bg-white rounded-lg shadow-md">
+                <div className="text-gray-400 mb-4">
+                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-lg text-gray-600">Please select a term and exam to view your results</p>
+              </div>
+            )}
           </div>
         </main>
       </div>

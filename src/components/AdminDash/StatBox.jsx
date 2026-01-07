@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -8,12 +8,34 @@ import {
   TrendingUp,
   TrendingDown
 } from "lucide-react";
+import { getDashboardStats } from "../../helper/requests-method/apiMethods";
 
 const StatBox = () => {
-  const stats = [
+  const [statsData, setStatsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const response = await getDashboardStats();
+      if (response.success && response.data) {
+        setStatsData(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stats = statsData ? [
     {
       title: 'Total Students',
-      value: '1,156',
+      value: statsData.students.total.toString(),
       change: '+2.5%',
       trend: 'up',
       icon: Users,
@@ -24,7 +46,7 @@ const StatBox = () => {
     },
     {
       title: 'Total Teachers',
-      value: '94',
+      value: statsData.teachers.total.toString(),
       change: '+1.2%',
       trend: 'up',
       icon: GraduationCap,
@@ -35,7 +57,7 @@ const StatBox = () => {
     },
     {
       title: 'Male Students',
-      value: '810',
+      value: statsData.students.male.toString(),
       change: '+0.5%',
       trend: 'up',
       icon: UserCheck,
@@ -46,7 +68,7 @@ const StatBox = () => {
     },
     {
       title: 'Female Students',
-      value: '346',
+      value: statsData.students.female.toString(),
       change: '+1.8%',
       trend: 'up',
       icon: UserX,
@@ -55,7 +77,7 @@ const StatBox = () => {
       iconBg: 'bg-gradient-to-br from-pink-500 to-rose-600',
       textColor: 'text-pink-600'
     },
-  ];
+  ] : [];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -78,6 +100,19 @@ const StatBox = () => {
       }
     }
   };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white rounded-2xl shadow-lg p-6 animate-pulse">
+            <div className="h-12 bg-gray-200 rounded-lg mb-4"></div>
+            <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <motion.div

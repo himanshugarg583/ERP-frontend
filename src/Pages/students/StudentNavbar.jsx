@@ -4,6 +4,7 @@ import {
   FaCog, FaSignOutAlt, FaBook, FaCalendarAlt, FaBullhorn, FaReply 
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const StudentNavbar = ({ setIsSidebarOpen }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -15,6 +16,7 @@ const StudentNavbar = ({ setIsSidebarOpen }) => {
   const [newMessage, setNewMessage] = useState({ to: '', subject: '', body: '' }); // State for new message
   const [replyTo, setReplyTo] = useState(null); // State for replying to a specific mail
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleNotificationClick = () => {
     setNotificationCount(0);
@@ -29,6 +31,12 @@ const StudentNavbar = ({ setIsSidebarOpen }) => {
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
     navigate('/student/profile');
+  };
+
+  const handleLogout = () => {
+    setIsDropdownOpen(false);
+    logout();
+    navigate('/login', { replace: true });
   };
 
   // Sample notifications
@@ -250,11 +258,14 @@ const StudentNavbar = ({ setIsSidebarOpen }) => {
                   <FaUser className="mr-2 text-gray-600" />
                   My Profile
                 </li>
-                <li className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+                <li className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
                   <FaCog className="mr-2 text-gray-600" />
                   Settings
                 </li>
-                <li className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer text-red-600">
+                <li 
+                  onClick={handleLogout}
+                  className="flex items-center px-3 py-2 hover:bg-gray-100 rounded-lg cursor-pointer text-red-600"
+                >
                   <FaSignOutAlt className="mr-2 text-red-600" />
                   Logout
                 </li>
