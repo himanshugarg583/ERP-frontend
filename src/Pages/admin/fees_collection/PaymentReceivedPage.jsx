@@ -23,7 +23,8 @@ import {
   getPaymentDetails,
   createPayment,
   getAllClassesDropdown,
-  getAllStudentsByClass
+  getAllStudentsByClass,
+  getStudentInstallments
 } from "../../../helper/requests-method/apiMethods";
 import { toast } from "react-toastify";
 
@@ -43,16 +44,14 @@ const PaymentReceived = () => {
   const [students, setStudents] = useState([]);
   const [paymentForm, setPaymentForm] = useState({
     student_id: "",
-    student_fee_id: "",
-    installment_id: "",
-    academic_year: "",
     amount_paid: "",
-    late_fee_paid: "",
     payment_method: "cash",
-    transaction_id: "",
-    payment_for: "",
-    remarks: ""
+    installment_ids: [],
+    late_fee_paid: ""
   });
+  const [installments, setInstallments] = useState([]);
+  const [selectedInstallments, setSelectedInstallments] = useState([]);
+  const [studentInfo, setStudentInfo] = useState(null);
 
   // Helper function to safely format currency
   const formatCurrency = (value) => {
@@ -167,6 +166,64 @@ const PaymentReceived = () => {
     }
   };
 
+  const handleStudentChange = async (studentId) => {
+    if (!studentId) {
+      setInstallments([]);
+      setSelectedInstallments([]);
+      setStudentInfo(null);
+      return;
+    }
+    
+    try {
+      const response = await getStudentInstallments(studentId);
+      if (response?.data) {
+        setInstallments(response.data.installments || []);
+        setStudentInfo(response.data.student_info || null);
+      } else {
+        setInstallments([]);
+        setStudentInfo(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch installments:", err);
+      toast.error("Failed to fetch student installments");
+      setInstallments([]);
+      setStudentInfo(null);
+    }
+  };
+
+  const handleInstallmentToggle = (installmentId) => {
+    setSelectedInstallments(prev => {
+      let updatedSelection;
+      if (prev.includes(installmentId)) {
+        updatedSelection = prev.filter(id => id !== installmentId);
+      } else {
+        updatedSelection = [...prev, installmentId];
+      }
+      
+      // Calculate total amount and late fee for selected installments
+      const selectedInstallmentsData = installments.filter(inst => 
+        updatedSelection.includes(inst.installment_id)
+      );
+      
+      const totalDue = selectedInstallmentsData.reduce((sum, inst) => 
+        sum + (parseFloat(inst.due_amount) || 0), 0
+      );
+      
+      const totalLateFee = selectedInstallmentsData.reduce((sum, inst) => 
+        sum + (parseFloat(inst.late_fee) || 0), 0
+      );
+      
+      // Auto-fill the amount and late fee
+      setPaymentForm(prevForm => ({
+        ...prevForm,
+        amount_paid: totalDue.toString(),
+        late_fee_paid: totalLateFee.toString()
+      }));
+      
+      return updatedSelection;
+    });
+  };
+
   const handlePaymentFormChange = (e) => {
     const { name, value } = e.target;
     setPaymentForm({ ...paymentForm, [name]: value });
@@ -174,6 +231,12 @@ const PaymentReceived = () => {
 
   const handleCreatePayment = async (e) => {
     e.preventDefault();
+    
+    if (selectedInstallments.length === 0) {
+      toast.error("Please select at least one installment");
+      return;
+    }
+    
     setLoading(true);
     setError("");
     setSuccess("");
@@ -181,18 +244,11 @@ const PaymentReceived = () => {
     try {
       const payload = {
         student_id: Number(paymentForm.student_id),
-        academic_year: paymentForm.academic_year,
         amount_paid: Number(paymentForm.amount_paid),
         payment_method: paymentForm.payment_method,
-        payment_for: paymentForm.payment_for,
+        installment_ids: selectedInstallments,
+        late_fee_paid: Number(paymentForm.late_fee_paid) || 0
       };
-
-      // Add optional fields if provided
-      if (paymentForm.student_fee_id) payload.student_fee_id = Number(paymentForm.student_fee_id);
-      if (paymentForm.installment_id) payload.installment_id = Number(paymentForm.installment_id);
-      if (paymentForm.late_fee_paid) payload.late_fee_paid = Number(paymentForm.late_fee_paid);
-      if (paymentForm.transaction_id) payload.transaction_id = paymentForm.transaction_id;
-      if (paymentForm.remarks) payload.remarks = paymentForm.remarks;
 
       const response = await createPayment(payload);
       const successMessage = response?.message || "Payment created successfully!";
@@ -202,17 +258,15 @@ const PaymentReceived = () => {
       // Reset form
       setPaymentForm({
         student_id: "",
-        student_fee_id: "",
-        installment_id: "",
-        academic_year: "",
         amount_paid: "",
-        late_fee_paid: "",
         payment_method: "cash",
-        transaction_id: "",
-        payment_for: "",
-        remarks: ""
+        installment_ids: [],
+        late_fee_paid: ""
       });
       setStudents([]);
+      setInstallments([]);
+      setSelectedInstallments([]);
+      setStudentInfo(null);
       setIsCreateModalOpen(false);
       fetchPayments();
     } catch (err) {
@@ -703,7 +757,10 @@ const PaymentReceived = () => {
                   <select
                     name="student_id"
                     value={paymentForm.student_id}
-                    onChange={handlePaymentFormChange}
+                    onChange={(e) => {
+                      handlePaymentFormChange(e);
+                      handleStudentChange(e.target.value);
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                     required
                     disabled={students.length === 0}
@@ -717,21 +774,74 @@ const PaymentReceived = () => {
                   </select>
                 </div>
 
-                {/* Academic Year */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Academic Year <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="academic_year"
-                    value={paymentForm.academic_year}
-                    onChange={handlePaymentFormChange}
-                    placeholder="e.g., 2024-2025"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    required
-                  />
-                </div>
+                {/* Student Info */}
+                {studentInfo && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm font-medium text-blue-900">{studentInfo.name}</p>
+                    <p className="text-xs text-blue-700">{studentInfo.email}</p>
+                  </div>
+                )}
+
+                {/* Installment Selection */}
+                {installments.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Installments <span className="text-red-500">*</span>
+                    </label>
+                    <div className="border border-gray-300 rounded-lg max-h-60 overflow-y-auto">
+                      {installments.map((installment) => (
+                        <div 
+                          key={installment.installment_id}
+                          className={`p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer ${
+                            selectedInstallments.includes(installment.installment_id) ? 'bg-violet-50' : ''
+                          }`}
+                          onClick={() => handleInstallmentToggle(installment.installment_id)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedInstallments.includes(installment.installment_id)}
+                              onChange={() => handleInstallmentToggle(installment.installment_id)}
+                              className="mt-1 h-4 w-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-gray-900">
+                                  {installment.installment_name}
+                                </p>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  installment.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                  installment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {installment.status}
+                                </span>
+                              </div>
+                              <div className="mt-1 text-xs text-gray-600">
+                                <span>{installment.fee_structure_name}</span>
+                                <span className="mx-2">•</span>
+                                <span>Due: {new Date(installment.due_date).toLocaleDateString()}</span>
+                              </div>
+                              <div className="mt-1 flex items-center gap-3 text-xs">
+                                <span className="text-gray-700">Amount: ₹{installment.amount}</span>
+                                <span className="text-green-600">Paid: ₹{installment.paid_amount}</span>
+                                <span className="text-red-600">Due: ₹{installment.due_amount}</span>
+                                {installment.late_fee && installment.late_fee !== '0.00' && (
+                                  <span className="text-orange-600">Late Fee: ₹{installment.late_fee}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedInstallments.length > 0 && (
+                      <p className="mt-2 text-sm text-violet-600">
+                        {selectedInstallments.length} installment(s) selected
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Amount Paid */}
                 <div>

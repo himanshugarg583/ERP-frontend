@@ -407,7 +407,7 @@ const Sidebar = () => {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSidebar}
-          className="absolute -right-4 top-20 z-20 w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex items-center justify-center text-white"
+          className="absolute -right-4 top-20 z-20 w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex items-center justify-center text-white cursor-pointer"
         >
           <motion.div
             animate={{ rotate: isSidebarOpen ? 180 : 0 }}

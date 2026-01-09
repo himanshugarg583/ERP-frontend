@@ -6,7 +6,7 @@ import {
   deleteFeeStructure,
   getFeeStructureById,
   getAllFeeHeads,
-  getAllClassSections
+  getAllClassesDropdown
 } from "../../../helper/requests-method/apiMethods";
 import Modal from "../../../components/comman_components/Modal";
 import PageHeader from "../../../components/comman_components/PageHeader";
@@ -36,10 +36,7 @@ const FeeStructureManagement = () => {
     academic_end_year: "",
     due_date: "",
     late_fee_amount: "",
-    late_fee_type: "fixed",
-    installment_allowed: false,
-    max_installments: "",
-    status: "active",
+    late_fee_type: "flat",
     fee_details: []
   });
 
@@ -92,13 +89,11 @@ const FeeStructureManagement = () => {
 
   const fetchClassSections = async () => {
     try {
-      const response = await getAllClassSections();
+      const response = await getAllClassesDropdown();
       let sections = [];
       
-      if (response?.data?.classSections && Array.isArray(response.data.classSections)) {
-        sections = response.data.classSections;
-      } else if (Array.isArray(response?.classSections)) {
-        sections = response.classSections;
+      if (response?.data && Array.isArray(response.data)) {
+        sections = response.data;
       } else if (Array.isArray(response)) {
         sections = response;
       }
@@ -174,10 +169,19 @@ const FeeStructureManagement = () => {
     }
 
     const payload = {
-      ...form,
+      name: form.name,
       class_section_id: Number(form.class_section_id),
+      academic_start_year: Number(form.academic_start_year),
+      academic_end_year: Number(form.academic_end_year),
+      due_date: form.due_date,
       late_fee_amount: Number(form.late_fee_amount),
-      max_installments: form.installment_allowed ? Number(form.max_installments) : 0,
+      late_fee_type: form.late_fee_type,
+      fee_details: form.fee_details.map(detail => ({
+        fee_head_id: Number(detail.fee_head_id),
+        amount: Number(detail.amount),
+        is_mandatory: detail.is_mandatory,
+        sequence_order: Number(detail.sequence_order)
+      }))
     };
 
     try {
@@ -200,10 +204,7 @@ const FeeStructureManagement = () => {
         academic_end_year: "",
         due_date: "",
         late_fee_amount: "",
-        late_fee_type: "fixed",
-        installment_allowed: false,
-        max_installments: "",
-        status: "active",
+        late_fee_type: "flat",
         fee_details: []
       });
       setIsModalOpen(false);
@@ -227,14 +228,23 @@ const FeeStructureManagement = () => {
       
       // Handle different response structures
       let structureData = null;
+      let usageStats = null;
+      
       if (response?.data?.feeStructure) {
         structureData = response.data.feeStructure;
+        usageStats = response.data.usage_statistics;
       } else if (response?.feeStructure) {
         structureData = response.feeStructure;
+        usageStats = response.usage_statistics;
       } else if (response?.data) {
         structureData = response.data;
       } else {
         structureData = response;
+      }
+      
+      // Attach usage statistics to the structure data
+      if (usageStats) {
+        structureData.usage_statistics = usageStats;
       }
       
       setViewFeeStructure(structureData);
@@ -249,18 +259,25 @@ const FeeStructureManagement = () => {
 
   const handleEdit = (feeStructure) => {
     setCurrentFeeStructure(feeStructure);
+    
+    // Handle fee details - check both feeDetails and fee_details
+    const feeDetails = feeStructure.feeDetails || feeStructure.fee_details || [];
+    const mappedFeeDetails = feeDetails.map(detail => ({
+      fee_head_id: detail.fee_head_id || "",
+      amount: detail.amount || "",
+      is_mandatory: detail.is_mandatory !== undefined ? detail.is_mandatory : true,
+      sequence_order: detail.sequence_order || 1
+    }));
+    
     setForm({
       name: feeStructure.name || "",
       class_section_id: feeStructure.class_section_id || "",
       academic_start_year: feeStructure.academic_start_year || "",
       academic_end_year: feeStructure.academic_end_year || "",
-      due_date: feeStructure.due_date || "",
+      due_date: feeStructure.due_date ? feeStructure.due_date.split('T')[0] : "",
       late_fee_amount: feeStructure.late_fee_amount || "",
-      late_fee_type: feeStructure.late_fee_type || "fixed",
-      installment_allowed: feeStructure.installment_allowed || false,
-      max_installments: feeStructure.max_installments || "",
-      status: feeStructure.status || "active",
-      fee_details: feeStructure.fee_details || []
+      late_fee_type: feeStructure.late_fee_type || "flat",
+      fee_details: mappedFeeDetails
     });
     setEditMode(true);
     setIsModalOpen(true);
@@ -292,10 +309,7 @@ const FeeStructureManagement = () => {
       academic_end_year: "",
       due_date: "",
       late_fee_amount: "",
-      late_fee_type: "fixed",
-      installment_allowed: false,
-      max_installments: "",
-      status: "active",
+      late_fee_type: "flat",
       fee_details: []
     });
     setEditMode(false);
@@ -400,16 +414,19 @@ const FeeStructureManagement = () => {
                           Structure Name
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Class
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Academic Year
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Due Date
                         </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Installment
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Total Amount
                         </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Status
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Late Fee
                         </th>
                         <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Actions
@@ -426,26 +443,23 @@ const FeeStructureManagement = () => {
                             {fs.name || "-"}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
+                            {fs.classSection ? 
+                              `${fs.classSection.class_name} - ${fs.classSection.section_name}` : 
+                              "-"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
                             {fs.academic_start_year && fs.academic_end_year ? 
-                              `${new Date(fs.academic_start_year).getFullYear()} - ${new Date(fs.academic_end_year).getFullYear()}` : 
+                              `${fs.academic_start_year} - ${fs.academic_end_year}` : 
                               "-"}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
                             {fs.due_date ? new Date(fs.due_date).toLocaleDateString('en-IN') : "-"}
                           </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                              fs.installment_allowed ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {fs.installment_allowed ? `Yes (${fs.max_installments})` : 'No'}
-                            </span>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                            ₹{fs.total_amount || "0.00"}
                           </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                              fs.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {fs.status || 'Active'}
-                            </span>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            ₹{fs.late_fee_amount || "0.00"} ({fs.late_fee_type || "flat"})
                           </td>
                           <td className="px-6 py-4 text-sm text-center">
                             <div className="flex items-center justify-center gap-2">
@@ -540,22 +554,6 @@ const FeeStructureManagement = () => {
                         ))}
                       </select>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Status <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="status"
-                        value={form.status}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
 
@@ -568,11 +566,14 @@ const FeeStructureManagement = () => {
                         Start Year <span className="text-red-500">*</span>
                       </label>
                       <input
-                        type="date"
+                        type="number"
                         name="academic_start_year"
                         value={form.academic_start_year}
                         onChange={handleChange}
+                        placeholder="2025"
                         required
+                        min="2000"
+                        max="2100"
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                       />
                     </div>
@@ -582,11 +583,14 @@ const FeeStructureManagement = () => {
                         End Year <span className="text-red-500">*</span>
                       </label>
                       <input
-                        type="date"
+                        type="number"
                         name="academic_end_year"
                         value={form.academic_end_year}
                         onChange={handleChange}
+                        placeholder="2026"
                         required
+                        min="2000"
+                        max="2100"
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                       />
                     </div>
@@ -638,47 +642,11 @@ const FeeStructureManagement = () => {
                         required
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                       >
-                        <option value="fixed">Fixed</option>
+                        <option value="flat">Flat</option>
                         <option value="percentage">Percentage</option>
                       </select>
                     </div>
                   </div>
-                </div>
-
-                {/* Installment Configuration */}
-                <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Installment Configuration</h3>
-                  <div className="flex items-center gap-3 mb-4">
-                    <input
-                      type="checkbox"
-                      id="installment_allowed"
-                      name="installment_allowed"
-                      checked={form.installment_allowed}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
-                    />
-                    <label htmlFor="installment_allowed" className="text-sm font-medium text-gray-700">
-                      Allow Installments
-                    </label>
-                  </div>
-
-                  {form.installment_allowed && (
-                    <div className="max-w-xs">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Maximum Installments <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        name="max_installments"
-                        value={form.max_installments}
-                        onChange={handleChange}
-                        placeholder="3"
-                        required={form.installment_allowed}
-                        min="1"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* Fee Details */}
@@ -834,32 +802,30 @@ const FeeStructureManagement = () => {
             >
               {viewFeeStructure && (
                 <div className="space-y-6">
+                  {/* Structure Name and Class Section */}
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Structure Name</label>
                       <p className="text-base font-semibold text-gray-900">{viewFeeStructure.name || '-'}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
-                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                        viewFeeStructure.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {viewFeeStructure.status || 'Active'}
-                      </span>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Class & Section</label>
+                      <p className="text-base font-semibold text-gray-900">
+                        {viewFeeStructure.classSection ? 
+                          `${viewFeeStructure.classSection.class_name} - ${viewFeeStructure.classSection.section_name}` : 
+                          '-'}
+                      </p>
                     </div>
                   </div>
 
+                  {/* Academic Year, Due Date, Total Amount */}
                   <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Academic Start</label>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Academic Year</label>
                       <p className="text-sm text-gray-700">
-                        {viewFeeStructure.academic_start_year ? new Date(viewFeeStructure.academic_start_year).toLocaleDateString('en-IN') : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Academic End</label>
-                      <p className="text-sm text-gray-700">
-                        {viewFeeStructure.academic_end_year ? new Date(viewFeeStructure.academic_end_year).toLocaleDateString('en-IN') : '-'}
+                        {viewFeeStructure.academic_start_year && viewFeeStructure.academic_end_year ? 
+                          `${viewFeeStructure.academic_start_year} - ${viewFeeStructure.academic_end_year}` : 
+                          '-'}
                       </p>
                     </div>
                     <div>
@@ -868,45 +834,77 @@ const FeeStructureManagement = () => {
                         {viewFeeStructure.due_date ? new Date(viewFeeStructure.due_date).toLocaleDateString('en-IN') : '-'}
                       </p>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Total Amount</label>
+                      <p className="text-sm font-bold text-gray-900">
+                        ₹{viewFeeStructure.total_amount || '0.00'}
+                      </p>
+                    </div>
                   </div>
 
+                  {/* Late Fee Information */}
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Late Fee</label>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Late Fee Amount</label>
                       <p className="text-sm text-gray-700">
-                        ₹{viewFeeStructure.late_fee_amount || 0} ({viewFeeStructure.late_fee_type || 'fixed'})
+                        ₹{viewFeeStructure.late_fee_amount || '0.00'}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Installments</label>
-                      <p className="text-sm text-gray-700">
-                        {viewFeeStructure.installment_allowed ? `Yes (Max: ${viewFeeStructure.max_installments})` : 'No'}
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Late Fee Type</label>
+                      <p className="text-sm text-gray-700 capitalize">
+                        {viewFeeStructure.late_fee_type || 'flat'}
                       </p>
                     </div>
                   </div>
 
-                  {viewFeeStructure.fee_details && viewFeeStructure.fee_details.length > 0 && (
+                  {/* Fee Details */}
+                  {viewFeeStructure.feeDetails && viewFeeStructure.feeDetails.length > 0 && (
                     <div className="pt-4 border-t">
                       <label className="block text-sm font-medium text-gray-700 mb-3">Fee Details</label>
                       <div className="space-y-2">
-                        {viewFeeStructure.fee_details.map((detail, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        {viewFeeStructure.feeDetails.map((detail, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                             <div>
-                              <p className="font-medium text-gray-900">Fee Head #{detail.fee_head_id}</p>
-                              <p className="text-sm text-gray-500">Order: {detail.sequence_order}</p>
+                              <p className="font-medium text-gray-900">
+                                {detail.feeHead?.name || `Fee Head #${detail.fee_head_id}`}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Order: {detail.sequence_order} {detail.is_mandatory && ' • Mandatory'}
+                              </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold text-gray-900">₹{detail.amount}</p>
-                              {detail.is_mandatory && (
-                                <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">Mandatory</span>
-                              )}
+                              <p className="font-semibold text-lg text-gray-900">₹{detail.amount}</p>
                             </div>
                           </div>
                         ))}
                       </div>
+                      <div className="mt-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-indigo-900">Total Fee Structure Amount</p>
+                          <p className="font-bold text-xl text-indigo-900">₹{viewFeeStructure.total_amount || '0.00'}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
 
+                  {/* Timestamps */}
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Created At</label>
+                      <p className="text-xs text-gray-600">
+                        {viewFeeStructure.created_at ? new Date(viewFeeStructure.created_at).toLocaleString('en-IN') : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Last Updated</label>
+                      <p className="text-xs text-gray-600">
+                        {viewFeeStructure.updated_at ? new Date(viewFeeStructure.updated_at).toLocaleString('en-IN') : '-'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
                   <div className="flex gap-3 pt-4">
                     <button
                       onClick={() => {

@@ -3,6 +3,10 @@ export const generateStaffIdCard = async (user_id) => {
   return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARD, { user_id });
 };
 
+export const generateMultipleStaffIdCards = async (user_ids) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_SATFF_ID_CARDS, { user_ids });
+};
+
 export const getAccountantDashboardStats = async () => {
   return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_DASHBOARD_STATS);
 };

@@ -80,12 +80,16 @@ const StudentFeeReport = () => {
     try {
       const response = await getStudentsByClass(classId);
       
-      if (response?.data) {
-        setStudents(response.data.students || []);
-        setClassInfo(response.data.class_info || null);
-      } else if (response?.students) {
-        setStudents(response.students || []);
-        setClassInfo(response.class_info || null);
+      // Handle new API response structure
+      if (response?.data && Array.isArray(response.data)) {
+        setStudents(response.data);
+        // Set class info from the selected class section
+        const selectedClassSection = classSections.find(cs => cs.id === Number(classId));
+        setClassInfo(selectedClassSection || null);
+      } else if (Array.isArray(response)) {
+        setStudents(response);
+        const selectedClassSection = classSections.find(cs => cs.id === Number(classId));
+        setClassInfo(selectedClassSection || null);
       } else {
         setStudents([]);
         setClassInfo(null);
@@ -104,9 +108,10 @@ const StudentFeeReport = () => {
 
   const filteredStudents = students.filter((student) => {
     const searchLower = searchTerm.toLowerCase();
-    const name = student.User?.name?.toLowerCase() || "";
+    const name = student.name?.toLowerCase() || "";
     const rollNumber = student.roll_number?.toLowerCase() || "";
-    return name.includes(searchLower) || rollNumber.includes(searchLower);
+    const fatherName = student.father_name?.toLowerCase() || "";
+    return name.includes(searchLower) || rollNumber.includes(searchLower) || fatherName.includes(searchLower);
   });
 
   const handleViewReport = async (student) => {
@@ -289,9 +294,15 @@ const StudentFeeReport = () => {
                           Student Name
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student ID
+                          Father Name
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Gender
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Phone
+                        </th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -306,15 +317,21 @@ const StudentFeeReport = () => {
                             {student.roll_number || "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {student.User?.name || "N/A"}
+                            {student.name || "N/A"}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.User?.id || student.id}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {student.father_name || "N/A"}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
+                            {student.gender || "N/A"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {student.phone_no || "N/A"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                             <button
                               onClick={() => handleViewReport(student)}
-                              className="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800 font-medium transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 font-medium transition-colors cursor-pointer"
                             >
                               <Eye className="w-4 h-4" />
                               View Report
@@ -344,7 +361,7 @@ const StudentFeeReport = () => {
         isOpen={isModalOpen} 
         onClose={handleCloseModal}
         title="Student Fee Details"
-        subtitle={selectedStudent ? `${selectedStudent.User?.name} - Roll No: ${selectedStudent.roll_number || "N/A"}` : ""}
+        subtitle={selectedStudent ? `${selectedStudent.name} - Roll No: ${selectedStudent.roll_number || "N/A"}` : ""}
         size="xl"
       >
           <div className="space-y-6">

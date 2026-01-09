@@ -20,10 +20,7 @@ const FeeAssignment = () => {
   const [form, setForm] = useState({
     class_section_id: "",
     fee_structure_id: "",
-    academic_year: "",
     discount_amount: "",
-    discount_reason: "",
-    due_date: "",
     installments: [],
   });
 
@@ -126,11 +123,11 @@ const FeeAssignment = () => {
     const payload = {
       class_section_id: Number(form.class_section_id),
       fee_structure_id: Number(form.fee_structure_id),
-      academic_year: form.academic_year,
       discount_amount: Number(form.discount_amount) || 0,
-      discount_reason: form.discount_reason || "",
-      due_date: form.due_date,
-      installments: form.installments,
+      installments: form.installments.map(inst => ({
+        amount: Number(inst.amount),
+        due_date: inst.due_date
+      }))
     };
 
     try {
@@ -141,10 +138,7 @@ const FeeAssignment = () => {
       setForm({
         class_section_id: "",
         fee_structure_id: "",
-        academic_year: "",
         discount_amount: "",
-        discount_reason: "",
-        due_date: "",
         installments: [],
       });
     } catch (err) {
@@ -242,70 +236,25 @@ const FeeAssignment = () => {
                         ))}
                       </select>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Academic Year <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="academic_year"
-                        value={form.academic_year}
-                        onChange={handleChange}
-                        placeholder="e.g., 2024-2025"
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Due Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        name="due_date"
-                        value={form.due_date}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
                   </div>
                 </div>
 
                 {/* Discount Information */}
                 <div className="border-b border-gray-200 pb-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Discount (Optional)</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Discount Amount
-                      </label>
-                      <input
-                        type="number"
-                        name="discount_amount"
-                        value={form.discount_amount}
-                        onChange={handleChange}
-                        placeholder="500"
-                        min="0"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Discount Reason
-                      </label>
-                      <input
-                        type="text"
-                        name="discount_reason"
-                        value={form.discount_reason}
-                        onChange={handleChange}
-                        placeholder="e.g., Class scholarship"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
+                  <div className="max-w-md">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discount Amount
+                    </label>
+                    <input
+                      type="number"
+                      name="discount_amount"
+                      value={form.discount_amount}
+                      onChange={handleChange}
+                      placeholder="500"
+                      min="0"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
                   </div>
                 </div>
 
