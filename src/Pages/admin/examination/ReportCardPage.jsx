@@ -224,14 +224,12 @@ const ReportCardPage = () => {
             subject.subject_code,
             subject.exam_date || '-',
             subject.max_marks.toString(),
-            subject.marks_obtained !== null ? subject.marks_obtained.toString() : '-',
-            subject.grade || '-',
-            subject.remarks || '-'
+            subject.marks_obtained !== null ? subject.marks_obtained.toString() : '-'
           ]);
 
           doc.autoTable({
             startY: yPosition,
-            head: [['S.No', 'Subject Name', 'Code', 'Exam Date', 'Max Marks', 'Obtained', 'Grade', 'Remarks']],
+            head: [['S.No', 'Subject Name', 'Code', 'Exam Date', 'Max Marks', 'Marks Obtained']],
             body: tableData,
             theme: 'grid',
             headStyles: { 
@@ -246,14 +244,12 @@ const ReportCardPage = () => {
               cellPadding: 3
             },
             columnStyles: {
-              0: { halign: 'center', cellWidth: 12 },
-              1: { cellWidth: 45 },
-              2: { halign: 'center', cellWidth: 20 },
-              3: { halign: 'center', cellWidth: 25 },
-              4: { halign: 'center', cellWidth: 20 },
-              5: { halign: 'center', cellWidth: 20, fontStyle: 'bold' },
-              6: { halign: 'center', cellWidth: 15, fontStyle: 'bold' },
-              7: { cellWidth: 33 }
+              0: { halign: 'center', cellWidth: 15 },
+              1: { cellWidth: 60 },
+              2: { halign: 'center', cellWidth: 25 },
+              3: { halign: 'center', cellWidth: 30 },
+              4: { halign: 'center', cellWidth: 25 },
+              5: { halign: 'center', cellWidth: 30, fontStyle: 'bold' }
             },
             margin: { left: 15, right: 15 },
             alternateRowStyles: {
@@ -507,9 +503,7 @@ const ReportCardPage = () => {
                             <tr>
                               <th className="py-2 px-2 text-left">Subject</th>
                               <th className="py-2 px-2 text-center">Max Marks</th>
-                              <th className="py-2 px-2 text-center">Obtained</th>
-                              <th className="py-2 px-2 text-center">Grade</th>
-                              <th className="py-2 px-2 text-left">Remarks</th>
+                              <th className="py-2 px-2 text-center">Marks Obtained</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -520,14 +514,6 @@ const ReportCardPage = () => {
                                 <td className="py-2 px-2 text-center font-bold text-blue-700">
                                   {subject.marks_obtained !== null ? subject.marks_obtained : '-'}
                                 </td>
-                                <td className="py-2 px-2 text-center">
-                                  {subject.grade ? (
-                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">
-                                      {subject.grade}
-                                    </span>
-                                  ) : '-'}
-                                </td>
-                                <td className="py-2 px-2 text-xs">{subject.remarks || '-'}</td>
                               </tr>
                             ))}
                           </tbody>

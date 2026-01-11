@@ -22,6 +22,11 @@ export const getAccountantIncomeExpenseChart = async () => {
 export const getAccountantRecentPayments = async (limit = 10) => {
   return authorizedGet(API_ENDPOINTS.GET_ACCOUNTANT_RECENT_PAYMENTS(limit));
 };
+
+export const getOverdueInstallments = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_OVERDUE_INSTALLMENTS);
+};
+
 import axios from 'axios';
 
 const API_BASE_URL = 'https://xd363v4j-5000.inc1.devtunnels.ms'; // Backend base URL
@@ -44,6 +49,10 @@ export const API_ENDPOINTS = {
     ASSIGN_FEE_TO_STUDENTS: '/admin/fees_collection/assignFeeToStudents',
     ASSIGN_FEE_WITH_INSTALLMENTS: '/admin/studentFee/assignFeeWithInstallments',
     GET_ALL_FEE_ASSIGNMENTS: '/admin/fees_collection/getAllFeeAssignments',
+    GET_CLASS_FEE_ASSIGNMENT: '/admin/studentFee/getClassFeeAssignment',
+    EDIT_CLASS_FEE_ASSIGNMENT: '/admin/studentFee/editClassFeeAssignment',
+    VIEW_CLASS_FEE_ASSIGNMENT_STUDENTS: '/admin/studentFee/viewClassFeeAssignmentStudents',
+    DELETE_CLASS_FEE_ASSIGNMENT: '/admin/studentFee/deleteClassFeeAssignment',
     GET_STUDENTS_BY_CLASS_SECTION: (classId, sectionId) => `/admin/fees_collection/getStudentsByClassSection?class_id=${classId}&section_id=${sectionId}`,
     GET_STUDENT_FEE_REPORT: (studentId) => `/admin/fees_collection/getStudentFeeReport/${studentId}`,
     GET_STUDENTS_FEE_SUMMARY: (classId, sectionId) => `/admin/fees_collection/getStudentsFeeSummary?class_id=${classId}&section_id=${sectionId}`,
@@ -63,6 +72,9 @@ export const API_ENDPOINTS = {
     GET_ACCOUNTANT_MONTHLY_COLLECTION: '/api/accountant/dashboard/monthly-collection',
     GET_ACCOUNTANT_INCOME_EXPENSE_CHART: '/api/accountant/dashboard/income-expense-chart',
     GET_ACCOUNTANT_RECENT_PAYMENTS: (limit) => `/api/accountant/dashboard/recent-payments?limit=${limit}`,
+    
+    // Admin Dashboard endpoints
+    GET_OVERDUE_INSTALLMENTS: '/admin/studentFeeInstallment/overdue',
     
   LOGIN: '/api/auth/login',
   SIGNUP: '/api/auth/signup',
@@ -233,7 +245,7 @@ export const API_ENDPOINTS = {
   DELETE_EXAM: (id) => `/admin/exam/deleteExam/${id}`,
 
   // Exam Marks endpoints
-  REGISTER_STUDENT_MARKS: '/admin/exam-marks/registerStudent',
+  REGISTER_STUDENT_MARKS: '/admin/examMark/registerStudent',
   GET_COMPLETE_MARKSHEET: (examId, classSectionId) => `/admin/examMark/getCompleteMarksheet?exam_id=${examId}&class_section_id=${classSectionId}`,
   GET_STUDENTS_BY_SUBJECT: (examId, classSectionId, subjectId) => `/admin/examMark/getStudentsBySubject?exam_id=${examId}&class_section_id=${classSectionId}&subject_id=${subjectId}`,
   UPDATE_SUBJECT_MARKS: '/admin/examMark/updateSubject',
@@ -293,6 +305,10 @@ export const API_ENDPOINTS = {
   GET_STUDENT_INSTALLMENTS: '/student/fees/getInstallments',
   // get student payment history
   GET_STUDENT_PAYMENT_HISTORY: '/student/fees/getPaymentHistory',
+  // create payment order for installment
+  CREATE_PAYMENT_ORDER: '/student/fees/createPaymentOrder',
+  // verify payment
+  VERIFY_PAYMENT: '/student/fees/verifyPayment',
   // get student profile and change password
   GET_STUDENT_PROFILE: '/student/setting/getProfile',
   CHANGE_STUDENT_PASSWORD: '/student/setting/changePassword',
@@ -1110,6 +1126,16 @@ export const getStudentPaymentHistory = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_PAYMENT_HISTORY);
 };
 
+// Create payment order for installment
+export const createPaymentOrder = async (installmentId) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_PAYMENT_ORDER, { installment_id: installmentId });
+};
+
+// Verify payment
+export const verifyPayment = async (paymentData) => {
+  return authorizedPost(API_ENDPOINTS.VERIFY_PAYMENT, paymentData);
+};
+
 // Student Leave API functions
 export const getStudentLeaves = async () => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_LEAVES);
@@ -1347,6 +1373,26 @@ export const assignFeeWithInstallments = async (assignmentData) => {
 // Get All Fee Assignments
 export const getAllFeeAssignments = async () => {
   return authorizedGet(API_ENDPOINTS.GET_ALL_FEE_ASSIGNMENTS);
+};
+
+// Get Class Fee Assignment
+export const getClassFeeAssignment = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_CLASS_FEE_ASSIGNMENT);
+};
+
+// Edit Class Fee Assignment
+export const editClassFeeAssignment = async (assignmentData) => {
+  return authorizedPut(API_ENDPOINTS.EDIT_CLASS_FEE_ASSIGNMENT, assignmentData);
+};
+
+// View Class Fee Assignment Students
+export const viewClassFeeAssignmentStudents = async (classSectionId, feeStructureId) => {
+  return authorizedGet(`${API_ENDPOINTS.VIEW_CLASS_FEE_ASSIGNMENT_STUDENTS}?class_section_id=${classSectionId}&fee_structure_id=${feeStructureId}`);
+};
+
+// Delete Class Fee Assignment
+export const deleteClassFeeAssignment = async (classSectionId, feeStructureId) => {
+  return authorizedDelete(`${API_ENDPOINTS.DELETE_CLASS_FEE_ASSIGNMENT}?class_section_id=${classSectionId}&fee_structure_id=${feeStructureId}`);
 };
 
 // Get Students by Class and Section

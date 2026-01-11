@@ -7,10 +7,7 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
   const [showAddForm, setShowAddForm] = useState(true);
   const [formData, setFormData] = useState({
     term_name: '',
-    academic_year: '',
-    start_date: '',
-    end_date: '',
-    status: 'active'
+    academic_year: ''
   });
   
   const [errors, setErrors] = useState({});
@@ -26,24 +23,6 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
     
     if (!formData.academic_year.trim()) {
       newErrors.academic_year = 'Academic year is required';
-    }
-    
-    if (!formData.start_date) {
-      newErrors.start_date = 'Start date is required';
-    }
-    
-    if (!formData.end_date) {
-      newErrors.end_date = 'End date is required';
-    }
-    
-    if (formData.start_date && formData.end_date) {
-      if (new Date(formData.start_date) > new Date(formData.end_date)) {
-        newErrors.end_date = 'End date must be after start date';
-      }
-    }
-    
-    if (!formData.status) {
-      newErrors.status = 'Status is required';
     }
     
     setErrors(newErrors);
@@ -82,10 +61,7 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
       // Create API payload
       const payload = {
         term_name: formData.term_name.trim(),
-        academic_year: formData.academic_year.trim(),
-        start_date: formData.start_date || null,
-        end_date: formData.end_date || null,
-        status: formData.status
+        academic_year: formData.academic_year.trim()
       };
       
       console.log("API Payload:", payload);
@@ -97,10 +73,7 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
         // Reset form
         setFormData({
           term_name: '',
-          academic_year: '',
-          start_date: '',
-          end_date: '',
-          status: 'active'
+          academic_year: ''
         });
         
         // Call parent callback to refresh terms list and close modal
@@ -194,63 +167,6 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
               />
               {errors.academic_year && <p className="mt-1 text-sm text-red-600">{errors.academic_year}</p>}
             </div>
-
-            {/* Start Date */}
-            <div>
-              <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                id="start_date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  errors.start_date ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.start_date && <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>}
-            </div>
-
-            {/* End Date */}
-            <div>
-              <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-2">
-                End Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                id="end_date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  errors.end_date ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.end_date && <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>}
-            </div>
-
-            {/* Status */}
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                Status <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  errors.status ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="completed">Completed</option>
-              </select>
-              {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
-            </div>
           </div>
 
           {/* Form Actions */}
@@ -294,7 +210,7 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
       
       {showAddForm && (
         <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Term Name */}
             <div>
               <label htmlFor="term_name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -331,63 +247,6 @@ const ExamTermForm = ({ onTermAdded, inModal = false, onCancel }) => {
                 placeholder="e.g. 2024-2025"
               />
               {errors.academic_year && <p className="mt-1 text-sm text-red-600">{errors.academic_year}</p>}
-            </div>
-
-            {/* Start Date */}
-            <div>
-              <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                id="start_date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  errors.start_date ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.start_date && <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>}
-            </div>
-
-            {/* End Date */}
-            <div>
-              <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-2">
-                End Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                id="end_date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  errors.end_date ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.end_date && <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>}
-            </div>
-
-            {/* Status */}
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                Status <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600 ${
-                  errors.status ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="completed">Completed</option>
-              </select>
-              {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
             </div>
           </div>
 

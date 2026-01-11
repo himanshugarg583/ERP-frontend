@@ -99,9 +99,7 @@ const MarkRegister = () => {
         const initialMarks = subjectsArray.map(subject => ({
           subject_id: subject.subject_id || subject.id,
           subject_name: subject.subject_name || subject.name,
-          marks_obtained: 0,
-          grade: '',
-          remarks: ''
+          marks_obtained: ''
         }));
         setMarksData(initialMarks);
       }
@@ -166,9 +164,7 @@ const MarkRegister = () => {
         student_id: selectedStudent.id,
         subjects: marksData.map(mark => ({
           subject_id: mark.subject_id,
-          marks_obtained: parseInt(mark.marks_obtained) || 0,
-          grade: mark.grade,
-          remarks: mark.remarks
+          marks_obtained: parseFloat(mark.marks_obtained) || 0
         }))
       };
 
@@ -367,49 +363,27 @@ const MarkRegister = () => {
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">Subject-wise Marks</h3>
                         <div className="space-y-4 max-h-96 overflow-y-auto">
                           {marksData.map((mark, index) => (
-                            <div key={mark.subject_id} className="bg-white p-4 rounded-lg shadow-sm">
-                              <h4 className="font-medium text-gray-800 mb-3">
-                                {mark.subject_name}
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Marks Obtained
-                                  </label>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={mark.marks_obtained}
-                                    onChange={(e) => handleMarkChange(index, 'marks_obtained', e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Grade
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={mark.grade}
-                                    onChange={(e) => handleMarkChange(index, 'grade', e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"
-                                    placeholder="e.g., A, B+"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Remarks
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={mark.remarks}
-                                    onChange={(e) => handleMarkChange(index, 'remarks', e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"
-                                    placeholder="Optional remarks"
-                                  />
-                                </div>
+                            <div key={mark.subject_id} className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-800">
+                                  {mark.subject_name}
+                                </h4>
+                              </div>
+                              <div className="w-48">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Marks Obtained
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.5"
+                                  value={mark.marks_obtained}
+                                  onChange={(e) => handleMarkChange(index, 'marks_obtained', e.target.value)}
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"
+                                  placeholder="Enter marks"
+                                  required
+                                />
                               </div>
                             </div>
                           ))}

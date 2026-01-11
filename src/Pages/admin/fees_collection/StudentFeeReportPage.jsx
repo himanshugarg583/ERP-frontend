@@ -498,7 +498,14 @@ const StudentFeeReport = () => {
                                     <p className="text-gray-500">Due Date</p>
                                     <p className="font-medium text-gray-900 flex items-center gap-1">
                                       <Calendar className="w-3 h-3" />
-                                      {new Date(feeStructure.due_date).toLocaleDateString()}
+                                      {feeStructure.fee_structure?.due_date 
+                                        ? new Date(feeStructure.fee_structure.due_date).toLocaleDateString('en-IN', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                          })
+                                        : 'N/A'
+                                      }
                                     </p>
                                   </div>
                                 </div>
@@ -532,13 +539,27 @@ const StudentFeeReport = () => {
                                             <td className="px-3 py-2 text-gray-900">{installment.installment_number}</td>
                                             <td className="px-3 py-2 text-gray-900">₹{formatCurrency(installment.amount)}</td>
                                             <td className="px-3 py-2 text-gray-700">
-                                              {new Date(installment.due_date).toLocaleDateString()}
+                                              {installment.due_date 
+                                                ? new Date(installment.due_date).toLocaleDateString('en-IN', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric'
+                                                  })
+                                                : 'N/A'
+                                              }
                                             </td>
                                             <td className="px-3 py-2 font-medium text-green-600">
                                               ₹{formatCurrency(installment.paid_amount)}
                                             </td>
                                             <td className="px-3 py-2 text-gray-700">
-                                              {installment.payment_date ? new Date(installment.payment_date).toLocaleDateString() : "-"}
+                                              {installment.payment_date 
+                                                ? new Date(installment.payment_date).toLocaleDateString('en-IN', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric'
+                                                  })
+                                                : '-'
+                                              }
                                             </td>
                                             <td className="px-3 py-2 text-red-600">
                                               {installment.late_fee_applied > 0 ? `₹${formatCurrency(installment.late_fee_applied)}` : "-"}

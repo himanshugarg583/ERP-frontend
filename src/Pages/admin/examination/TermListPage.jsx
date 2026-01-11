@@ -41,10 +41,7 @@ const TermListPage = () => {
       const normalizedTerms = payload.map((term) => ({
         id: term.id,
         term_name: term.term_name || '',
-        academic_year: term.academic_year || '',
-        start_date: term.start_date || null,
-        end_date: term.end_date || null,
-        status: term.status || 'active'
+        academic_year: term.academic_year || ''
       }));
 
       setTerms(normalizedTerms);
@@ -86,52 +83,6 @@ const TermListPage = () => {
         type: 'text',
         required: true,
         placeholder: 'e.g. 2024-2025'
-      },
-      {
-        key: 'start_date',
-        header: 'Start Date',
-        type: 'date',
-        required: true,
-        render: (value) => {
-          if (!value) return 'N/A';
-          const date = new Date(value);
-          return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-      },
-      {
-        key: 'end_date',
-        header: 'End Date',
-        type: 'date',
-        required: true,
-        render: (value) => {
-          if (!value) return 'N/A';
-          const date = new Date(value);
-          return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-      },
-      {
-        key: 'status',
-        header: 'Status',
-        type: 'select',
-        required: true,
-        options: [
-          { value: 'active', label: 'Active' },
-          { value: 'inactive', label: 'Inactive' },
-          { value: 'completed', label: 'Completed' }
-        ],
-        render: (value) => {
-          const statusColors = {
-            active: 'bg-green-100 text-green-800',
-            inactive: 'bg-gray-100 text-gray-800',
-            completed: 'bg-blue-100 text-blue-800'
-          };
-          const colorClass = statusColors[value] || 'bg-gray-100 text-gray-800';
-          return (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-              {value ? value.charAt(0).toUpperCase() + value.slice(1) : 'N/A'}
-            </span>
-          );
-        }
       }
     ],
     []
@@ -142,19 +93,8 @@ const TermListPage = () => {
     async (id, data) => {
       const payload = {
         term_name: data.term_name?.trim(),
-        academic_year: data.academic_year?.trim(),
-        start_date: data.start_date,
-        end_date: data.end_date,
-        status: data.status
+        academic_year: data.academic_year?.trim()
       };
-
-      // Validate dates
-      if (payload.start_date && payload.end_date) {
-        if (new Date(payload.start_date) > new Date(payload.end_date)) {
-          toast.error('End date must be after start date');
-          return { success: false, message: 'End date must be after start date' };
-        }
-      }
 
       try {
         const response = await updateExamTerm(id, payload);
@@ -310,8 +250,6 @@ const TermListPage = () => {
             </p>
             <div className="bg-gray-50 p-3 rounded-md mb-4">
               <p className="text-sm text-gray-600"><strong>Academic Year:</strong> {termToDelete.academic_year}</p>
-              <p className="text-sm text-gray-600"><strong>Start Date:</strong> {termToDelete.start_date ? new Date(termToDelete.start_date).toLocaleDateString('en-GB') : 'N/A'}</p>
-              <p className="text-sm text-gray-600"><strong>End Date:</strong> {termToDelete.end_date ? new Date(termToDelete.end_date).toLocaleDateString('en-GB') : 'N/A'}</p>
             </div>
             <p className="text-red-600 text-sm mb-4">This action cannot be undone.</p>
             <div className="flex justify-end gap-3">
@@ -359,38 +297,6 @@ const TermListPage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{termToView.academic_year || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {termToView.start_date ? new Date(termToView.start_date).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  }) : 'N/A'}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {termToView.end_date ? new Date(termToView.end_date).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  }) : 'N/A'}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    termToView.status === 'active' ? 'bg-green-100 text-green-800' :
-                    termToView.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {termToView.status ? termToView.status.charAt(0).toUpperCase() + termToView.status.slice(1) : 'N/A'}
-                  </span>
-                </p>
               </div>
             </div>
             <div className="mt-6 flex justify-end">

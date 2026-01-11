@@ -325,10 +325,8 @@ const StudentWiseList = () => {
                                       <th className="py-2 px-2 text-left">Code</th>
                                       <th className="py-2 px-2 text-left">Date</th>
                                       <th className="py-2 px-2 text-center">Time</th>
-                                      <th className="py-2 px-2 text-center">Max</th>
-                                      <th className="py-2 px-2 text-center">Obtained</th>
-                                      <th className="py-2 px-2 text-center">Grade</th>
-                                      <th className="py-2 px-2 text-left">Remarks</th>
+                                      <th className="py-2 px-2 text-center">Max Marks</th>
+                                      <th className="py-2 px-2 text-center">Marks Obtained</th>
                                       <th className="py-2 px-2 text-center">Status</th>
                                     </tr>
                                   </thead>
@@ -344,16 +342,6 @@ const StudentWiseList = () => {
                                         <td className="py-2 px-2 text-center font-semibold">{subject.max_marks}</td>
                                         <td className="py-2 px-2 text-center font-bold text-blue-700">
                                           {subject.marks_obtained !== null ? subject.marks_obtained : '-'}
-                                        </td>
-                                        <td className="py-2 px-2 text-center">
-                                          {subject.grade ? (
-                                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">
-                                              {subject.grade}
-                                            </span>
-                                          ) : '-'}
-                                        </td>
-                                        <td className="py-2 px-2 text-xs text-gray-600">
-                                          {subject.remarks || '-'}
                                         </td>
                                         <td className="py-2 px-2 text-center">
                                           <span className={`px-2 py-1 rounded text-xs font-semibold ${

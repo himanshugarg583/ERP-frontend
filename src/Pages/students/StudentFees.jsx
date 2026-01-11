@@ -4,7 +4,7 @@ import StudentSidebar from './StudentSidebar';
 import Header from '../../components/comman_components/Header';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getStudentFeesDetails, getStudentInstallments, getStudentPaymentHistory } from '../../helper/requests-method/apiMethods';
+import { getStudentFeesDetails, getStudentInstallments, getStudentPaymentHistory, createPaymentOrder, verifyPayment } from '../../helper/requests-method/apiMethods';
 
 const StudentFees = () => {
   const [feesData, setFeesData] = useState(null);
@@ -12,6 +12,8 @@ const StudentFees = () => {
   const [paymentHistory, setPaymentHistory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'installments', or 'history'
+  const [selectedInstallments, setSelectedInstallments] = useState([]);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
     fetchFeesData();
@@ -89,15 +91,164 @@ const StudentFees = () => {
     return <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">{status}</span>;
   };
 
+  const handleInstallmentSelection = (installmentId, installment) => {
+    setSelectedInstallments(prev => {
+      const isSelected = prev.some(item => item.installment_id === installmentId);
+      if (isSelected) {
+        return prev.filter(item => item.installment_id !== installmentId);
+      } else {
+        // Only allow pending installments
+        if (installment.status?.toLowerCase() !== 'paid') {
+          return [...prev, installment];
+        }
+        return prev;
+      }
+    });
+  };
+
+  const handleSelectAllInFee = (installments) => {
+    const pendingInstallments = installments.filter(inst => inst.status?.toLowerCase() !== 'paid');
+    const allSelected = pendingInstallments.every(inst => 
+      selectedInstallments.some(selected => selected.installment_id === inst.installment_id)
+    );
+
+    if (allSelected) {
+      // Deselect all from this fee
+      setSelectedInstallments(prev => 
+        prev.filter(selected => 
+          !pendingInstallments.some(inst => inst.installment_id === selected.installment_id)
+        )
+      );
+    } else {
+      // Select all pending from this fee
+      setSelectedInstallments(prev => {
+        const newSelections = pendingInstallments.filter(inst => 
+          !prev.some(selected => selected.installment_id === inst.installment_id)
+        );
+        return [...prev, ...newSelections];
+      });
+    }
+  };
+
+  const calculateSelectedTotal = () => {
+    return selectedInstallments.reduce((total, inst) => {
+      return total + parseFloat(inst.remaining_amount || 0) + parseFloat(inst.calculated_late_fee || 0);
+    }, 0);
+  };
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePaySelected = async () => {
+    if (selectedInstallments.length === 0) {
+      toast.warning('Please select at least one installment to pay');
+      return;
+    }
+
+    if (selectedInstallments.length > 1) {
+      toast.warning('Please select only one installment at a time for payment');
+      return;
+    }
+
+    setPaymentLoading(true);
+    try {
+      // Load Razorpay script
+      const res = await loadRazorpayScript();
+      if (!res) {
+        toast.error('Razorpay SDK failed to load. Please check your internet connection.');
+        setPaymentLoading(false);
+        return;
+      }
+
+      const installmentId = selectedInstallments[0].installment_id;
+      const totalAmount = calculateSelectedTotal();
+
+      // Create payment order
+      const orderResponse = await createPaymentOrder(installmentId);
+      
+      if (!orderResponse.success || !orderResponse.data) {
+        toast.error(orderResponse.message || 'Failed to create payment order');
+        setPaymentLoading(false);
+        return;
+      }
+
+      const { order_id, amount, currency, key_id } = orderResponse.data;
+
+      // Razorpay payment options
+      const options = {
+        key: key_id || 'rzp_test_YOUR_KEY_ID', // Razorpay Key ID from backend
+        amount: amount, // Amount in paise
+        currency: currency || 'INR',
+        name: 'School ERP',
+        description: `Payment for Installment #${selectedInstallments[0].installment_number}`,
+        order_id: order_id,
+        handler: async function (response) {
+          try {
+            // Verify payment
+            const verifyData = {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              installment_id: installmentId
+            };
+
+            const verifyResponse = await verifyPayment(verifyData);
+
+            if (verifyResponse.success) {
+              toast.success(verifyResponse.message || 'Payment successful!');
+              // Refresh data
+              await fetchInstallmentsData();
+              await fetchPaymentHistory();
+              setSelectedInstallments([]);
+            } else {
+              toast.error(verifyResponse.message || 'Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            toast.error(error.response?.data?.message || 'Payment verification failed');
+          } finally {
+            setPaymentLoading(false);
+          }
+        },
+        prefill: {
+          name: feesData?.student_name || '',
+          email: feesData?.student_email || '',
+          contact: feesData?.student_phone || ''
+        },
+        theme: {
+          color: '#6366F1'
+        },
+        modal: {
+          ondismiss: function() {
+            setPaymentLoading(false);
+            toast.info('Payment cancelled');
+          }
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+      
+    } catch (error) {
+      console.error('Payment failed:', error);
+      toast.error(error.response?.data?.message || 'Payment failed');
+      setPaymentLoading(false);
+    }
+  };
+
   // Calculate totals
   const calculateTotals = () => {
     if (!feesData || !feesData.fees) return { totalAmount: 0, paidAmount: 0, dueAmount: 0 };
     
     const totals = feesData.fees.reduce((acc, fee) => {
-      const details = fee.fee_details;
-      acc.totalAmount += parseFloat(details.original_amount || 0);
-      acc.paidAmount += parseFloat(details.paid_amount || 0);
-      acc.dueAmount += parseFloat(details.due_amount || 0);
+      acc.totalAmount += parseFloat(fee.final_amount || 0);
       return acc;
     }, { totalAmount: 0, paidAmount: 0, dueAmount: 0 });
 
@@ -143,8 +294,8 @@ const StudentFees = () => {
                   <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">Total Fee</p>
-                        <p className="text-2xl font-bold text-indigo-600">{formatCurrency(totals.totalAmount)}</p>
+                        <p className="text-sm text-gray-600 mb-1">Total Fee Assigned</p>
+                        <p className="text-2xl font-bold text-indigo-600">{formatCurrency(feesData?.total_fees_assigned || 0)}</p>
                       </div>
                       <FaMoneyBillWave className="text-3xl text-indigo-200" />
                     </div>
@@ -153,8 +304,8 @@ const StudentFees = () => {
                   <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">Paid Amount</p>
-                        <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.paidAmount)}</p>
+                        <p className="text-sm text-gray-600 mb-1">Total Fee Records</p>
+                        <p className="text-2xl font-bold text-green-600">{feesData?.total_fee_records || 0}</p>
                       </div>
                       <FaCheckCircle className="text-3xl text-green-200" />
                     </div>
@@ -163,8 +314,8 @@ const StudentFees = () => {
                   <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">Due Amount</p>
-                        <p className="text-2xl font-bold text-yellow-600">{formatCurrency(totals.dueAmount)}</p>
+                        <p className="text-sm text-gray-600 mb-1">Student ID</p>
+                        <p className="text-2xl font-bold text-yellow-600">{feesData?.student_id || '-'}</p>
                       </div>
                       <FaClock className="text-3xl text-yellow-200" />
                     </div>
@@ -173,8 +324,8 @@ const StudentFees = () => {
                   <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">Total Fees</p>
-                        <p className="text-2xl font-bold text-purple-600">{feesData?.total_fees || 0}</p>
+                        <p className="text-sm text-gray-600 mb-1">User ID</p>
+                        <p className="text-2xl font-bold text-purple-600">{feesData?.user_id || '-'}</p>
                       </div>
                       <FaInfoCircle className="text-3xl text-purple-200" />
                     </div>
@@ -187,7 +338,7 @@ const StudentFees = () => {
                     <nav className="flex -mb-px">
                       <button
                         onClick={() => setActiveTab('overview')}
-                        className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                        className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
                           activeTab === 'overview'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -197,7 +348,7 @@ const StudentFees = () => {
                       </button>
                       <button
                         onClick={() => setActiveTab('installments')}
-                        className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                        className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
                           activeTab === 'installments'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -207,7 +358,7 @@ const StudentFees = () => {
                       </button>
                       <button
                         onClick={() => setActiveTab('history')}
-                        className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                        className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
                           activeTab === 'history'
                             ? 'border-indigo-600 text-indigo-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -223,86 +374,64 @@ const StudentFees = () => {
                       <div className="space-y-6">
                         {feesData && feesData.fees && feesData.fees.length > 0 ? (
                           feesData.fees.map((fee, index) => (
-                            <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                            <div key={fee.id || index} className="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:shadow-md transition-shadow">
                               <div className="flex justify-between items-start mb-4">
                                 <div>
                                   <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                    {fee.fee_structure?.name || 'Fee Structure'}
+                                    {fee.fee_structure_name || 'Fee Structure'}
                                   </h3>
                                   <p className="text-sm text-gray-600">
-                                    Academic Year: <span className="font-medium">{fee.fee_details?.academic_year || 'N/A'}</span>
+                                    Academic Year: <span className="font-medium text-indigo-600">{fee.academic_year || 'N/A'}</span>
                                   </p>
                                 </div>
-                                {getStatusBadge(fee.fee_details?.status)}
+                                <div className="text-right">
+                                  <p className="text-xs text-gray-500 mb-1">Fee Record ID</p>
+                                  <p className="text-lg font-bold text-gray-700">#{fee.id}</p>
+                                </div>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                                <div className="bg-white p-4 rounded-lg">
-                                  <p className="text-xs text-gray-500 mb-1">Original Amount</p>
-                                  <p className="text-lg font-semibold text-gray-800">{formatCurrency(fee.fee_details?.original_amount)}</p>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                    <FaMoneyBillWave className="text-blue-500" />
+                                    Original Amount
+                                  </p>
+                                  <p className="text-xl font-semibold text-blue-600">{formatCurrency(fee.original_amount)}</p>
                                 </div>
-                                <div className="bg-white p-4 rounded-lg">
-                                  <p className="text-xs text-gray-500 mb-1">Discount</p>
-                                  <p className="text-lg font-semibold text-green-600">-{formatCurrency(fee.fee_details?.discount_amount)}</p>
-                                  {fee.fee_details?.discount_reason && (
-                                    <p className="text-xs text-gray-500 mt-1">{fee.fee_details.discount_reason}</p>
+                                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                    <FaInfoCircle className="text-green-500" />
+                                    Discount Applied
+                                  </p>
+                                  <p className="text-xl font-semibold text-green-600">
+                                    {fee.discount_amount > 0 ? `-${formatCurrency(fee.discount_amount)}` : formatCurrency(0)}
+                                  </p>
+                                  {fee.discount_reason && (
+                                    <p className="text-xs text-gray-500 mt-1 italic">{fee.discount_reason}</p>
                                   )}
                                 </div>
-                                <div className="bg-white p-4 rounded-lg">
-                                  <p className="text-xs text-gray-500 mb-1">Final Amount</p>
-                                  <p className="text-lg font-semibold text-indigo-600">{formatCurrency(fee.fee_details?.final_amount)}</p>
-                                </div>
-                                <div className="bg-white p-4 rounded-lg">
-                                  <p className="text-xs text-gray-500 mb-1">Due Date</p>
-                                  <p className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                    <FaCalendarAlt className="text-indigo-500" />
-                                    {formatDate(fee.fee_details?.due_date)}
+                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-lg shadow-sm border border-indigo-200">
+                                  <p className="text-xs text-indigo-600 mb-1 flex items-center gap-1 font-medium">
+                                    <FaCheckCircle className="text-indigo-500" />
+                                    Final Amount
                                   </p>
+                                  <p className="text-2xl font-bold text-indigo-700">{formatCurrency(fee.final_amount)}</p>
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="bg-indigo-50 p-4 rounded-lg">
-                                  <p className="text-xs text-gray-600 mb-1">Paid Amount</p>
-                                  <p className="text-xl font-bold text-indigo-600">{formatCurrency(fee.fee_details?.paid_amount)}</p>
-                                </div>
-                                <div className="bg-yellow-50 p-4 rounded-lg">
-                                  <p className="text-xs text-gray-600 mb-1">Due Amount</p>
-                                  <p className="text-xl font-bold text-yellow-600">{formatCurrency(fee.fee_details?.due_amount)}</p>
-                                </div>
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <p className="text-xs text-gray-600 mb-1">Payment Progress</p>
-                                  <div className="mt-2">
-                                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                      <div
-                                        className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500"
-                                        style={{
-                                          width: `${((parseFloat(fee.fee_details?.paid_amount || 0) / parseFloat(fee.fee_details?.final_amount || 1)) * 100).toFixed(0)}%`
-                                        }}
-                                      ></div>
+                              {fee.discount_amount > 0 && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                                  <div className="flex items-center gap-2">
+                                    <FaCheckCircle className="text-green-600" />
+                                    <div>
+                                      <p className="text-sm font-medium text-green-800">
+                                        Discount of {formatCurrency(fee.discount_amount)} applied
+                                      </p>
+                                      {fee.discount_reason && (
+                                        <p className="text-xs text-green-700 mt-1">Reason: {fee.discount_reason}</p>
+                                      )}
                                     </div>
-                                    <p className="text-xs text-gray-600 mt-1">
-                                      {((parseFloat(fee.fee_details?.paid_amount || 0) / parseFloat(fee.fee_details?.final_amount || 1)) * 100).toFixed(0)}% Paid
-                                    </p>
                                   </div>
-                                </div>
-                              </div>
-
-                              {fee.fee_structure && (
-                                <div className="mt-4 pt-4 border-t border-gray-200">
-                                  <p className="text-sm text-gray-600 mb-2">
-                                    <span className="font-medium">Installment Allowed:</span>{' '}
-                                    {fee.fee_structure.installment_allowed ? 'Yes' : 'No'}
-                                    {fee.fee_structure.installment_allowed && fee.fee_structure.max_installments && (
-                                      <span className="ml-2">(Max: {fee.fee_structure.max_installments})</span>
-                                    )}
-                                  </p>
-                                  {fee.fee_structure.late_fee_amount && parseFloat(fee.fee_structure.late_fee_amount) > 0 && (
-                                    <p className="text-sm text-red-600">
-                                      <FaExclamationTriangle className="inline mr-1" />
-                                      Late Fee: {formatCurrency(fee.fee_structure.late_fee_amount)}
-                                    </p>
-                                  )}
                                 </div>
                               )}
                             </div>
@@ -310,7 +439,8 @@ const StudentFees = () => {
                         ) : (
                           <div className="text-center py-12 text-gray-500">
                             <FaInfoCircle className="text-4xl mx-auto mb-4 text-gray-400" />
-                            <p>No fee records found</p>
+                            <p className="text-lg font-medium">No fee records found</p>
+                            <p className="text-sm mt-2">There are no fee structures assigned to your account yet.</p>
                           </div>
                         )}
                       </div>
@@ -318,61 +448,159 @@ const StudentFees = () => {
 
                     {activeTab === 'installments' && (
                       <div className="space-y-6">
-                        {installmentsData && installmentsData.fee_records && installmentsData.fee_records.length > 0 ? (
-                          installmentsData.fee_records.map((record, recordIndex) => (
-                            <div key={recordIndex} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                              <div className="mb-4">
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                  {record.fee_structure_name || 'Fee Structure'}
-                                </h3>
-                                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                                  <span>
-                                    <span className="font-medium">Academic Year:</span> {record.academic_year || 'N/A'}
-                                  </span>
-                                  <span>
-                                    <span className="font-medium">Total Amount:</span> {formatCurrency(record.total_amount)}
-                                  </span>
-                                  <span>
-                                    <span className="font-medium">Total Installments:</span> {record.total_installments || 0}
-                                  </span>
-                                </div>
+                        {/* Summary and Action Bar */}
+                        {selectedInstallments.length > 0 && (
+                          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 sticky top-0 z-10 shadow-md">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-indigo-700 mb-1">
+                                  {selectedInstallments.length} Installment(s) Selected
+                                </p>
+                                <p className="text-2xl font-bold text-indigo-900">
+                                  Total: {formatCurrency(calculateSelectedTotal())}
+                                </p>
                               </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setSelectedInstallments([])}
+                                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium cursor-pointer"
+                                >
+                                  Clear Selection
+                                </button>
+                                <button
+                                  onClick={handlePaySelected}
+                                  disabled={paymentLoading}
+                                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                                >
+                                  <FaMoneyBillWave />
+                                  {paymentLoading ? 'Processing...' : 'Pay Now'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-                              <div className="overflow-x-auto">
-                                <table className="w-full">
-                                  <thead>
-                                    <tr className="bg-indigo-50">
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Installment</th>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Amount</th>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Due Date</th>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Paid Amount</th>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Payment Date</th>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Late Fee</th>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Remaining</th>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">Status</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {record.installments && record.installments.length > 0 ? (
-                                      record.installments.map((installment, instIndex) => (
-                                        <tr key={instIndex} className="hover:bg-gray-50 transition-colors">
+                        {/* Installments Table */}
+                        {installmentsData && installmentsData.fee_records && installmentsData.fee_records.length > 0 ? (
+                          <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-indigo-100">
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Select
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Fee Structure
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Fee Structure ID
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Academic Year
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Installment #
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Amount
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Due Date
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Paid Amount
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Remaining
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Late Fee
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Payment Date
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+                                    Status
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {installmentsData.fee_records.map((record) => 
+                                  record.installments && record.installments.length > 0 ? (
+                                    record.installments.map((installment, instIndex) => {
+                                      const isSelected = selectedInstallments.some(
+                                        item => item.installment_id === installment.installment_id
+                                      );
+                                      const isPaid = installment.status?.toLowerCase() === 'paid';
+                                      const isOverdue = installment.is_overdue;
+
+                                      return (
+                                        <tr 
+                                          key={`${record.student_fee_id}-${instIndex}`}
+                                          className={`hover:bg-gray-50 transition-colors ${
+                                            isSelected ? 'bg-indigo-50' : ''
+                                          } ${isOverdue && !isPaid ? 'border-l-4 border-l-red-500' : ''}`}
+                                        >
+                                          <td className="px-4 py-4 whitespace-nowrap">
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => handleInstallmentSelection(installment.installment_id, installment)}
+                                              disabled={isPaid}
+                                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                            />
+                                          </td>
                                           <td className="px-4 py-4 whitespace-nowrap">
                                             <span className="text-sm font-medium text-gray-900">
-                                              {installment.installment_number || instIndex + 1}
+                                              {record.fee_structure_name || 'N/A'}
                                             </span>
                                           </td>
                                           <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className="text-sm text-gray-900">{formatCurrency(installment.amount)}</span>
+                                            <span className="text-sm text-gray-600">
+                                              {record.student_fee_id}
+                                            </span>
                                           </td>
                                           <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className="text-sm text-gray-600 flex items-center gap-1">
-                                              <FaCalendarAlt className="text-indigo-500" />
+                                            <span className="text-sm text-gray-700">
+                                              {record.academic_year}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-4 whitespace-nowrap">
+                                            <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-full">
+                                              {installment.installment_number}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-4 whitespace-nowrap">
+                                            <span className="text-sm font-semibold text-gray-900">
+                                              {formatCurrency(installment.amount)}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-4 whitespace-nowrap">
+                                            <span className={`text-sm flex items-center gap-1 ${
+                                              isOverdue && !isPaid ? 'text-red-600 font-medium' : 'text-gray-600'
+                                            }`}>
+                                              <FaCalendarAlt className={isOverdue && !isPaid ? 'text-red-500' : 'text-indigo-500'} />
                                               {formatDate(installment.due_date)}
+                                              {isOverdue && !isPaid && (
+                                                <FaExclamationTriangle className="text-red-500 ml-1" title="Overdue" />
+                                              )}
                                             </span>
                                           </td>
                                           <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className="text-sm text-green-600 font-medium">
+                                            <span className="text-sm text-green-600 font-semibold">
                                               {formatCurrency(installment.paid_amount)}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-4 whitespace-nowrap">
+                                            <span className="text-sm text-orange-600 font-bold">
+                                              {formatCurrency(installment.remaining_amount)}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-4 whitespace-nowrap">
+                                            <span className={`text-sm font-medium ${
+                                              parseFloat(installment.calculated_late_fee) > 0 ? 'text-red-600' : 'text-gray-400'
+                                            }`}>
+                                              {formatCurrency(installment.calculated_late_fee)}
                                             </span>
                                           </td>
                                           <td className="px-4 py-4 whitespace-nowrap">
@@ -381,36 +609,27 @@ const StudentFees = () => {
                                             </span>
                                           </td>
                                           <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className="text-sm text-red-600">
-                                              {formatCurrency(installment.late_fee_applied || installment.late_fee)}
-                                            </span>
-                                          </td>
-                                          <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className="text-sm text-gray-900 font-medium">
-                                              {formatCurrency(installment.remaining_amount)}
-                                            </span>
-                                          </td>
-                                          <td className="px-4 py-4 whitespace-nowrap">
-                                            {getStatusBadge(installment.status)}
+                                            {isOverdue && !isPaid ? (
+                                              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                                <FaExclamationTriangle /> Overdue
+                                              </span>
+                                            ) : (
+                                              getStatusBadge(installment.status)
+                                            )}
                                           </td>
                                         </tr>
-                                      ))
-                                    ) : (
-                                      <tr>
-                                        <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
-                                          No installments found
-                                        </td>
-                                      </tr>
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          ))
+                                      );
+                                    })
+                                  ) : null
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
                         ) : (
-                          <div className="text-center py-12 text-gray-500">
+                          <div className="text-center py-12 text-gray-500 bg-white rounded-xl shadow-lg">
                             <FaInfoCircle className="text-4xl mx-auto mb-4 text-gray-400" />
-                            <p>No installment records found</p>
+                            <p className="text-lg font-medium">No installment records found</p>
+                            <p className="text-sm mt-2">There are no installments assigned to your account yet.</p>
                           </div>
                         )}
                       </div>

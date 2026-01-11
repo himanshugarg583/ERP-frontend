@@ -119,9 +119,7 @@ const SubjectWiseMarkRegister = () => {
           student_id: student.student_id,
           student_name: student.student_name,
           roll_number: student.roll_number,
-          marks_obtained: student.marks_obtained || 0,
-          grade: student.grade || '',
-          remarks: student.remarks || ''
+          marks_obtained: student.marks_obtained || ''
         }));
         setMarksData(initialMarks);
       }
@@ -155,9 +153,7 @@ const SubjectWiseMarkRegister = () => {
         subject_id: parseInt(selectedSubject),
         students: marksData.map(mark => ({
           student_id: mark.student_id,
-          marks_obtained: parseInt(mark.marks_obtained) || 0,
-          grade: mark.grade,
-          remarks: mark.remarks
+          marks_obtained: parseFloat(mark.marks_obtained) || 0
         }))
       };
 
@@ -328,8 +324,6 @@ const SubjectWiseMarkRegister = () => {
                   <th className="py-3 px-4 text-left">Roll No</th>
                   <th className="py-3 px-4 text-left">Student Name</th>
                   <th className="py-3 px-4 text-center">Marks Obtained</th>
-                  <th className="py-3 px-4 text-center">Grade</th>
-                  <th className="py-3 px-4 text-left">Remarks</th>
                 </tr>
               </thead>
               <tbody>
@@ -342,28 +336,12 @@ const SubjectWiseMarkRegister = () => {
                         type="number"
                         min="0"
                         max="100"
+                        step="0.5"
                         value={mark.marks_obtained}
                         onChange={(e) => handleMarkChange(index, 'marks_obtained', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600 text-center"
+                        placeholder="Enter marks"
                         required
-                      />
-                    </td>
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={mark.grade}
-                        onChange={(e) => handleMarkChange(index, 'grade', e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600 text-center"
-                        placeholder="A, B+"
-                      />
-                    </td>
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={mark.remarks}
-                        onChange={(e) => handleMarkChange(index, 'remarks', e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-violet-600 focus:border-violet-600"
-                        placeholder="Remarks"
                       />
                     </td>
                   </tr>

@@ -394,7 +394,7 @@ const PaymentReceived = () => {
                 </div>
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm font-medium whitespace-nowrap"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm font-medium whitespace-nowrap cursor-pointer"
                 >
                   <Plus className="w-5 h-5" />
                   Create Payment
@@ -726,7 +726,7 @@ const PaymentReceived = () => {
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)}
         title="Create Payment"
-        size="lg"
+        size="xl"
       >
             <form onSubmit={handleCreatePayment} className="flex-1 overflow-y-auto p-6">
               <div className="space-y-4">
@@ -982,7 +982,7 @@ const PaymentReceived = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  className="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
                   disabled={loading}
                 >
                   Cancel
@@ -990,7 +990,7 @@ const PaymentReceived = () => {
                 <button
                   type="submit"
                   onClick={handleCreatePayment}
-                  className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50"
+                  className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 cursor-pointer"
                   disabled={loading}
                 >
                   {loading ? "Creating..." : "Create Payment"}

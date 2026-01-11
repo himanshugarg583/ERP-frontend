@@ -297,9 +297,7 @@ const SubjectWiseReport = () => {
                   <th className="py-3 px-4 text-left">Admission No</th>
                   <th className="py-3 px-4 text-left">Student Name</th>
                   <th className="py-3 px-4 text-left hidden md:table-cell">Email</th>
-                  <th className="py-3 px-4 text-center">Marks</th>
-                  <th className="py-3 px-4 text-center">Grade</th>
-                  <th className="py-3 px-4 text-left hidden lg:table-cell">Remarks</th>
+                  <th className="py-3 px-4 text-center">Marks Obtained</th>
                   <th className="py-3 px-4 text-center">Status</th>
                 </tr>
               </thead>
@@ -318,18 +316,6 @@ const SubjectWiseReport = () => {
                         {student.marks_obtained !== null ? student.marks_obtained : '-'}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        {student.grade ? (
-                          <span className="px-2 py-1 bg-violet-100 text-violet-700 rounded">
-                            {student.grade}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td className="py-3 px-4 hidden lg:table-cell text-gray-600">
-                        {student.remarks || '-'}
-                      </td>
-                      <td className="py-3 px-4 text-center">
                         {student.is_marked ? (
                           <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
                             Marked
@@ -344,7 +330,7 @@ const SubjectWiseReport = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center text-gray-600">
+                    <td colSpan="6" className="py-8 text-center text-gray-600">
                       No students found.
                     </td>
                   </tr>

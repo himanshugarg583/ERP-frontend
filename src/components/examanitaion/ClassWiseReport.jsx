@@ -234,9 +234,7 @@ const ClassWiseReport = () => {
                       <tr>
                         <th className="py-2 px-3 text-left">Subject</th>
                         <th className="py-2 px-3 text-left hidden md:table-cell">Code</th>
-                        <th className="py-2 px-3 text-center">Marks</th>
-                        <th className="py-2 px-3 text-center">Grade</th>
-                        <th className="py-2 px-3 text-left hidden lg:table-cell">Remarks</th>
+                        <th className="py-2 px-3 text-center">Marks Obtained</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -245,12 +243,6 @@ const ClassWiseReport = () => {
                           <td className="py-2 px-3">{subject.subject_name}</td>
                           <td className="py-2 px-3 hidden md:table-cell">{subject.subject_code}</td>
                           <td className="py-2 px-3 text-center font-medium">{subject.marks_obtained}</td>
-                          <td className="py-2 px-3 text-center">
-                            <span className="px-2 py-1 bg-violet-100 text-violet-700 rounded">
-                              {subject.grade}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3 hidden lg:table-cell text-gray-600">{subject.remarks}</td>
                         </tr>
                       ))}
                     </tbody>
