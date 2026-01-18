@@ -29,7 +29,7 @@ export const getOverdueInstallments = async () => {
 
 import axios from 'axios';
 
-const API_BASE_URL = 'https://xd363v4j-5000.inc1.devtunnels.ms'; // Backend base URL
+const API_BASE_URL = ' https://erp-backend-1-svup.onrender.com'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
