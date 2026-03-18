@@ -16,6 +16,7 @@ const CombinedForm = () => {
     address: "",
     admission_date: "",
     class_section_id: "",
+    admission_no: "",
     phone_no: "",
     previous_school_name: "",
     father_name: "",
@@ -26,7 +27,7 @@ const CombinedForm = () => {
     father_occupation: "",
     mother_occupation: "",
     Aadhar_no: "",
-    
+
     // Additional form fields for UI compatibility
     admissionNo: "",
     class: "",
@@ -47,7 +48,7 @@ const CombinedForm = () => {
     admittedClass: "",
     asOnDate: "",
     referralBy: "",
-    
+
     fatherName: "",
     fatherPhone: "",
     fatherDob: "",
@@ -64,7 +65,7 @@ const CombinedForm = () => {
     guardianEmail: "",
     guardianOccupation: "",
     guardianAddress: "",
-    
+
     currentAddress: "",
     permanentAddress: "",
     isGuardianAddressCurrent: false,
@@ -120,7 +121,7 @@ const CombinedForm = () => {
   // Handle input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     // Special handling for class selection
     if (name === 'class_section_id') {
       const selectedClass = classOptions.find(option => option.id.toString() === value);
@@ -177,7 +178,8 @@ const CombinedForm = () => {
       email: formData.email || "",
       password: formData.password || "123456",
       dob: formData.dob || formData.dateOfBirth || "",
-      roll_number: formData.roll_number || formData.rollNumber || formData.admissionNo || "",
+      admission_no: formData.admission_no || formData.admissionNo || "",
+      roll_number: formData.roll_number || formData.rollNumber || "",
       gender: formData.gender || "",
       class_name: formData.class_name || "",
       address: formData.address || formData.currentAddress || "",
@@ -185,7 +187,7 @@ const CombinedForm = () => {
       class_section_id: parseInt(formData.class_section_id) || 1,
       phone_no: formData.phone_no || formData.mobileNumber || "",
       previous_school_name: formData.previous_school_name || formData.previousSchool || "",
-      
+
       // Parent Details with correct field names
       father_name: formData.father_name || formData.fatherName || "",
       mother_name: formData.mother_name || formData.motherName || "",
@@ -211,6 +213,7 @@ const CombinedForm = () => {
       address: "",
       admission_date: "",
       class_section_id: "",
+      admission_no: "",
       phone_no: "",
       previous_school_name: "",
       father_name: "",
@@ -282,14 +285,14 @@ const CombinedForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const payload = buildStudentPayload();
       console.log("API Payload:", payload);
       console.log("Files to upload:", files);
-      
+
       const response = await addStudent(payload, files);
-      
+
       if (response && response.success) {
         showToast(response, "Student added successfully!");
         resetForm();
@@ -331,15 +334,31 @@ const CombinedForm = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Admission No/Roll No. <span className="text-red-500">*</span>
+                Admission No. <span className="text-red-500">*</span>
               </label>
               <input
-                name="admissionNo"
-                value={formData.admissionNo}
+                name="admission_no"
+                value={formData.admission_no}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
-                placeholder="Enter Admission No/Roll No"
+                placeholder="Enter Admission No"
                 type="text"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Roll No. <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="roll_number"
+                value={formData.roll_number}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
+                placeholder="Enter Roll No"
+                type="text"
+                required
               />
             </div>
 
@@ -639,7 +658,7 @@ const CombinedForm = () => {
           <h2 className="text-lg md:text-xl font-semibold text-slate-800 border-b border-slate-200 pb-2">
             Documents
           </h2>
-          
+
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full border-collapse border border-slate-300">
@@ -732,11 +751,10 @@ const CombinedForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`px-6 py-2 text-white rounded-lg font-medium transition-colors ${
-              loading 
-                ? 'bg-slate-400 cursor-not-allowed' 
-                : 'bg-violet-600 hover:bg-violet-700'
-            }`}
+            className={`px-6 py-2 text-white rounded-lg font-medium transition-colors ${loading
+              ? 'bg-slate-400 cursor-not-allowed'
+              : 'bg-violet-600 hover:bg-violet-700'
+              }`}
           >
             {loading ? 'Adding Student...' : 'Submit'}
           </button>
