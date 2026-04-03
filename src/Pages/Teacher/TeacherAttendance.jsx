@@ -4,12 +4,12 @@ import Header from '../../components/comman_components/Header';
 import { FaCheckCircle, FaChalkboardTeacher, FaUsers, FaChevronLeft, FaCalendarAlt, FaRegClock, FaCheck, FaTimes, FaSave } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useAuth } from '../../context/AuthContext';
 import { 
   getTeacherClasses, 
   getStudentsByClassForAttendance, 
   markClassAttendance, 
-  getClassAttendanceByDate 
+  getClassAttendanceByDate,
+  updateClassAttendance
 } from '../../helper/requests-method/apiMethods';
 
 const ClassCard = ({ cls, onClick, studentCount, todayStats }) => {
@@ -293,7 +293,6 @@ const AttendanceView = ({
 };
 
 const TeacherAttendance = () => {
-  const { user } = useAuth();
   const [activeMenu, setActiveMenu] = useState('Attendance');
   const [activeClass, setActiveClass] = useState(null);
   const [classes, setClasses] = useState([]);
@@ -318,8 +317,14 @@ const TeacherAttendance = () => {
           class_name: cls.class_name,
           section_name: cls.section_name,
           display_name: cls.display_name,
+          total_students: cls.total_students ?? 0,
         }));
         setClasses(mappedClasses);
+        const initialStudentCounts = mappedClasses.reduce((acc, cls) => {
+          acc[cls.class_section_id] = cls.total_students ?? 0;
+          return acc;
+        }, {});
+        setClassStudentCounts(initialStudentCounts);
       } else {
         toast.error(response.message || 'Failed to fetch classes');
       }
@@ -338,7 +343,7 @@ const TeacherAttendance = () => {
       const response = await getStudentsByClassForAttendance(classId);
       if (response.success && response.data?.students) {
         const mappedStudents = response.data.students.map(student => ({
-          user_id: student.user_id,
+          user_id: student.user_id ?? student.student_id,
           student_name: student.student_name,
           roll_number: student.roll_number || '',
           status: null,
@@ -369,15 +374,15 @@ const TeacherAttendance = () => {
   const handleClassClick = async (classId) => {
     setActiveClass(classId);
     const today = new Date().toISOString().split('T')[0];
-    // Load students for current date when class is selected
-    await fetchStudentsByClass(classId);
+    // Load today's attendance when class is selected
+    await handleViewPastAttendance(classId, today, true);
   };
 
   // Save attendance
   const handleSaveAttendance = async (classId, date) => {
     const students = attendance[classId] || [];
     const attendanceData = students.map(student => ({
-      user_id: student.user_id,
+      student_id: student.user_id ?? student.student_id,
       status: student.status || 'absent', // Default to absent if not marked
     })).filter(s => s.status !== null);
 
@@ -391,15 +396,27 @@ const TeacherAttendance = () => {
       const payload = {
         class_section_id: classId,
         date: date,
-        marked_by: user?.id || 2,
         attendance: attendanceData,
       };
 
-      const response = await markClassAttendance(payload);
+      const today = new Date().toISOString().split('T')[0];
+      const isToday = date === today;
+      let response;
+
+      if (isToday) {
+        // Current-day attendance can be edited, so update first and fallback to create.
+        response = await updateClassAttendance(payload);
+        if (!response?.success) {
+          response = await markClassAttendance(payload);
+        }
+      } else {
+        response = await markClassAttendance(payload);
+      }
+
       if (response.success) {
         toast.success(response.message || 'Attendance marked successfully');
         // Refresh the attendance view
-        await fetchStudentsByClass(classId);
+        await handleViewPastAttendance(classId, date, isToday);
         // Update history
         setHistory(prev => ({
           ...prev,
@@ -423,41 +440,59 @@ const TeacherAttendance = () => {
 
     try {
       setLoading(true);
-      
-      if (isToday || isCurrentDate) {
-        // For current date, fetch students list
-        await fetchStudentsByClass(classId);
-      } else {
-        // For past date, fetch attendance by date
-        const response = await getClassAttendanceByDate(classId, date);
-        if (response.success && response.data?.attendance) {
-          const mappedAttendance = response.data.attendance.map(att => ({
-            user_id: att.user_id,
-            student_name: att.student_name,
-            roll_number: att.roll_number || '',
-            status: att.status,
-          }));
-          setAttendance(prev => ({
-            ...prev,
-            [classId]: mappedAttendance,
-          }));
-          
-          // Update summary stats
-          const summary = response.data.summary || {};
+
+      // Fetch attendance by class/date for both current and past dates.
+      const response = await getClassAttendanceByDate(classId, date);
+      const attendanceList = Array.isArray(response?.data?.attendance)
+        ? response.data.attendance
+        : Array.isArray(response?.data)
+          ? response.data
+          : response?.data?.student_id
+            ? [response.data]
+            : [];
+
+      if (response?.success && attendanceList.length > 0) {
+        const mappedAttendance = attendanceList.map(att => ({
+          user_id: att.user_id ?? att.student_id,
+          student_id: att.student_id,
+          student_name: att.student_name,
+          roll_number: att.roll_number || '',
+          status: att.status,
+        }));
+        setAttendance(prev => ({
+          ...prev,
+          [classId]: mappedAttendance,
+        }));
+
+        const summary = response.data?.summary || {};
+        if (response.data?.summary) {
           setClassTodayStats(prev => ({
             ...prev,
             [classId]: {
-              total: summary.total || 0,
+              total: summary.total || attendanceList.length,
               present: summary.present || 0,
               absent: summary.absent || 0,
               leave: summary.leave || 0,
             },
           }));
-          
-          toast.success('Attendance loaded successfully');
         } else {
-          // If no attendance found, load the student list without attendance marked
-          await fetchStudentsByClass(classId);
+          const present = mappedAttendance.filter(s => s.status === 'present' || s.status === true).length;
+          const absent = mappedAttendance.filter(s => s.status === 'absent' || s.status === false).length;
+          const leave = mappedAttendance.filter(s => s.status === 'leave').length;
+          setClassTodayStats(prev => ({
+            ...prev,
+            [classId]: {
+              total: mappedAttendance.length,
+              present,
+              absent,
+              leave,
+            },
+          }));
+        }
+      } else {
+        // No attendance found for this date: load student list with unmarked status.
+        await fetchStudentsByClass(classId);
+        if (!isToday && !isCurrentDate) {
           toast.info('No attendance found for this date.');
         }
       }
@@ -523,7 +558,7 @@ const TeacherAttendance = () => {
                           key={cls.class_section_id} 
                           cls={cls} 
                           onClick={() => handleClassClick(cls.class_section_id)}
-                          studentCount={classStudentCounts[cls.class_section_id]}
+                          studentCount={classStudentCounts[cls.class_section_id] ?? cls.total_students ?? 0}
                           todayStats={classTodayStats[cls.class_section_id]}
                         />
                       ))}

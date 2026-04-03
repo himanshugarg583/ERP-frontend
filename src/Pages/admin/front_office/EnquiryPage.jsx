@@ -23,6 +23,20 @@ const EnquiryPage = () => {
     const [enquiryData, setEnquiryData] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const buildEnquiryPayload = (data = {}) => ({
+        name: data.name || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        className: data.className || '',
+        address: data.address || '',
+        parentName: data.parentName || '',
+        oldSchool: data.oldSchool || '',
+        source: data.source || '',
+        description: data.description || '',
+        status: data.status || '',
+        date: data.date || data.enquiry_date || ''
+    });
+
     // Define columns for enquiry management
     const enquiryColumns = [
         {
@@ -91,20 +105,20 @@ const EnquiryPage = () => {
             required: true,
             type: 'select',
             options: [
+                { value: 'visit', label: 'Visit' },
                 { value: 'social_media', label: 'Social Media' },
                 { value: 'mobile', label: 'Mobile' },
                 { value: 'referral', label: 'Referral' },
-                { value: 'visit', label: 'Visit' },
                 { value: 'friend', label: 'Friend' },
                 { value: 'parent', label: 'Parent' },
                 { value: 'other', label: 'Other' }
             ],
             render: (value) => {
                 const sourceMap = {
+                    visit: 'Visit',
                     social_media: 'Social Media',
                     mobile: 'Mobile',
                     referral: 'Referral',
-                    visit: 'Visit',
                     friend: 'Friend',
                     parent: 'Parent',
                     other: 'Other'
@@ -113,14 +127,15 @@ const EnquiryPage = () => {
             }
         },
         {
-            key: 'enquiry_date',
+            key: 'date',
             header: 'Enquiry Date',
             required: true,
             type: 'date',
-            render: (value) => {
-                if (!value) return 'N/A';
+            render: (value, row) => {
+                const dateValue = value || row?.enquiry_date;
+                if (!dateValue) return 'N/A';
                 try {
-                    const date = new Date(value);
+                    const date = new Date(dateValue);
                     if (isNaN(date.getTime())) return 'Invalid Date';
                     return date.toLocaleDateString('en-GB', {
                         day: '2-digit',
@@ -185,7 +200,7 @@ const EnquiryPage = () => {
     const handleCreateEnquiry = async (enquiryData) => {
         try {
             setLoading(true);
-            const response = await createEnquiry(enquiryData);
+            const response = await createEnquiry(buildEnquiryPayload(enquiryData));
             if (response.success) {
                 // Refresh the enquiry list after successful creation
                 await fetchEnquiries();
@@ -213,7 +228,7 @@ const EnquiryPage = () => {
     const handleUpdateEnquiry = async (id, enquiryData) => {
         try {
             setLoading(true);
-            const response = await updateEnquiry(id, enquiryData);
+            const response = await updateEnquiry(id, buildEnquiryPayload(enquiryData));
             if (response.success) {
                 // Refresh the enquiry list after successful update
                 await fetchEnquiries();
@@ -277,7 +292,7 @@ const EnquiryPage = () => {
             } else {
                 setEnquiryData([]);
             }
-        } catch (error) {
+        } catch {
             setEnquiryData([]);
         } finally {
             setLoading(false);
@@ -320,9 +335,10 @@ const EnquiryPage = () => {
         // Date Filter
         let dateMatch = true;
         if (appliedFilters.startDate || appliedFilters.endDate) {
-            if (!enquiry.enquiry_date) return false;
+            const recordDate = enquiry.date || enquiry.enquiry_date;
+            if (!recordDate) return false;
 
-            const enquiryDate = new Date(enquiry.enquiry_date);
+            const enquiryDate = new Date(recordDate);
             if (isNaN(enquiryDate.getTime())) return false;
 
             enquiryDate.setHours(0, 0, 0, 0);
@@ -425,13 +441,13 @@ const EnquiryPage = () => {
                                 <select
                                     value={filters.source}
                                     onChange={(e) => setFilters({ ...filters, source: e.target.value })}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none text-gray-700 cursor-pointer transition-all h-[42px]"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none text-gray-700 cursor-pointer transition-all h-10.5"
                                 >
                                     <option value="">All Sources</option>
+                                    <option value="visit">Visit</option>
                                     <option value="social_media">Social Media</option>
                                     <option value="mobile">Mobile</option>
                                     <option value="referral">Referral</option>
-                                    <option value="visit">Visit</option>
                                     <option value="friend">Friend</option>
                                     <option value="parent">Parent</option>
                                     <option value="other">Other</option>
@@ -444,7 +460,7 @@ const EnquiryPage = () => {
                                 <select
                                     value={filters.status}
                                     onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none text-gray-700 cursor-pointer transition-all h-[42px]"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none text-gray-700 cursor-pointer transition-all h-10.5"
                                 >
                                     <option value="">All Status</option>
                                     <option value="active">Active</option>

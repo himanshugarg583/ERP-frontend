@@ -84,9 +84,8 @@ const StudentLeave = () => {
 
   const formatDateForAPI = (dateString) => {
     if (!dateString) return '';
-    // Convert YYYY-MM-DD to DD-MM-YYYY
-    const [year, month, day] = dateString.split('-');
-    return `${day}-${month}-${year}`;
+    // API expects ISO date-only format: YYYY-MM-DD
+    return dateString;
   };
 
   const handleSubmit = async (e) => {

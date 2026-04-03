@@ -37,12 +37,14 @@ const AssignClass = () => {
           class_section: `${cls.class_name}-${cls.section_name}`,
           class_name: cls.class_name || '-',
           section_name: cls.section_name || '-',
-          teacher_id: cls.teacher_id ? cls.teacher_id.toString() : '',
-          teacher_name: cls.teacher_name || 'Not Assigned',
-          phone: cls.teacher_phone || cls.phone || '',
-          email: cls.teacher_email || cls.email || '',
+          teacher_id: (cls.teacher_id || (cls.classTeacher && cls.classTeacher.id))
+            ? (cls.teacher_id || (cls.classTeacher && cls.classTeacher.id)).toString()
+            : '',
+          teacher_name: cls.classTeacher?.User?.name || cls.teacher_name || 'Not Assigned',
+          phone: cls.classTeacher?.mobile_no || cls.teacher_phone || cls.phone || '',
+          email: cls.classTeacher?.User?.email || cls.teacher_email || cls.email || '',
           assigned_date: cls.created_at || cls.updated_at || new Date().toISOString().split('T')[0],
-          status: cls.teacher_id ? 'active' : 'inactive',
+          status: (cls.teacher_id || (cls.classTeacher && cls.classTeacher.id)) ? 'active' : 'inactive',
           room_No: cls.room_No || '',
           capacity: cls.capacity || '',
         }));
@@ -132,6 +134,7 @@ const AssignClass = () => {
       header: 'Class & Section', 
       required: true,
       type: 'select',
+      readOnlyOnEdit: true,
       options: classSelectOptions,
       placeholder: 'Select Class & Section',
       render: (value, item) => {
@@ -146,6 +149,7 @@ const AssignClass = () => {
       header: 'Class Name', 
       required: false,
       type: 'text',
+      readOnlyOnEdit: true,
       hideInTable: true
     },
     { 
@@ -153,6 +157,7 @@ const AssignClass = () => {
       header: 'Section', 
       required: false,
       type: 'text',
+      readOnlyOnEdit: true,
       hideInTable: true
     },
     { 
@@ -175,6 +180,7 @@ const AssignClass = () => {
       header: 'Teacher Name', 
       required: false,
       type: 'text',
+      hideInEdit: true,
       hideInTable: true
     },
     { 
@@ -182,6 +188,7 @@ const AssignClass = () => {
       header: 'Phone', 
       required: false,
       type: 'text',
+      hideInEdit: true,
       placeholder: 'e.g. 9876543210',
       render: (value) => value || 'N/A'
     },
@@ -190,49 +197,9 @@ const AssignClass = () => {
       header: 'Email', 
       required: false,
       type: 'email',
+      hideInEdit: true,
       placeholder: 'e.g. teacher@school.com',
       render: (value) => value || 'N/A'
-    },
-    { 
-      key: 'assigned_date', 
-      header: 'Assigned Date', 
-      required: true,
-      type: 'date',
-      render: (value) => {
-        if (!value) return 'N/A';
-        try {
-          const date = new Date(value);
-          if (isNaN(date.getTime())) return 'Invalid Date';
-          return date.toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        } catch {
-          return 'Invalid Date';
-        }
-      }
-    },
-    { 
-      key: 'status', 
-      header: 'Status', 
-      required: true,
-      type: 'select',
-      options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' }
-      ],
-      render: (value) => {
-        if (!value) return 'N/A';
-        const statusClass = value === 'active' 
-          ? 'bg-green-100 text-green-800' 
-          : 'bg-gray-100 text-gray-800';
-        return (
-          <span className={`px-2 py-1 rounded text-xs font-medium ${statusClass}`}>
-            {value.charAt(0).toUpperCase() + value.slice(1)}
-          </span>
-        );
-      }
     },
   ], [classSelectOptions, teacherSelectOptions]);
 
@@ -258,11 +225,6 @@ const AssignClass = () => {
           message: 'Class section not found' 
         };
       }
-      
-      // Get teacher name from selected teacher
-      const selectedTeacher = teacherOptions.find(
-        t => t.teacherDetails.id.toString() === data.teacher_id
-      );
       
       // Update the class section with teacher assignment
       const payload = {
@@ -428,7 +390,7 @@ const AssignClass = () => {
             showActions={{
               add: true,
               edit: true,
-              delete: true,
+              delete: false,
               view: true
             }}
           />

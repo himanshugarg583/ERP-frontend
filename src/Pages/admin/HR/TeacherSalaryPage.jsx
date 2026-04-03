@@ -20,11 +20,11 @@ const TeacherSalaryPage = () => {
       const response = await getTeacherSalary();
       if (response.success && response.data) {
         const mappedData = response.data.map((item, index) => ({
-          id: item.teacher_id || item.id || index,
-          teacher_id: item.teacher_id || item.id || "N/A",
+          id: item.teacherDetails?.id || item.id || item.teacher_id || index,
+          teacher_id: item.teacherDetails?.id || item.id || item.teacher_id || item.user_id || "N/A",
           name: item.name || "N/A",
           email: item.email || "N/A",
-          salary: item.salary || "0.00",
+          salary: item.teacherDetails?.salary || item.salary || "0.00",
           role: item.role || "N/A",
         }));
         setSalaryData(mappedData);

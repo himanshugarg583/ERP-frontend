@@ -29,7 +29,7 @@ export const getOverdueInstallments = async () => {
 
 import axios from 'axios';
 
-const API_BASE_URL = ' https://erp-backend-1-svup.onrender.com'; // Backend base URL
+const API_BASE_URL = 'http://localhost:5000'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
@@ -156,7 +156,7 @@ export const API_ENDPOINTS = {
   GET_ALL_STUDENTS: '/admin/studentInfo/getAllStudents',
   GET_STUDENT_STATES: '/admin/studentInfo/getStudentStats',
   UPDATE_STUDENT: (id) => `/api/admin/updateStudent/${id}`,
-  DELETE_STUDENT: (id) => `/api/admin/softDeleteStudent/${id}`,
+  DELETE_STUDENT: (studentId) => `/admin/studentInfo/deleteStudent/${studentId}`,
   GET_STUDENT_REPORT: (classId) => `/admin/studentInfo/getStudentReport/${classId}`,
   GET_PARENT_REPORT: (classId) => `/admin/studentInfo/getParentReport/${classId}`,
   GET_STUDENT_CREDENTIALS: (classId) => `/admin/studentInfo/getStudentCredentials?class_id=${classId}`,
@@ -219,7 +219,7 @@ export const API_ENDPOINTS = {
   DELETE_CLASS_SECTION: (id) => `/api/Classsection/DeleteClassSection/${id}`,
 
   // subject endpoints
-  ADD_SUBJECTS: '/api/classSubject/addSubject',
+  ADD_SUBJECTS: '/admin/Subject/addSubject',
   GET_ALL_SUBJECTS_CLASS: '/admin/Subject/getAllSubjectsWithDetails',
   UPDATE_SUBJECT_CLASS: (id) => `/api/classSubject/updateSubject/${id}`,
   DELETE_SUBJECT_CLASS: (id) => `/api/classSubject/deleteSubject/${id}`,
@@ -271,8 +271,9 @@ export const API_ENDPOINTS = {
 
   // Teacher Attendance Endpoints
   GET_TEACHER_CLASSES: '/classattendance/getTeacherClasses',
-  GETS_STUDENTS_BY_CLASS: (classId) => `/classattendance/getClassStudentList/${classId}`,
+  GETS_STUDENTS_BY_CLASS: (classId) => `/classattendance/getStudentsByClass/${classId}`,
   MARK_CLASS_ATTENDANCE: '/classattendance/markClassAttendance',
+  UPDATE_CLASS_ATTENDANCE: '/classattendance/updateClassAttendance',
   GET_CLASS_ATTENDANCE_BY_DATE: (classId, date) => `/classattendance/getClassAttendanceByDate?class_section_id=${classId}&date=${date}`,
 
   // Teacher Timetable Endpoints
@@ -422,6 +423,18 @@ export const authorizedPost = async (endpoint, data) => {
 export const authorizedPut = async (endpoint, data) => {
   const token = localStorage.getItem('authToken');
   const response = await axios.put(`${API_BASE_URL}${endpoint}`, data, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  return response.data;
+};
+
+// Reusable authorized PATCH request
+export const authorizedPatch = async (endpoint, data) => {
+  const token = localStorage.getItem('authToken');
+  const response = await axios.patch(`${API_BASE_URL}${endpoint}`, data, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -1040,12 +1053,17 @@ export const getTeacherClasses = async () => {
 
 // Get students by class for attendance
 export const getStudentsByClassForAttendance = async (classId) => {
-  return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS(classId));
+  return authorizedGet(API_ENDPOINTS.GETS_STUDENTS_BY_CLASS(classId));
 };
 
 // Mark class attendance
 export const markClassAttendance = async (attendanceData) => {
   return authorizedPost(API_ENDPOINTS.MARK_CLASS_ATTENDANCE, attendanceData);
+};
+
+// Update class attendance (current date)
+export const updateClassAttendance = async (attendanceData) => {
+  return authorizedPatch(API_ENDPOINTS.UPDATE_CLASS_ATTENDANCE, attendanceData);
 };
 
 // Get class attendance by date

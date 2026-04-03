@@ -37,8 +37,8 @@ const AddClass = () => {
           section_name: cls.section_name || '-',
           room_No: cls.room_No || '-',
           capacity: cls.capacity || '-',
-          teacher_id: cls.teacher_id ? cls.teacher_id.toString() : '',
-          teacher_name: cls.teacher_name || '-',
+          teacher_id: (cls.teacher_id || cls.classTeacher?.id) ? (cls.teacher_id || cls.classTeacher?.id).toString() : '',
+          teacher_name: cls.classTeacher?.User?.name || cls.teacher_name || '-',
         }));
         setClasses(mappedClasses);
         
@@ -95,8 +95,17 @@ const AddClass = () => {
       key: 'section_name', 
       header: 'Section', 
       required: true,
-      type: 'text',
-      placeholder: 'e.g. A',
+      type: 'select',
+      placeholder: 'Select Section',
+      options: [
+        { value: 'A', label: 'A' },
+        { value: 'B', label: 'B' },
+        { value: 'C', label: 'C' },
+        { value: 'D', label: 'D' },
+        { value: 'E', label: 'E' },
+        { value: 'F', label: 'F' },
+        { value: 'G', label: 'G' },
+      ],
       render: (value) => value || 'N/A'
     },
     { 

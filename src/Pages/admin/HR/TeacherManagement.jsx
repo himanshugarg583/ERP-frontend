@@ -66,10 +66,10 @@ const TeacherManagement = () => {
         // Map API response to component format
         const mappedTeachers = response.data.map((teacher) => ({
           id: teacher.id,
-          teacher_id: teacher.id?.toString() || "N/A",
+          teacher_id: teacher.teacherDetails?.id?.toString() || teacher.id?.toString() || "N/A",
           name: teacher.name || "N/A",
           email: teacher.email || "N/A",
-          phone: teacher.teacherDetails?.mobile || teacher.teacherDetails?.phone || "N/A",
+          phone: teacher.teacherDetails?.mobile_no || teacher.teacherDetails?.mobile || teacher.teacherDetails?.phone || "N/A",
           subject: teacher.teacherDetails?.subject || "N/A",
           qualification: teacher.teacherDetails?.qualification || "N/A",
           experience: teacher.teacherDetails?.experience || "N/A",
@@ -482,25 +482,11 @@ const TeacherManagement = () => {
       placeholder: "e.g. 9876543210",
     },
     {
-      key: "subject",
-      header: "Subject",
-      type: "text",
-      required: true,
-      placeholder: "e.g. Mathematics",
-    },
-    {
       key: "qualification",
       header: "Qualification",
       type: "text",
       required: true,
       placeholder: "e.g. M.Sc, B.Ed",
-    },
-    {
-      key: "experience",
-      header: "Experience",
-      type: "text",
-      required: true,
-      placeholder: "e.g. 5 years",
     },
   ];
 

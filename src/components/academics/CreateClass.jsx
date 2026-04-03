@@ -177,15 +177,22 @@ const CreateClass = ({ onClassAdded }) => {
               <label className="block text-gray-700 mb-2 font-medium">
                 Section <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 name="section_name"
                 value={newClass.section_name}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
-                placeholder="e.g. A"
                 required
-              />
+              >
+                <option value="">Select Section</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="G">G</option>
+              </select>
             </div>
             
             <div>

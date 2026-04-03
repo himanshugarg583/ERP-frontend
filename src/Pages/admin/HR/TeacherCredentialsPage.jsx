@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
-import { Key, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getTeacherCredentials } from "../../../helper/requests-method/apiMethods";
@@ -12,6 +12,14 @@ const TeacherCredentialsPage = () => {
   const navigate = useNavigate();
   const [credentialsData, setCredentialsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+
+  const togglePasswordVisibility = (id) => {
+    setVisiblePasswords((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   // Fetch teacher credentials
   const fetchCredentials = useCallback(async () => {
@@ -20,8 +28,8 @@ const TeacherCredentialsPage = () => {
       const response = await getTeacherCredentials();
       if (response.success && response.data) {
         const mappedData = response.data.map((item, index) => ({
-          id: item.teacher_id || item.id || index,
-          teacher_id: item.teacher_id || item.id || "N/A",
+          id: item.teacherDetails?.id || item.id || item.teacher_id || index,
+          teacher_id: item.teacherDetails?.id || item.id || item.teacher_id || item.user_id || "N/A",
           name: item.name || "N/A",
           email: item.email || "N/A",
           password: item.password || "N/A",
@@ -73,7 +81,27 @@ const TeacherCredentialsPage = () => {
       type: 'password',
       required: true,
       placeholder: 'Enter password',
-      render: (value) => value ? '••••••••' : 'N/A'
+      render: (value, item) => {
+        if (!value || value === 'N/A') {
+          return 'N/A';
+        }
+
+        const isVisible = !!visiblePasswords[item.id];
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-medium tracking-wide">
+              {isVisible ? value : '••••••••'}
+            </span>
+            <button
+              type="button"
+              onClick={() => togglePasswordVisibility(item.id)}
+              className="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors cursor-pointer"
+            >
+              {isVisible ? 'Hide' : 'View'}
+            </button>
+          </div>
+        );
+      }
     },
     {
       key: 'role',

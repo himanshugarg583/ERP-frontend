@@ -31,7 +31,7 @@ const StaffIdCard = () => {
           qualification: teacher.teacherDetails?.qualification || '',
           dob: teacher.teacherDetails?.dob || '',
           gender: teacher.teacherDetails?.gender || '',
-          mobile_no: teacher.teacherDetails?.mobile || teacher.teacherDetails?.phone || '',
+          mobile_no: teacher.teacherDetails?.mobile_no || teacher.teacherDetails?.mobile || teacher.teacherDetails?.phone || teacher.mobile_no || '',
           current_address: teacher.teacherDetails?.currentaddress || '',
           permanent_address: teacher.teacherDetails?.permanentaddress || teacher.teacherDetails?.permenantaddress || '',
           joining_date: teacher.teacherDetails?.joining_date || '',

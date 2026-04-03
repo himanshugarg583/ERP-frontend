@@ -244,6 +244,7 @@ const ReusableTable = ({
   const handleEdit = ({ item, onClose }) => {
     // Set the editing item to trigger useEffect
     setEditingItem(item);
+    const editColumns = columns.filter((column) => !column.hideInEdit);
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -284,10 +285,11 @@ const ReusableTable = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Form Fields - Responsive Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {columns.map((column, index) => {
+          {editColumns.map((column, index) => {
             // Determine column span based on field type
             const isFullWidth = column.type === 'textarea' || column.key === 'description' || column.key === 'address';
             const colSpan = isFullWidth ? 'md:col-span-2' : '';
+            const isReadOnlyInEdit = column.readOnlyOnEdit === true;
             
             return (
               <div key={index} className={`space-y-2 ${colSpan}`}>
@@ -301,6 +303,7 @@ const ReusableTable = ({
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
                     required={column.required}
+                    disabled={formLoading || isReadOnlyInEdit}
                   >
                     <option value="">Select {column.header}</option>
                     {column.options?.map((option, optIndex) => (
@@ -318,6 +321,7 @@ const ReusableTable = ({
                     required={column.required}
                     rows={4}
                     placeholder={column.placeholder || `Enter ${column.header}`}
+                    disabled={formLoading || isReadOnlyInEdit}
                   />
                 ) : column.type === 'file' ? (
                   <input
@@ -327,6 +331,7 @@ const ReusableTable = ({
                     className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm text-gray-900 bg-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors duration-200"
                     accept={column.accept || "image/*"}
                     required={column.required}
+                    disabled={formLoading || isReadOnlyInEdit}
                   />
                 ) : (
                   <input
@@ -339,6 +344,8 @@ const ReusableTable = ({
                     required={column.required}
                     min={column.min}
                     max={column.max}
+                    readOnly={isReadOnlyInEdit}
+                    disabled={formLoading || (column.type === 'date' && isReadOnlyInEdit)}
                   />
                 )}
               </div>
