@@ -3,8 +3,8 @@ import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import StandardStatCard from "../../../components/comman_components/StandardStatCard";
 import ReusableTable from "../../../components/comman_components/ReusableTable";
-import { Users, Clock, CheckCircle, XCircle, Plus, X } from 'lucide-react';
-import { getAllLeaves, updateLeaveStatus, applyLeave, getAllClassesDropdown, getAllStudentsByClass } from "../../../helper/requests-method/apiMethods";
+import { Users, Clock, CheckCircle, XCircle, Plus, X, CalendarRange, Trash2 } from 'lucide-react';
+import { getAllLeaves, updateLeaveStatus, applyLeave, getAllClassesDropdown, getAllStudentsByClass, deleteAdminLeave, createHoliday, getAllHolidays, getHolidayByDate, deleteHoliday } from "../../../helper/requests-method/apiMethods";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -34,6 +34,19 @@ const LeavePage = () => {
     leave_type: '',
     reason: '',
   });
+
+  const [holidayForm, setHolidayForm] = useState({
+    holiday_date: '',
+    reason: '',
+    description: '',
+  });
+  const [holidayList, setHolidayList] = useState([]);
+  const [holidayMonth, setHolidayMonth] = useState('');
+  const [holidayYear, setHolidayYear] = useState(new Date().getFullYear().toString());
+  const [holidayLookupDate, setHolidayLookupDate] = useState('');
+  const [holidayLookupResult, setHolidayLookupResult] = useState(null);
+  const [isHolidaySubmitting, setIsHolidaySubmitting] = useState(false);
+  const [isHolidayLoading, setIsHolidayLoading] = useState(false);
 
   // Define columns for leave management
   const leaveColumns = [
@@ -237,6 +250,88 @@ const LeavePage = () => {
     }
   };
 
+  const fetchHolidays = async (month = holidayMonth, year = holidayYear) => {
+    try {
+      setIsHolidayLoading(true);
+      const response = await getAllHolidays(month || undefined, year || undefined);
+      if (response.success && response.data) {
+        const holidays = response.data.holidays || response.data || [];
+        setHolidayList(Array.isArray(holidays) ? holidays : []);
+      } else {
+        setHolidayList([]);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error fetching holidays');
+      setHolidayList([]);
+    } finally {
+      setIsHolidayLoading(false);
+    }
+  };
+
+  const handleCreateHoliday = async (e) => {
+    e.preventDefault();
+    if (!holidayForm.holiday_date || !holidayForm.reason) {
+      toast.error('Holiday date and reason are required');
+      return;
+    }
+
+    try {
+      setIsHolidaySubmitting(true);
+      const response = await createHoliday(holidayForm);
+      if (response.success) {
+        toast.success(response.message || 'Holiday created successfully');
+        setHolidayForm({ holiday_date: '', reason: '', description: '' });
+        await fetchHolidays();
+      } else {
+        toast.error(response.message || 'Failed to create holiday');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error creating holiday');
+    } finally {
+      setIsHolidaySubmitting(false);
+    }
+  };
+
+  const handleDeleteHoliday = async (id) => {
+    try {
+      const response = await deleteHoliday(id);
+      if (response.success) {
+        toast.success(response.message || 'Holiday deleted successfully');
+        await fetchHolidays();
+        if (holidayLookupResult?.id === id) {
+          setHolidayLookupResult(null);
+        }
+        return { success: true };
+      }
+      toast.error(response.message || 'Failed to delete holiday');
+      return { success: false };
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error deleting holiday');
+      return { success: false };
+    }
+  };
+
+  const handleHolidayLookup = async () => {
+    if (!holidayLookupDate) {
+      toast.error('Select a date to lookup holiday');
+      return;
+    }
+
+    try {
+      const response = await getHolidayByDate(holidayLookupDate);
+      if (response.success && response.data) {
+        setHolidayLookupResult(response.data.holiday || response.data);
+        toast.success('Holiday found for selected date');
+      } else {
+        setHolidayLookupResult(null);
+        toast.info('No holiday found for selected date');
+      }
+    } catch (error) {
+      setHolidayLookupResult(null);
+      toast.info(error.response?.data?.message || 'No holiday found for selected date');
+    }
+  };
+
   // Fetch students by class
   const fetchStudentsByClass = async (classId) => {
     if (!classId) {
@@ -345,6 +440,7 @@ const LeavePage = () => {
   useEffect(() => {
     fetchLeaves();
     fetchClasses();
+    fetchHolidays();
   }, []);
 
   // Handle update leave status (this will be called from ReusableTable's edit)
@@ -390,10 +486,25 @@ const LeavePage = () => {
 
   // Handle delete leave (not used in admin, but required by ReusableTable)
   const handleDeleteLeave = async (id) => {
-    return { 
-      success: false, 
-      message: 'Delete functionality not available for admin' 
-    };
+    try {
+      const response = await deleteAdminLeave(id);
+      if (response.success) {
+        await fetchLeaves();
+        return {
+          success: true,
+          message: response.message || 'Leave deleted successfully by admin'
+        };
+      }
+      return {
+        success: false,
+        message: response.message || 'Failed to delete leave'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to delete leave'
+      };
+    }
   };
 
   return (
@@ -450,6 +561,134 @@ const LeavePage = () => {
               <Plus size={18} />
               Apply Leave
             </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <CalendarRange className="w-5 h-5 text-violet-600" />
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Holiday Management</h2>
+            </div>
+
+            <form onSubmit={handleCreateHoliday} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+              <input
+                type="date"
+                value={holidayForm.holiday_date}
+                onChange={(e) => setHolidayForm({ ...holidayForm, holiday_date: e.target.value })}
+                className="border border-gray-300 rounded-md px-3 py-2.5 text-sm"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Reason"
+                value={holidayForm.reason}
+                onChange={(e) => setHolidayForm({ ...holidayForm, reason: e.target.value })}
+                className="border border-gray-300 rounded-md px-3 py-2.5 text-sm"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Description"
+                value={holidayForm.description}
+                onChange={(e) => setHolidayForm({ ...holidayForm, description: e.target.value })}
+                className="border border-gray-300 rounded-md px-3 py-2.5 text-sm"
+              />
+              <button
+                type="submit"
+                disabled={isHolidaySubmitting}
+                className="bg-violet-600 text-white rounded-md px-4 py-2.5 text-sm hover:bg-violet-700 disabled:bg-gray-400"
+              >
+                {isHolidaySubmitting ? 'Saving...' : 'Mark As Holiday'}
+              </button>
+            </form>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+              <select
+                value={holidayMonth}
+                onChange={(e) => setHolidayMonth(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2.5 text-sm"
+              >
+                <option value="">All Months</option>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={holidayYear}
+                onChange={(e) => setHolidayYear(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2.5 text-sm"
+                min="2000"
+              />
+              <button
+                type="button"
+                onClick={() => fetchHolidays()}
+                className="bg-gray-900 text-white rounded-md px-4 py-2.5 text-sm hover:bg-gray-700"
+              >
+                Filter Holidays
+              </button>
+              <div className="text-sm text-gray-600 flex items-center">
+                {isHolidayLoading ? 'Loading holidays...' : `Total holidays: ${holidayList.length}`}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+              <input
+                type="date"
+                value={holidayLookupDate}
+                onChange={(e) => setHolidayLookupDate(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2.5 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleHolidayLookup}
+                className="bg-blue-600 text-white rounded-md px-4 py-2.5 text-sm hover:bg-blue-700"
+              >
+                Check Holiday By Date
+              </button>
+            </div>
+
+            {holidayLookupResult && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                <p><span className="font-semibold">Date:</span> {holidayLookupResult.holiday_date}</p>
+                <p><span className="font-semibold">Reason:</span> {holidayLookupResult.reason}</p>
+                <p><span className="font-semibold">Description:</span> {holidayLookupResult.description || '-'}</p>
+              </div>
+            )}
+
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Date</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Reason</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Description</th>
+                    <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-700">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {holidayList.length > 0 ? holidayList.map((holiday) => (
+                    <tr key={holiday.id} className="border-t border-gray-100">
+                      <td className="px-4 py-2.5 text-sm text-gray-900">{holiday.holiday_date}</td>
+                      <td className="px-4 py-2.5 text-sm text-gray-900">{holiday.reason}</td>
+                      <td className="px-4 py-2.5 text-sm text-gray-900">{holiday.description || '-'}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteHoliday(holiday.id)}
+                          className="inline-flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs hover:bg-red-700"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-4 text-center text-sm text-gray-500">No holidays found</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Apply Leave Modal */}
@@ -669,7 +908,7 @@ const LeavePage = () => {
             showActions={{
               add: false, // Admin doesn't add leaves, students do
               edit: true,
-              delete: false, // Admin doesn't delete leaves
+              delete: true,
               view: true
             }}
           />

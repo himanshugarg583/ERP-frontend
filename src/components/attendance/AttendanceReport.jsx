@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getStudentReportByDate, getStudentReportByMonth, getClassWiseSummary, getAllClassesDropdown } from '../../helper/requests-method/apiMethods';
+import { getStudentReportByDate, getStudentReportByMonth, getClassWiseSummary, fetchAllClassesForAttendance } from '../../helper/requests-method/apiMethods';
 import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
 import StandardStatCard from '../comman_components/StandardStatCard';
-import { Users, Calendar, FileText, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
+import { Users, Calendar, FileText, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
 import 'react-toastify/dist/ReactToastify.css';
 
 const AttendanceReport = () => {
@@ -43,9 +43,9 @@ const AttendanceReport = () => {
 
   const fetchClasses = async () => {
     try {
-      const response = await getAllClassesDropdown();
-      if (response.success && response.data) {
-        setClasses(response.data);
+      const response = await fetchAllClassesForAttendance();
+      if (response.success && response.data?.classes) {
+        setClasses(response.data.classes);
       }
     } catch (error) {
       toast.error('Error fetching classes');
@@ -198,13 +198,12 @@ const AttendanceReport = () => {
 
   // Calculate stats for date report
   const getDateReportStats = () => {
-    if (!dateReportData || !dateReportData.student_reports) return null;
-    const reports = dateReportData.student_reports;
+    if (!dateReportData?.summary) return null;
     return {
-      total: reports.length,
-      present: reports.filter(s => s.status === 'present').length,
-      absent: reports.filter(s => s.status === 'absent').length,
-      late: reports.filter(s => s.status === 'late').length,
+      total: dateReportData.summary.total_students || 0,
+      present: dateReportData.summary.present || 0,
+      absent: dateReportData.summary.absent || 0,
+      leave: dateReportData.summary.leave ?? dateReportData.summary.late ?? 0,
     };
   };
 
@@ -214,12 +213,15 @@ const AttendanceReport = () => {
     const reports = monthReportData.student_reports;
     const totalPresent = reports.reduce((sum, s) => sum + (s.attendance_summary?.present || 0), 0);
     const totalAbsent = reports.reduce((sum, s) => sum + (s.attendance_summary?.absent || 0), 0);
-    const totalLate = reports.reduce((sum, s) => sum + (s.attendance_summary?.late || 0), 0);
+    const totalLeave = reports.reduce(
+      (sum, s) => sum + (s.attendance_summary?.leave ?? s.attendance_summary?.late ?? 0),
+      0
+    );
     return {
       total: reports.length,
       present: totalPresent,
       absent: totalAbsent,
-      late: totalLate,
+      leave: totalLeave,
       avgPercentage: monthReportData.class_summary?.average_attendance_percentage || '0.00',
     };
   };
@@ -232,7 +234,7 @@ const AttendanceReport = () => {
       totalStudents: classWiseReportData.overall_summary.total_students || 0,
       present: classWiseReportData.overall_summary.present || 0,
       absent: classWiseReportData.overall_summary.absent || 0,
-      late: classWiseReportData.overall_summary.late || 0,
+      leave: classWiseReportData.overall_summary.leave ?? classWiseReportData.overall_summary.late ?? 0,
       notMarked: classWiseReportData.overall_summary.not_marked || 0,
       avgPercentage: classWiseReportData.overall_summary.attendance_percentage || '0.00',
     };
@@ -360,9 +362,9 @@ const AttendanceReport = () => {
                   color="#ef4444"
                 />
                 <StandardStatCard 
-                  name="Late" 
-                  icon={Clock} 
-                  value={dateStats.late.toLocaleString()} 
+                  name="Leave" 
+                  icon={FileText} 
+                  value={dateStats.leave.toLocaleString()} 
                   color="#f59e0b"
                 />
               </div>
@@ -372,34 +374,34 @@ const AttendanceReport = () => {
             {dateReportData && (
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Report Results</h3>
-                {dateReportData.report_info && (
+                {dateReportData.class_info && (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                     <h4 className="font-semibold text-gray-900 mb-3">Report Information</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Class:</span>
-                        <span className="ml-2 text-gray-900">{dateReportData.report_info.class_name}</span>
+                        <span className="ml-2 text-gray-900">{dateReportData.class_info.class_name}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Section:</span>
-                        <span className="ml-2 text-gray-900">{dateReportData.report_info.section_name}</span>
+                        <span className="ml-2 text-gray-900">{dateReportData.class_info.section_name}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Room No:</span>
-                        <span className="ml-2 text-gray-900">{dateReportData.report_info.room_No || '-'}</span>
+                        <span className="ml-2 text-gray-900">{dateReportData.class_info.room_No || '-'}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Date:</span>
                         <span className="ml-2 text-gray-900">
-                          {dateReportData.report_info.date 
-                            ? new Date(dateReportData.report_info.date).toLocaleDateString('en-GB')
+                          {dateReportData.class_info.date 
+                            ? new Date(dateReportData.class_info.date).toLocaleDateString('en-GB')
                             : dateReport.date ? new Date(dateReport.date).toLocaleDateString('en-GB') : '-'}
                         </span>
                       </div>
                     </div>
                   </div>
                 )}
-                {dateReportData.student_reports && dateReportData.student_reports.length > 0 ? (
+                {dateReportData.attendance_records && dateReportData.attendance_records.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead>
@@ -411,19 +413,20 @@ const AttendanceReport = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {dateReportData.student_reports.map((student, index) => (
+                        {dateReportData.attendance_records.map((student, index) => (
                           <tr key={index} className="hover:bg-gray-50 transition-colors">
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.student_id || '-'}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.student_name || '-'}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{student.roll_number || '-'}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-center">
                               <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                                student.status === 'present' ? 'bg-green-100 text-green-800' :
-                                student.status === 'absent' ? 'bg-red-100 text-red-800' :
-                                student.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
+                                student.attendance_status === 'present' ? 'bg-green-100 text-green-800' :
+                                student.attendance_status === 'absent' ? 'bg-red-100 text-red-800' :
+                                student.attendance_status === 'leave' ? 'bg-yellow-100 text-yellow-800' :
+                                student.attendance_status === 'late' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {student.status ? student.status.charAt(0).toUpperCase() + student.status.slice(1) : '-'}
+                                {student.attendance_status ? student.attendance_status.charAt(0).toUpperCase() + student.attendance_status.slice(1) : '-'}
                               </span>
                             </td>
                           </tr>
@@ -539,9 +542,9 @@ const AttendanceReport = () => {
                   color="#ef4444"
                 />
                 <StandardStatCard 
-                  name="Late" 
-                  icon={Clock} 
-                  value={monthStats.late.toLocaleString()} 
+                  name="Leave" 
+                  icon={FileText} 
+                  value={monthStats.leave.toLocaleString()} 
                   color="#f59e0b"
                 />
                 <StandardStatCard 
@@ -628,7 +631,7 @@ const AttendanceReport = () => {
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Days</th>
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Present</th>
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Absent</th>
-                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Late</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Leave</th>
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Attendance %</th>
                         </tr>
                       </thead>
@@ -653,7 +656,7 @@ const AttendanceReport = () => {
                             </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-yellow-600 font-medium">
-                                {student.attendance_summary?.late || 0}
+                                {student.attendance_summary?.leave ?? student.attendance_summary?.late ?? 0}
                               </span>
                             </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center font-semibold text-gray-900">
@@ -737,9 +740,9 @@ const AttendanceReport = () => {
                   color="#ef4444"
                 />
                 <StandardStatCard 
-                  name="Late" 
-                  icon={Clock} 
-                  value={classWiseStats.late.toLocaleString()} 
+                  name="Leave" 
+                  icon={FileText} 
+                  value={classWiseStats.leave.toLocaleString()} 
                   color="#f59e0b"
                 />
                 <StandardStatCard 
@@ -787,9 +790,9 @@ const AttendanceReport = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="font-medium text-gray-700">Late:</span>
+                      <span className="font-medium text-gray-700">Leave:</span>
                       <span className="ml-2 text-yellow-600 font-medium">
-                        {classWiseReportData.overall_summary?.late || 0}
+                        {classWiseReportData.overall_summary?.leave ?? classWiseReportData.overall_summary?.late ?? 0}
                       </span>
                     </div>
                     <div>
@@ -817,7 +820,7 @@ const AttendanceReport = () => {
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Students</th>
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Present</th>
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Absent</th>
-                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Late</th>
+                          <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Leave</th>
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Not Marked</th>
                           <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Attendance %</th>
                         </tr>
@@ -843,7 +846,7 @@ const AttendanceReport = () => {
                             </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center">
                               <span className="text-yellow-600 font-medium">
-                                {classReport.summary?.late || 0}
+                                {classReport.summary?.leave ?? classReport.summary?.late ?? 0}
                               </span>
                             </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">

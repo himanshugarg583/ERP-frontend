@@ -10,6 +10,11 @@ import {
   MessageSquare,
   Download,
   UserCog,
+  Bus,
+  Hotel,
+  Boxes,
+  Library,
+  FileQuestion,
   Award,
   User,
   ChevronRight,
@@ -104,6 +109,36 @@ const SIDEBAR_ITEMS = [
       { name: "Marks Register", href: "/admin/marks-register-page" },
       { name: "Report Card", href: "/admin/report-card-page" },
       { name: "Examination Report", href: "/admin/exam-report-page" },
+      { name: "Question Type", href: "/admin/question-type" },
+      { name: "Question Paper", href: "/admin/question-paper" },
+    ],
+  },
+  {
+    name: "Transport",
+    icon: Bus,
+    subItems: [
+      { name: "Transport Module", href: "/admin/transport" },
+    ],
+  },
+  {
+    name: "Hostel",
+    icon: Hotel,
+    subItems: [
+      { name: "Hostel Module", href: "/admin/hostel" },
+    ],
+  },
+  {
+    name: "Inventory",
+    icon: Boxes,
+    subItems: [
+      { name: "Inventory Module", href: "/admin/inventory" },
+    ],
+  },
+  {
+    name: "Library",
+    icon: Library,
+    subItems: [
+      { name: "Library Module", href: "/admin/library" },
     ],
   },
   {

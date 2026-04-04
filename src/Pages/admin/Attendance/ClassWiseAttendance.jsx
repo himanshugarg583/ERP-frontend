@@ -3,7 +3,7 @@ import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import StandardStatCard from "../../../components/comman_components/StandardStatCard";
 import { Users, Calendar, Clock, ChevronLeft, Check, X, UserCheck } from "lucide-react";
-import { fetchAllClassesForAttendance, fetchStudentsByClass, markAttendance } from "../../../helper/requests-method/apiMethods";
+import { fetchAllClassesForAttendance, fetchStudentsByClass, markAttendance, getHolidayByDate, getAdminClassAttendanceByDate } from "../../../helper/requests-method/apiMethods";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -15,6 +15,7 @@ const ClassWiseAttendance = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
@@ -23,9 +24,9 @@ const ClassWiseAttendance = () => {
 
   useEffect(() => {
     if (activeClass) {
-      fetchStudentsForClass(activeClass);
+      loadAttendanceForClassAndDate(activeClass, selectedDate);
     }
-  }, [activeClass]);
+  }, [activeClass, selectedDate]);
 
   const fetchClasses = async () => {
     try {
@@ -40,7 +41,7 @@ const ClassWiseAttendance = () => {
           subject: classItem.classTeacher?.User?.name || 'No Teacher Assigned',
           teacherName: classItem.classTeacher?.User?.name || null,
           roomNo: classItem.room_No || null,
-          capacity: classItem.capacity || null,
+          totalStudents: classItem.total_students ?? 0,
           students: [],
         }));
         setClasses(mappedClasses);
@@ -77,13 +78,46 @@ const ClassWiseAttendance = () => {
             present: false,
           })),
         }));
+        setIsEditingExisting(false);
       } else {
         toast.error('Failed to fetch students');
         setStudents([]);
+        setIsEditingExisting(false);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error fetching students');
       setStudents([]);
+      setIsEditingExisting(false);
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  };
+
+  const loadAttendanceForClassAndDate = async (classId, date) => {
+    try {
+      setIsLoadingStudents(true);
+      const response = await getAdminClassAttendanceByDate(classId, date);
+
+      if (response.success && response.data?.attendance && response.data.attendance.length > 0) {
+        const mappedStudents = response.data.attendance.map((student) => ({
+          id: student.student_id,
+          student_id: student.student_id,
+          name: student.student_name || 'Unknown',
+          rollNo: student.roll_number || '',
+          present: student.status === 'present',
+        }));
+
+        setStudents(mappedStudents);
+        setAttendanceData((prevData) => ({
+          ...prevData,
+          [classId]: mappedStudents,
+        }));
+        setIsEditingExisting(true);
+      } else {
+        await fetchStudentsForClass(classId);
+      }
+    } catch (_error) {
+      await fetchStudentsForClass(classId);
     } finally {
       setIsLoadingStudents(false);
     }
@@ -141,6 +175,17 @@ const ClassWiseAttendance = () => {
     }
 
     try {
+      const holidayResponse = await getHolidayByDate(selectedDate);
+      if (holidayResponse?.success && holidayResponse?.data) {
+        const holidayInfo = holidayResponse.data.holiday || holidayResponse.data;
+        toast.error(`Attendance blocked: ${selectedDate} is a holiday (${holidayInfo.reason || 'Holiday'})`);
+        return;
+      }
+    } catch (_error) {
+      // Continue when date is not a holiday or API returns not-found.
+    }
+
+    try {
       setIsSaving(true);
       const attendancePayload = {
         class_section_id: activeClass,
@@ -154,8 +199,8 @@ const ClassWiseAttendance = () => {
       const response = await markAttendance(attendancePayload);
       
       if (response.success || response.message) {
-        toast.success(response.message || 'Attendance marked successfully');
-        setActiveClass(null);
+        toast.success(response.message || (isEditingExisting ? 'Attendance updated successfully' : 'Attendance marked successfully'));
+        await loadAttendanceForClassAndDate(activeClass, selectedDate);
       } else {
         toast.error('Failed to mark attendance');
       }
@@ -284,7 +329,7 @@ const ClassWiseAttendance = () => {
                           : 'bg-violet-600 hover:bg-violet-700 text-white'
                       }`}
                     >
-                      {isSaving ? 'Saving...' : 'Save Attendance'}
+                      {isSaving ? 'Saving...' : isEditingExisting ? 'Update Attendance' : 'Save Attendance'}
                     </button>
                   </div>
                 </div>
@@ -424,7 +469,7 @@ const ClassWiseAttendance = () => {
                         <div className="flex items-center gap-2 mb-3">
                           <Users size={16} className="text-violet-600" />
                           <span className="text-sm text-gray-700">
-                            {classItem.capacity ? `${classItem.capacity} capacity` : 'Students'}
+                            {`${classItem.totalStudents} students`}
                           </span>
                         </div>
                         <div className="bg-violet-50 rounded-lg p-3">

@@ -2,7 +2,7 @@
 
 export const ROUTE_CATEGORIES = {
   PUBLIC: ['home', 'login'],
-  PROTECTED: ['admin', 'teacher', 'student', 'accountant', 'parent', 'superAdmin', 'Staff', 'library', 'onlineLearning']
+  PROTECTED: ['admin', 'teacher', 'student', 'accountant', 'parent', 'superAdmin', 'Staff', 'library', 'onlineLearning', 'hr', 'admissionOfficer', 'transportManager', 'hostelWarden']
 };
 
 export const ROLE_DASHBOARDS = {
@@ -14,7 +14,11 @@ export const ROLE_DASHBOARDS = {
   superadmin: "/superAdminDash",
   staff: "/StaffDashboard",
   library: "/LibraryDashboard",
-  onlinelearning: "/onlineLearningDash"
+  onlinelearning: "/onlineLearningDash",
+  hr: "/hr/dashboard",
+  admissionofficer: "/admission-officer/dashboard",
+  transportmanager: "/transport-manager/dashboard",
+  hostelwarden: "/hostel-warden/dashboard"
 };
 
 export const getRouteProtection = (category) => {
@@ -37,6 +41,14 @@ export const getRouteProtection = (category) => {
       return 'library';
     case 'onlineLearning':
       return 'onlinelearning';
+    case 'hr':
+      return 'admin';
+    case 'admissionOfficer':
+      return 'admin';
+    case 'transportManager':
+      return 'staff';
+    case 'hostelWarden':
+      return 'staff';
     default:
       return null;
   }

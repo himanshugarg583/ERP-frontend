@@ -127,6 +127,12 @@ import TeacherCredentialsPage from "./Pages/admin/HR/TeacherCredentialsPage.jsx"
 import TeacherSalaryPage from "./Pages/admin/HR/TeacherSalaryPage.jsx";
 import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
 import Assignment from "./Pages/admin/DownloadCenter/Assignment.jsx";
+import QuestionTypePage from "./Pages/admin/modules/QuestionTypePage.jsx";
+import QuestionPaperPage from "./Pages/admin/modules/QuestionPaperPage.jsx";
+import TransportModulePage from "./Pages/admin/modules/TransportModulePage.jsx";
+import HostelModulePage from "./Pages/admin/modules/HostelModulePage.jsx";
+import InventoryModulePage from "./Pages/admin/modules/InventoryModulePage.jsx";
+import LibraryModulePage from "./Pages/admin/modules/LibraryModulePage.jsx";
 // Certificates
 import StudentIdPage from "./Pages/admin/Certificates/StudentIdPage.jsx";
 import StaffIdCard from "./Pages/admin/Certificates/StaffIdCard.jsx";
@@ -159,6 +165,10 @@ import AccountantLogin from "./Pages/Authentication/AccountantLogin.jsx";
 import PaymentRecipt from "./Pages/admin/fees_collection/PaymentRecipt";
 import DemandNotice from "./Pages/admin/fees_collection/DemandNotice";
 import FeeDiscountPage from "./Pages/admin/fees_collection/FeeDiscountPage";
+import HRDashboard from "./Pages/RoleDashboards/HRDashboard";
+import AdmissionOfficerDashboard from "./Pages/RoleDashboards/AdmissionOfficerDashboard";
+import TransportManagerDashboard from "./Pages/RoleDashboards/TransportManagerDashboard";
+import HostelWardenDashboard from "./Pages/RoleDashboards/HostelWardenDashboard";
 
 
 const routes = {
@@ -280,6 +290,8 @@ const routes = {
     { path: "/admin/term-list-page", element: <TermListPage/> },
     { path: "/admin/exam-list-page", element: <ExamListPage/> },
     { path: "/admin/exam-report-page", element: <ExamReportPage/> },
+    { path: "/admin/question-type", element: <QuestionTypePage/> },
+    { path: "/admin/question-paper", element: <QuestionPaperPage/> },
     { path: "/admin/notes", element: <AdminNotes/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },
     { path: "/admin/hr-reports", element: <HRReports/> },
@@ -288,6 +300,10 @@ const routes = {
     { path: "/admin/upload-content", element: <UploadContent /> },
     { path: "/admin/assignment", element: <Assignment /> },
     { path: "/admin/payment-received", element: <PaymentReceivedPage /> },
+    { path: "/admin/transport", element: <TransportModulePage /> },
+    { path: "/admin/hostel", element: <HostelModulePage /> },
+    { path: "/admin/inventory", element: <InventoryModulePage /> },
+    { path: "/admin/library", element: <LibraryModulePage /> },
     // Certificates
     { path: "/admin/student-id-page", element: <StudentIdPage /> },
     { path: "/admin/staff-id-card", element: <StaffIdCard /> },
@@ -328,6 +344,18 @@ const routes = {
     {path:"/onlineLearningLive",element:<OnlineLearningLive/>},
     {path:"/onlineLearningAssignment",element:<OnlineLearningAssignment/>},
     {path:"/onlineLearningProfile",element:<OnlineLearningProfile/>},
+  ],
+  hr: [
+    { path: "/hr/dashboard", element: <HRDashboard /> },
+  ],
+  admissionOfficer: [
+    { path: "/admission-officer/dashboard", element: <AdmissionOfficerDashboard /> },
+  ],
+  transportManager: [
+    { path: "/transport-manager/dashboard", element: <TransportManagerDashboard /> },
+  ],
+  hostelWarden: [
+    { path: "/hostel-warden/dashboard", element: <HostelWardenDashboard /> },
   ],
   // ChooseOptions: [
     // { path: "/chooseOptions", element: <ChooseOptions /> },

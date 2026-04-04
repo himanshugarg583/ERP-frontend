@@ -145,12 +145,24 @@ export const API_ENDPOINTS = {
   // student attendance endpoints
   GET_ALL_CLASSES: '/admin/studentsAttendance/getAllClasses',
   GET_STUDENTS_BY_CLASS: (classId) => `/admin/studentsAttendance/getStudentsByClass/${classId}`,
+  GET_ADMIN_CLASS_ATTENDANCE_BY_DATE: (classSectionId, date) => `/admin/studentsAttendance/getClassAttendanceByDate?class_section_id=${classSectionId}&date=${date}`,
   MARK_ATTENDANCE: '/admin/studentsAttendance/markClassAttendance',
   // student leave endpoints
   GET_ALL_LEAVES: '/admin/studentLeave/getAllLeaves',
   APPLY_LEAVE: '/admin/studentLeave/applyLeave',
   GET_LEAVE_BY_ID: (id) => `/admin/studentLeave/getLeave/${id}`,
   UPDATE_LEAVE: (id) => `/admin/studentLeave/updateLeaveStatus/${id}`,
+  DELETE_ADMIN_LEAVE: (id) => `/admin/studentLeave/deleteLeave/${id}`,
+  CREATE_HOLIDAY: '/admin/holiday/createHoliday',
+  GET_ALL_HOLIDAYS: (month, year) => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    if (year) params.append('year', year);
+    const query = params.toString();
+    return `/admin/holiday/getAllHolidays${query ? `?${query}` : ''}`;
+  },
+  GET_HOLIDAY_BY_DATE: (holidayDate) => `/admin/holiday/getHolidayByDate?holiday_date=${holidayDate}`,
+  DELETE_HOLIDAY: (id) => `/admin/holiday/deleteHoliday/${id}`,
 
   // student information endpoints
   GET_ALL_STUDENTS: '/admin/studentInfo/getAllStudents',
@@ -201,9 +213,9 @@ export const API_ENDPOINTS = {
   LOGOUT: '/api/auth/logout',
 
   // student report endpoints
-  GET_STUDENT_REPORT_BY_DATE: (className, sectionName, date) => `admin/studentsAttendance/attendanceReportByDate?class_name=${className}&section_name=${sectionName}&date=${date}`,
-  GET_STUDENT_REPORT_BY_MONTH: (className, sectionName, month, year) => `admin/studentsAttendance/monthlyAttendanceReport?class_name=${className}&section_name=${sectionName}&month=${month}&year=${year}`,
-  GET_CLASS_WISE_SUMMARY: (date) => `admin/studentsAttendance/classWiseSummary?date=${date}`,
+  GET_STUDENT_REPORT_BY_DATE: (className, sectionName, date) => `/admin/studentsAttendance/attendanceReport?class_name=${className}&section_name=${sectionName}&date=${date}`,
+  GET_STUDENT_REPORT_BY_MONTH: (className, sectionName, month, year) => `/admin/studentsAttendance/monthlyAttendanceReport?class_name=${className}&section_name=${sectionName}&month=${month}&year=${year}`,
+  GET_CLASS_WISE_SUMMARY: (date) => `/admin/studentsAttendance/classWiseSummary?date=${date}`,
   
   // student fee details endpoint
   GET_STUDENT_COMPLETE_FEE_DETAILS: (studentId) => `/admin/studentFee/getStudentCompleteFeeDetails/${studentId}`,
@@ -271,7 +283,8 @@ export const API_ENDPOINTS = {
 
   // Teacher Attendance Endpoints
   GET_TEACHER_CLASSES: '/classattendance/getTeacherClasses',
-  GETS_STUDENTS_BY_CLASS: (classId) => `/classattendance/getStudentsByClass/${classId}`,
+  GET_CLASS_STUDENT_LIST: (classSectionId) => `/classattendance/getClassStudentList/${classSectionId}`,
+  GET_STUDENTS_BY_CLASS_FOR_TEACHER: (classId) => `/classattendance/getStudentsByClass/${classId}`,
   MARK_CLASS_ATTENDANCE: '/classattendance/markClassAttendance',
   UPDATE_CLASS_ATTENDANCE: '/classattendance/updateClassAttendance',
   GET_CLASS_ATTENDANCE_BY_DATE: (classId, date) => `/classattendance/getClassAttendanceByDate?class_section_id=${classId}&date=${date}`,
@@ -850,6 +863,12 @@ export const fetchAllClassesForAttendance = async () => {
 export const fetchStudentsByClass = async (classId) => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS(classId));
 };
+
+// get admin class attendance by date
+export const getAdminClassAttendanceByDate = async (classSectionId, date) => {
+  return authorizedGet(API_ENDPOINTS.GET_ADMIN_CLASS_ATTENDANCE_BY_DATE(classSectionId, date));
+};
+
 // mark attendance
 export const markAttendance = async (attendanceData) => {
   return authorizedPost(API_ENDPOINTS.MARK_ATTENDANCE, attendanceData);
@@ -885,6 +904,26 @@ export const updateLeaveStatus = async (id, statusData) => {
 // get leave by id
 export const getLeaveById = async (id) => {
   return authorizedGet(API_ENDPOINTS.GET_LEAVE_BY_ID(id));
+};
+
+export const deleteAdminLeave = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_ADMIN_LEAVE(id));
+};
+
+export const createHoliday = async (payload) => {
+  return authorizedPost(API_ENDPOINTS.CREATE_HOLIDAY, payload);
+};
+
+export const getAllHolidays = async (month, year) => {
+  return authorizedGet(API_ENDPOINTS.GET_ALL_HOLIDAYS(month, year));
+};
+
+export const getHolidayByDate = async (holidayDate) => {
+  return authorizedGet(API_ENDPOINTS.GET_HOLIDAY_BY_DATE(holidayDate));
+};
+
+export const deleteHoliday = async (id) => {
+  return authorizedDelete(API_ENDPOINTS.DELETE_HOLIDAY(id));
 };
 
 // get student report by date
@@ -1053,7 +1092,11 @@ export const getTeacherClasses = async () => {
 
 // Get students by class for attendance
 export const getStudentsByClassForAttendance = async (classId) => {
-  return authorizedGet(API_ENDPOINTS.GETS_STUDENTS_BY_CLASS(classId));
+  try {
+    return await authorizedGet(API_ENDPOINTS.GET_CLASS_STUDENT_LIST(classId));
+  } catch (error) {
+    return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS_FOR_TEACHER(classId));
+  }
 };
 
 // Mark class attendance

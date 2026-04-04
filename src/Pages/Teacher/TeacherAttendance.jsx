@@ -9,7 +9,8 @@ import {
   getStudentsByClassForAttendance, 
   markClassAttendance, 
   getClassAttendanceByDate,
-  updateClassAttendance
+  updateClassAttendance,
+  getHolidayByDate
 } from '../../helper/requests-method/apiMethods';
 
 const ClassCard = ({ cls, onClick, studentCount, todayStats }) => {
@@ -380,6 +381,17 @@ const TeacherAttendance = () => {
 
   // Save attendance
   const handleSaveAttendance = async (classId, date) => {
+    try {
+      const holidayResponse = await getHolidayByDate(date);
+      if (holidayResponse?.success && holidayResponse?.data) {
+        const holidayInfo = holidayResponse.data.holiday || holidayResponse.data;
+        toast.error(`Attendance blocked: ${date} is a holiday (${holidayInfo.reason || 'Holiday'})`);
+        return;
+      }
+    } catch (_error) {
+      // Continue when date is not a holiday or API returns not-found.
+    }
+
     const students = attendance[classId] || [];
     const attendanceData = students.map(student => ({
       student_id: student.user_id ?? student.student_id,

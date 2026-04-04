@@ -9,6 +9,7 @@ import { MdMail, MdLock, MdSchool } from "react-icons/md";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
+import { getDashboardByKey } from "../../utils/dashboardCatalog";
 
 import React from "react";
 
@@ -18,16 +19,31 @@ const schema = yup.object({
 });
 
 const testCredentials = {
-  admin: { email: "admin@gmail.com", password: "Admin@123", icon: FaUserShield, color: "from-purple-500 to-indigo-600" },
-  teacher: { email: "teacher@gmail.com", password: "Teacher@123", icon: FaChalkboardTeacher, color: "from-blue-500 to-cyan-600" },
-  student: { email: "student@gmail.com", password: "Student@123", icon: FaUserGraduate, color: "from-green-500 to-emerald-600" },
-  accountant: { email: "accountant@gmail.com", password: "Accountant@123", icon: FaCalculator, color: "from-orange-500 to-red-600" },
+  admin: { label: "Admin", email: "admin@gmail.com", password: "Admin@123", icon: FaUserShield, color: "from-purple-500 to-indigo-600", expectedRole: "admin", targetPath: "/admin/dashboard" },
+  teacher: { label: "Teacher", email: "teacher@gmail.com", password: "Teacher@123", icon: FaChalkboardTeacher, color: "from-blue-500 to-cyan-600", expectedRole: "teacher", targetPath: "/teacher/dashboard" },
+  student: { label: "Student", email: "student@gmail.com", password: "Student@123", icon: FaUserGraduate, color: "from-green-500 to-emerald-600", expectedRole: "student", targetPath: "/student/dashboard" },
+  accountant: { label: "Accountant", email: "accountant@gmail.com", password: "Accountant@123", icon: FaCalculator, color: "from-orange-500 to-red-600", expectedRole: "accountant", targetPath: "/AccountantDashboard" },
+  librarian: { label: "Librarian", email: "librarian.demo@erp.local", password: "Library@123", icon: FaGraduationCap, color: "from-emerald-500 to-teal-600", expectedRole: "library", targetPath: "/LibraryDashboard" },
+  onlinelearning: { label: "Online Learning", email: "onlinelearning@gmail.com", password: "Online@123", icon: FaChalkboardTeacher, color: "from-cyan-500 to-blue-600", expectedRole: "onlinelearning", targetPath: "/onlineLearningDash" },
+  parents: { label: "Parents", email: "parents@gmail.com", password: "Parents@123", icon: FaUserShield, color: "from-rose-500 to-pink-600", expectedRole: "parent", targetPath: "/ParentDashboard" },
+  staff: { label: "Staff", email: "staff.demo@erp.local", password: "Staff@123", icon: FaUserShield, color: "from-slate-500 to-slate-700", expectedRole: "staff", targetPath: "/StaffDashboard" },
+  superadmin: { label: "Super Admin", email: "superadmin@gmail.com", password: "SuperAdmin@123", icon: FaUserShield, color: "from-indigo-600 to-violet-700", expectedRole: "superadmin", targetPath: "/superAdminDash" },
+  "hr-dashboard": { label: "HR Dashboard", email: "hr.demo@erp.local", password: "Hr@12345", icon: FaUserShield, color: "from-fuchsia-500 to-purple-600", expectedRole: "admin", targetPath: "/hr/dashboard" },
+  "admission-officer": { label: "Admission Officer", email: "admission.demo@erp.local", password: "Admission@123", icon: FaUserGraduate, color: "from-lime-500 to-emerald-600", expectedRole: "admin", targetPath: "/admission-officer/dashboard" },
+  "transport-manager": { label: "Transport Manager", email: "transport.demo@erp.local", password: "Transport@123", icon: FaCalculator, color: "from-amber-500 to-orange-600", expectedRole: "staff", targetPath: "/transport-manager/dashboard" },
+  "hostel-warden": { label: "Hostel Warden", email: "hostel.demo@erp.local", password: "Hostel@123", icon: FaUserGraduate, color: "from-sky-500 to-indigo-600", expectedRole: "staff", targetPath: "/hostel-warden/dashboard" },
 };
 
 const UnifiedLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, getDashboardPath } = useAuth();
+  const preselectedDashboardKey = new URLSearchParams(location.search).get("dashboard");
+  const [selectedDashboardKey, setSelectedDashboardKey] = useState(preselectedDashboardKey || null);
+  const [selectedTargetPath, setSelectedTargetPath] = useState(null);
+  const [selectedExpectedRole, setSelectedExpectedRole] = useState(null);
+  const [selectedLoginLabel, setSelectedLoginLabel] = useState("");
+  const selectedDashboard = getDashboardByKey(selectedDashboardKey);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -41,10 +57,17 @@ const UnifiedLogin = () => {
   });
 
   // Autofill handler
-  const autofill = (role) => {
-    const creds = testCredentials[role];
+  const autofill = (credentialKey) => {
+    const creds = testCredentials[credentialKey];
     setValue("email", creds.email);
     setValue("password", creds.password);
+    setSelectedTargetPath(creds.targetPath || null);
+    setSelectedExpectedRole(creds.expectedRole || null);
+    setSelectedLoginLabel(creds.label || credentialKey);
+
+    if (creds.dashboardKey) {
+      setSelectedDashboardKey(creds.dashboardKey);
+    }
   };
 
   // Hydrate remembered email
@@ -70,9 +93,34 @@ const UnifiedLogin = () => {
         } else {
           localStorage.removeItem("rememberEmail");
         }
-        // Redirect to the intended page or default dashboard
-        const from = location.state?.from?.pathname || getDashboardPath();
-        navigate(from, { replace: true });
+
+        const fromPath = location.state?.from?.pathname;
+        const roleDashboard = getDashboardPath();
+
+        if (fromPath) {
+          navigate(fromPath, { replace: true });
+          return;
+        }
+
+        if (selectedTargetPath && selectedExpectedRole === result.user.role) {
+          navigate(selectedTargetPath, { replace: true });
+          return;
+        }
+
+        if (selectedTargetPath && selectedExpectedRole && selectedExpectedRole !== result.user.role) {
+          toast.info(`Logged in as ${result.user.role}. Redirected to your role dashboard.`);
+        }
+
+        if (selectedDashboard && selectedDashboard.allowedRoles.includes(result.user.role)) {
+          navigate(selectedDashboard.path, { replace: true });
+          return;
+        }
+
+        if (selectedDashboard && !selectedDashboard.allowedRoles.includes(result.user.role)) {
+          toast.info(`Your account role is ${result.user.role}. Redirected to your default dashboard.`);
+        }
+
+        navigate(roleDashboard, { replace: true });
       } else {
         toast.error(result.error || "Login failed");
       }
@@ -196,6 +244,11 @@ const UnifiedLogin = () => {
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">Sign In</h2>
               <p className="text-gray-600">Enter your credentials to access your account</p>
+              {selectedLoginLabel ? (
+                <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-700">
+                  Selected profile: <span className="font-semibold">{selectedLoginLabel}</span>
+                </div>
+              ) : null}
             </div>
 
             <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
@@ -305,14 +358,14 @@ const UnifiedLogin = () => {
               transition={{ delay: 0.8, duration: 0.5 }}
               className="mt-8"
             >
-              <p className="text-xs text-gray-500 text-center mb-3 font-medium">Quick Login As:</p>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(testCredentials).map(([role, creds]) => {
+              <p className="text-xs text-gray-500 text-center mb-3 font-medium">Quick Credentials:</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {Object.entries(testCredentials).map(([credentialKey, creds]) => {
                   const Icon = creds.icon;
                   return (
                     <motion.button
-                      key={role}
-                      onClick={() => autofill(role)}
+                      key={credentialKey}
+                      onClick={() => autofill(credentialKey)}
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                       className={`relative overflow-hidden p-3 rounded-xl bg-gradient-to-br ${creds.color} text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group`}
@@ -320,7 +373,7 @@ const UnifiedLogin = () => {
                       <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <div className="relative flex flex-col items-center gap-1">
                         <Icon className="text-xl" />
-                        <span className="text-xs font-semibold capitalize">{role}</span>
+                        <span className="text-xs font-semibold leading-tight text-center">{creds.label}</span>
                       </div>
                     </motion.button>
                   );
