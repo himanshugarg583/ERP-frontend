@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus } from 'lucide-react';
+import { useDispatch } from 'react-redux';
 import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
 import CommonTable from '../../../components/tables/CommonTable';
@@ -7,14 +8,14 @@ import ExamTermForm from '../../../components/examanitaion/ExamTermForm';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
-  getAllExamTerms,
-  updateExamTerm,
-  deleteExamTerm,
-  getExamTermById
-} from '../../../helper/requests-method/apiMethods';
+  listExamTypesV2Thunk,
+  updateExamTypeV2Thunk,
+  deleteExamTypeV2Thunk,
+} from '../../../store/slices/examSlice';
 import Modal from '../../../components/comman_components/Modal';
 
 const TermListPage = () => {
+  const dispatch = useDispatch();
   const [terms, setTerms] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -22,26 +23,25 @@ const TermListPage = () => {
   const [termToDelete, setTermToDelete] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [termToView, setTermToView] = useState(null);
-  const [viewLoading, setViewLoading] = useState(false);
   const itemsPerPage = 10;
 
   const fetchTerms = useCallback(async () => {
     setTableLoading(true);
     try {
-      const response = await getAllExamTerms();
-      // API response structure: { success: true, statusCode: 200, message: "...", data: [...] }
+      const response = await dispatch(listExamTypesV2Thunk()).unwrap();
       const payload = Array.isArray(response?.data)
         ? response.data
-        : Array.isArray(response?.terms)
-          ? response.terms
-          : Array.isArray(response)
-            ? response
-            : [];
-      
+        : Array.isArray(response)
+          ? response
+          : [];
+
       const normalizedTerms = payload.map((term) => ({
-        id: term.id,
-        term_name: term.term_name || '',
-        academic_year: term.academic_year || ''
+        id: term.id || term.uuid,
+        term_name: term.name || term.term_name || '',
+        description: term.description || '',
+        grading_config: term.grading_config || {},
+        grading_config_text: term.grading_config ? JSON.stringify(term.grading_config) : '{}',
+        status: term.is_active === false ? 'inactive' : 'active',
       }));
 
       setTerms(normalizedTerms);
@@ -51,18 +51,17 @@ const TermListPage = () => {
     } finally {
       setTableLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     fetchTerms();
-    
-    // Listen for exam term added event
+
     const handleTermAdded = () => {
       fetchTerms();
     };
-    
+
     window.addEventListener('examTermAdded', handleTermAdded);
-    
+
     return () => {
       window.removeEventListener('examTermAdded', handleTermAdded);
     };
@@ -75,35 +74,72 @@ const TermListPage = () => {
         header: 'Term Name',
         type: 'text',
         required: true,
-        placeholder: 'e.g. First Term'
+        placeholder: 'e.g. Mid Term',
       },
       {
-        key: 'academic_year',
-        header: 'Academic Year',
+        key: 'description',
+        header: 'Description',
         type: 'text',
-        required: true,
-        placeholder: 'e.g. 2024-2025'
-      }
+        placeholder: 'Term description',
+        render: (value) => value || 'N/A',
+      },
+      {
+        key: 'grading_config_text',
+        header: 'Grading Config (JSON)',
+        type: 'text',
+        placeholder: '{"A+":90,"A":80}',
+        render: (value) => {
+          if (!value) return '{}';
+          return value.length > 45 ? `${value.substring(0, 45)}...` : value;
+        },
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        type: 'select',
+        options: [
+          { value: 'active', label: 'Active' },
+          { value: 'inactive', label: 'Inactive' },
+        ],
+        render: (value) => (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+            {value === 'active' ? 'Active' : 'Inactive'}
+          </span>
+        ),
+      },
     ],
     []
   );
 
-
   const handleUpdateTerm = useCallback(
     async (id, data) => {
+      let gradingConfig;
+      const gradingText = data.grading_config_text?.trim();
+      if (gradingText) {
+        try {
+          gradingConfig = JSON.parse(gradingText);
+        } catch {
+          toast.error('Grading config must be valid JSON');
+          return { success: false, message: 'Invalid grading config JSON' };
+        }
+      }
+
       const payload = {
-        term_name: data.term_name?.trim(),
-        academic_year: data.academic_year?.trim()
+        name: data.term_name?.trim(),
+        description: data.description?.trim() || '',
+        is_active: data.status !== 'inactive',
       };
 
+      if (gradingConfig !== undefined) {
+        payload.grading_config = gradingConfig;
+      }
+
       try {
-        const response = await updateExamTerm(id, payload);
-        if (response?.success) {
-          toast.success(response.message || 'Exam term updated successfully');
-          await fetchTerms();
-        } else {
-          toast.error(response?.message || 'Failed to update exam term');
-        }
+        const response = await dispatch(
+          updateExamTypeV2Thunk({ examTypeUuid: id, payload })
+        ).unwrap();
+        toast.success(response?.message || 'Exam term updated successfully');
+        await fetchTerms();
         return response;
       } catch (error) {
         console.error('Error updating exam term:', error);
@@ -111,10 +147,10 @@ const TermListPage = () => {
         throw error;
       }
     },
-    [fetchTerms]
+    [dispatch, fetchTerms]
   );
 
-  const handleDeleteClick = useCallback(async (term) => {
+  const handleDeleteClick = useCallback((term) => {
     setTermToDelete(term);
     setDeleteModalOpen(true);
   }, []);
@@ -123,43 +159,24 @@ const TermListPage = () => {
     if (!termToDelete) return;
 
     try {
-      const response = await deleteExamTerm(termToDelete.id);
-      if (response?.success) {
-        toast.success(response.message || 'Exam term deleted successfully');
-        setTerms((prev) => prev.filter((term) => term.id !== termToDelete.id));
-        setDeleteModalOpen(false);
-        setTermToDelete(null);
-      } else {
-        toast.error(response?.message || 'Failed to delete exam term');
-      }
+      const response = await dispatch(
+        deleteExamTypeV2Thunk({ examTypeUuid: termToDelete.id })
+      ).unwrap();
+      toast.success(response?.message || 'Exam term deleted successfully');
+      setTerms((prev) => prev.filter((term) => term.id !== termToDelete.id));
+      setDeleteModalOpen(false);
+      setTermToDelete(null);
     } catch (error) {
       console.error('Error deleting exam term:', error);
       toast.error(error?.response?.data?.message || 'Failed to delete exam term');
     }
-  }, [termToDelete]);
+  }, [dispatch, termToDelete]);
 
-  const handleViewClick = useCallback(async (term) => {
-    setViewLoading(true);
+  const handleViewClick = useCallback((term) => {
+    setTermToView(term);
     setViewModalOpen(true);
-    try {
-      const response = await getExamTermById(term.id);
-      if (response?.success && response?.data) {
-        setTermToView(response.data);
-      } else {
-        // Fallback to term data if API fails
-        setTermToView(term);
-      }
-    } catch (error) {
-      console.error('Error fetching term details:', error);
-      // Fallback to term data if API fails
-      setTermToView(term);
-    } finally {
-      setViewLoading(false);
-    }
   }, []);
 
-
-  // Handle term addition from form component
   const handleTermAdded = () => {
     fetchTerms();
     setAddModalOpen(false);
@@ -173,17 +190,16 @@ const TermListPage = () => {
         width: '100vw',
         gap: '10px',
         display: 'flex',
-        transition: 'margin-left 0.3s ease'
+        transition: 'margin-left 0.3s ease',
       }}>
         <Header />
         <main className="w-full py-4 md:py-6 px-4 md:px-6">
           <div className="space-y-4 md:space-y-6">
-            {/* Page Header */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-xl md:text-2xl font-semibold text-slate-800 mb-2">Exam Term Management</h1>
-                  <p className="text-sm text-slate-600">Manage exam terms, academic years, and term status</p>
+                  <p className="text-sm text-slate-600">Manage exam terms, descriptions, grading config, and status</p>
                 </div>
                 <button
                   onClick={() => setAddModalOpen(true)}
@@ -195,7 +211,6 @@ const TermListPage = () => {
               </div>
             </div>
 
-            {/* Table Component */}
             <CommonTable
               title="Exam Terms"
               columns={termColumns}
@@ -221,20 +236,14 @@ const TermListPage = () => {
         </main>
       </div>
 
-      {/* Add Exam Term Modal */}
       <Modal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         title="Add New Exam Term"
       >
-        <ExamTermForm 
-          onTermAdded={handleTermAdded} 
-          inModal={true} 
-          onCancel={() => setAddModalOpen(false)}
-        />
+        <ExamTermForm onTermAdded={handleTermAdded} inModal={true} onCancel={() => setAddModalOpen(false)} />
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={deleteModalOpen}
         onClose={() => {
@@ -249,7 +258,7 @@ const TermListPage = () => {
               Are you sure you want to delete the exam term <strong>"{termToDelete.term_name}"</strong>?
             </p>
             <div className="bg-gray-50 p-3 rounded-md mb-4">
-              <p className="text-sm text-gray-600"><strong>Academic Year:</strong> {termToDelete.academic_year}</p>
+              <p className="text-sm text-gray-600"><strong>Status:</strong> {termToDelete.status}</p>
             </div>
             <p className="text-red-600 text-sm mb-4">This action cannot be undone.</p>
             <div className="flex justify-end gap-3">
@@ -273,7 +282,6 @@ const TermListPage = () => {
         )}
       </Modal>
 
-      {/* View Term Details Modal */}
       <Modal
         isOpen={viewModalOpen}
         onClose={() => {
@@ -282,12 +290,7 @@ const TermListPage = () => {
         }}
         title="Exam Term Details"
       >
-        {viewLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-            <p className="mt-2 text-gray-600">Loading term details...</p>
-          </div>
-        ) : termToView ? (
+        {termToView ? (
           <div className="p-4">
             <div className="space-y-4">
               <div>
@@ -295,8 +298,18 @@ const TermListPage = () => {
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{termToView.term_name || 'N/A'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{termToView.academic_year || 'N/A'}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{termToView.description || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Grading Config</label>
+                <pre className="text-gray-900 bg-gray-50 p-2 rounded-md text-xs overflow-auto">
+                  {JSON.stringify(termToView.grading_config || {}, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{termToView.status || 'active'}</p>
               </div>
             </div>
             <div className="mt-6 flex justify-end">
@@ -310,13 +323,13 @@ const TermListPage = () => {
                 Close
               </button>
             </div>
-    </div>
+          </div>
         ) : null}
       </Modal>
-    
+
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
-    );
+  );
 };
 
 export default TermListPage;

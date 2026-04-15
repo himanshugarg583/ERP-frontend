@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaMoneyBillWave, FaReceipt, FaRupeeSign, FaPlus, FaCheckCircle } from 'react-icons/fa';
 import Sidebar from './Accountant_Sidebar';
 import Header from './Accountant_Header';
-import { getFeePayments, getClassDropdown, getStudentsByClass, getStudentInstallments, fillPayment } from '../../helper/requests-method/apiMethods';
+import { getFeePayments, getClassDropdown, getStudentsByClass, getStudentInstallments, fillPayment } from '../../helper/requests-method/feeV1Api';
 import { toast } from 'react-toastify';
 
 const OnlinePaymentPage = () => {
@@ -508,7 +508,7 @@ const OnlinePaymentPage = () => {
                             {/* Summary Cards */}
                             {summary && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 rounded-lg shadow">
+                                    <div className="bg-linear-to-r from-blue-50 to-blue-100 p-5 rounded-lg shadow">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-sm text-gray-600 mb-1">Total Amount Paid</p>
@@ -517,7 +517,7 @@ const OnlinePaymentPage = () => {
                                             <FaRupeeSign className="text-4xl text-blue-600 opacity-50" />
                                         </div>
                                     </div>
-                                    <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-5 rounded-lg shadow">
+                                    <div className="bg-linear-to-r from-orange-50 to-orange-100 p-5 rounded-lg shadow">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-sm text-gray-600 mb-1">Total Late Fee Paid</p>
@@ -526,7 +526,7 @@ const OnlinePaymentPage = () => {
                                             <FaMoneyBillWave className="text-4xl text-orange-600 opacity-50" />
                                         </div>
                                     </div>
-                                    <div className="bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-lg shadow">
+                                    <div className="bg-linear-to-r from-green-50 to-green-100 p-5 rounded-lg shadow">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-sm text-gray-600 mb-1">Total Collected</p>

@@ -547,7 +547,7 @@ const StudentLeave = () => {
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
               <div className="p-4 sm:p-6">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                       <AlertCircle className="text-red-600" size={24} />
                     </div>

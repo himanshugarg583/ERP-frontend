@@ -2,11 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import { toast } from "react-toastify";
-import { User, RefreshCw } from "lucide-react";
-import {
-  getAllTeachers,
-  getTeacherTimeTable,
-} from "../../../helper/requests-method/apiMethods";
+import { User, RefreshCw, Download } from "lucide-react";
+import { getAllTeachers } from "../../../helper/requests-method/apiMethods";
+import { getAdminTeacherTimetable } from "../../../helper/requests-method/timetableApi";
 
 const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -25,6 +23,31 @@ const formatTimeRange = (start, end) => {
   return `${formatTime(start)} - ${formatTime(end)}`;
 };
 
+const escapeCsvValue = (value) => {
+  const normalized = value === null || value === undefined ? '' : String(value);
+  if (/[",\n]/.test(normalized)) {
+    return `"${normalized.replace(/"/g, '""')}"`;
+  }
+  return normalized;
+};
+
+const downloadCsvFile = (filename, headers, rows) => {
+  const csvLines = [
+    headers.map(escapeCsvValue).join(','),
+    ...rows.map((row) => row.map(escapeCsvValue).join(',')),
+  ];
+
+  const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
+
 const TeacherTimeTablePage = () => {
   const [teachers, setTeachers] = useState([]);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -40,21 +63,22 @@ const TeacherTimeTablePage = () => {
       acc[day] = entries.map((entry, index) => {
         const isBreak = Boolean(entry?.is_break);
         const classInfo = entry?.class_info || {};
-        const subjectInfo = entry?.subject_info || {};
+        const subjectInfo = entry?.subject_info || entry?.subject || {};
+        const slotInfo = entry?.slot || {};
         const classLabel =
           classInfo.display ||
           [classInfo.class_name, classInfo.section_name].filter(Boolean).join(" ");
         return {
-          id: entry?.id ?? `${day}-${index}`,
-          period_name: entry?.period_name || `Period ${index + 1}`,
-          start_time: entry?.start_time || "",
-          end_time: entry?.end_time || "",
+          id: entry?.id ?? entry?.timetable_entry_id ?? `${day}-${index}`,
+          period_name: entry?.period_name || slotInfo?.slot_label || `Period ${index + 1}`,
+          start_time: entry?.start_time || slotInfo?.start_time || "",
+          end_time: entry?.end_time || slotInfo?.end_time || "",
           is_break: isBreak,
           class_name: classInfo.class_name || "",
           section_name: classInfo.section_name || "",
           class_display: classLabel.trim(),
-          subject_name: subjectInfo.subject_name || (isBreak ? "Break" : "N/A"),
-          subject_code: subjectInfo.subject_code || "",
+          subject_name: entry?.subject_name || subjectInfo.subject_name || (isBreak ? "Break" : "N/A"),
+          subject_code: entry?.subject_code || subjectInfo.subject_code || "",
         };
       });
       return acc;
@@ -135,7 +159,7 @@ const TeacherTimeTablePage = () => {
     setError("");
     try {
       const numericId = Number(teacherId);
-      const response = await getTeacherTimeTable(
+      const response = await getAdminTeacherTimetable(
         Number.isNaN(numericId) ? teacherId : numericId
       );
       if (!response?.success) {
@@ -161,6 +185,45 @@ const TeacherTimeTablePage = () => {
     if (selectedTeacher) {
       fetchTimetableForTeacher(selectedTeacher.teacher_id);
     }
+  };
+
+  const handleDownloadTeacherTimetable = () => {
+    if (!selectedTeacher || periodSlots.length === 0) {
+      toast.error('No timetable data available to download');
+      return;
+    }
+
+    const headers = ['Day', 'Slot', 'Time', 'Subject', 'Class', 'Status'];
+    const rows = [];
+
+    WEEK_DAYS.forEach((day) => {
+      const dayEntries = timetable[day] || [];
+
+      periodSlots.forEach((slot, index) => {
+        const entry = dayEntries[index];
+        const isBreak = Boolean(entry?.is_break);
+        const status = isBreak ? 'Break' : entry ? 'Assigned' : 'Free';
+        rows.push([
+          day,
+          slot.label || `Period ${index + 1}`,
+          formatTimeRange(slot.start_time, slot.end_time),
+          isBreak ? 'Break' : entry?.subject_name || '',
+          isBreak
+            ? ''
+            : entry?.class_display ||
+              [entry?.class_name, entry?.section_name].filter(Boolean).join(' '),
+          status,
+        ]);
+      });
+    });
+
+    const teacherLabel = selectedTeacher.name || `teacher_${selectedTeacher.teacher_id}`;
+    const safeTeacherLabel = String(teacherLabel)
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_-]/g, '');
+    downloadCsvFile(`${safeTeacherLabel || 'teacher'}_timetable.csv`, headers, rows);
+    toast.success('Teacher timetable downloaded');
   };
 
   const periodSlots = buildPeriodSlots(timetable);
@@ -215,14 +278,24 @@ const TeacherTimeTablePage = () => {
                         <p className="text-sm text-slate-600">Teacher Timetable</p>
                       </div>
                     </div>
-                    <button
-                      onClick={handleRefresh}
-                      disabled={loadingTimetable}
-                      className="px-4 py-2 text-sm bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${loadingTimetable ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={handleDownloadTeacherTimetable}
+                        disabled={loadingTimetable || periodSlots.length === 0}
+                        className="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-800 text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download
+                      </button>
+                      <button
+                        onClick={handleRefresh}
+                        disabled={loadingTimetable}
+                        className="px-4 py-2 text-sm bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${loadingTimetable ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -276,7 +349,7 @@ const TeacherTimeTablePage = () => {
                               Day
                             </th>
                             {periodSlots.map((slot, index) => (
-                              <th key={index} className="border border-slate-300 p-2 md:p-3 text-center font-semibold text-slate-800 min-w-[120px]">
+                              <th key={index} className="border border-slate-300 p-2 md:p-3 text-center font-semibold text-slate-800 min-w-30">
                                 <div className="flex flex-col items-center gap-1">
                                   <span className="text-xs md:text-sm">{slot.label || `Period ${index + 1}`}</span>
                                   <span className="text-[10px] md:text-xs text-slate-600 font-normal">

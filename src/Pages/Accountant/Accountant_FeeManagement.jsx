@@ -7,7 +7,7 @@ import Accountant_Table from './Accountant_Table';
 import Accountant_PieChartCard from './Accountant_PieChartCard';
 import Accountant_SearchInput from './Accountant_SearchInput';
 import Accountant_LateFeeModal from './Accountant_LateFeeModal';
-import { addAccountantFeeHead, getAccountantFeeHeads, updateAccountantFeeHead, deleteAccountantFeeHead, addAccountantFeeStructure, getAccountantFeeStructures, getAccountantFeeStructureById, updateAccountantFeeStructure, deleteAccountantFeeStructure, getClassSectionDropdown, assignFee, getAssignedFeesByClass } from '../../helper/requests-method/apiMethods';
+import { addAccountantFeeHead, getAccountantFeeHeads, updateAccountantFeeHead, deleteAccountantFeeHead, addAccountantFeeStructure, getAccountantFeeStructures, getAccountantFeeStructureById, updateAccountantFeeStructure, deleteAccountantFeeStructure, getClassSectionDropdown, assignFee, getAssignedFeesByClass } from '../../helper/requests-method/feeV1Api';
 import { toast } from 'react-toastify';
 
 const AccountantFeeManagement = () => {
@@ -1592,7 +1592,7 @@ const AccountantFeeManagement = () => {
 
                             {/* Selected Fee Structure Details */}
                             {selectedFeeStructureDetails && (
-                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-200">
+                                <div className="bg-linear-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-200">
                                     <h4 className="text-sm font-semibold text-purple-800 mb-3">Fee Structure Details</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <div className="bg-white p-3 rounded-lg shadow-sm">

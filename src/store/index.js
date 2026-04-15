@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import adminReducer from './slices/adminSlice';
 import teacherReducer from './slices/teacherSlice';
 import studentReducer from './slices/studentSlice';
+import examReducer from './slices/examSlice';
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     admin: adminReducer,
     teacher: teacherReducer,
     student: studentReducer,
+    exam: examReducer,
   },
 });
 

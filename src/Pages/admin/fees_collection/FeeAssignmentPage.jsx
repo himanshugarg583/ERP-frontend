@@ -13,7 +13,7 @@ import {
   editClassFeeAssignment,
   viewClassFeeAssignmentStudents,
   deleteClassFeeAssignment,
-} from "../../../helper/requests-method/apiMethods";
+} from "../../../helper/requests-method/feeV1Api";
 import { toast } from "react-toastify";
 
 const FeeAssignment = () => {
@@ -302,14 +302,14 @@ const FeeAssignment = () => {
 
             {error && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-700">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <AlertCircle className="w-5 h-5 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             {success && (
               <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-700">
-                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 shrink-0" />
                 <span>{success}</span>
               </div>
             )}

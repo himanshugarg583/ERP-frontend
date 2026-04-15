@@ -4,7 +4,7 @@ import Header from '../../components/comman_components/Header';
 import { FaClock, FaBook, FaChalkboardTeacher, FaChevronLeft, FaUser } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getTeacherTimetable, getClassTimetable } from '../../helper/requests-method/apiMethods';
+import { getTeacherMyTimetable, getTeacherClassTimetable } from '../../helper/requests-method/timetableApi';
 
 const TeacherTimetable = () => {
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,7 @@ const TeacherTimetable = () => {
   const fetchTeacherTimetable = async () => {
     try {
       setLoading(true);
-      const response = await getTeacherTimetable();
+      const response = await getTeacherMyTimetable();
       if (response.success && response.data) {
         setTeacherTimetable(response.data);
       } else {
@@ -40,7 +40,7 @@ const TeacherTimetable = () => {
   const fetchClassTimetable = async (classSectionId) => {
     try {
       setLoading(true);
-      const response = await getClassTimetable(classSectionId);
+      const response = await getTeacherClassTimetable(classSectionId);
       if (response.success && response.data) {
         setClassTimetable(response.data);
         setViewMode('class');
@@ -140,7 +140,7 @@ const TeacherTimetable = () => {
           return (
             <td 
               key={`${day}-${periodIndex}`} 
-              className="py-4 px-6 align-top min-w-[180px]"
+              className="py-4 px-6 align-top min-w-45"
             >
               {period && !period.is_break ? (
                 <div 
@@ -210,7 +210,7 @@ const TeacherTimetable = () => {
           return (
             <td 
               key={`${day}-${periodIndex}`} 
-              className="py-4 px-6 align-top min-w-[180px]"
+              className="py-4 px-6 align-top min-w-45"
             >
               {period && !period.is_break ? (
                 <div className="bg-indigo-50 p-4 rounded-lg hover:shadow-lg transition-shadow duration-200 ease-in-out">

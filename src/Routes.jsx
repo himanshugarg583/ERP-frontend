@@ -110,25 +110,22 @@ import AssignSubjectPage from "./Pages/admin/Academics/AssignSubjectPage.jsx";
 import ClassTimeTablePage from "./Pages/admin/Academics/ClassTimeTablePage.jsx";
 import TeacherTimeTablePage from "./Pages/admin/Academics/TeacherTimeTablePage.jsx";
 import ViewAssignSubPage from "./Pages/admin/Academics/ViewAssignSubPage.jsx"; 
-import AdmitCardPage from "./Pages/admin/examination/AdmitCardPage.jsx";
 import ExamAttendancePage from "./Pages/admin/examination/ExamAttendancePage.jsx";
 import ExamTimeTablePage from "./Pages/admin/examination/ExamTimeTablePage.jsx";
 import ViewExamTimeTablePage from "./Pages/admin/examination/ViewExamTimeTablePage.jsx";
-import ViewClassAdmitCardsPage from "./Pages/admin/examination/ViewClassAdmitCardsPage.jsx";
 import MarksRegisterPage from "./Pages/admin/examination/MarksRegisterPage.jsx";
-import EnterMarks from "./components/examanitaion/EnterMarks.jsx";
-import ReportCardPage from "./Pages/admin/examination/ReportCardPage.jsx";
+import MarkAttendancePage from "./Pages/admin/examination/MarkAttendancePage.jsx";
+import PublishResultPage from "./Pages/admin/examination/PublishResultPage.jsx";
+import AdmitCardGeneratorPage from "./Pages/admin/examination/AdmitCardGeneratorPage.jsx";
 import TermListPage from "./Pages/admin/examination/TermListPage.jsx";
 import ExamListPage from "./Pages/admin/examination/ExamListPage.jsx";
-import ExamReportPage from "./Pages/admin/examination/ExamReportPage.jsx";
+import ReportCardGeneratorPage from "./Pages/admin/examination/ReportCardGeneratorPage.jsx";
 import TeacherManagement from "./Pages/admin/HR/TeacherManagement.jsx";
 import HRReports from "./Pages/admin/HR/HRReports.jsx";
 import TeacherCredentialsPage from "./Pages/admin/HR/TeacherCredentialsPage.jsx";
 import TeacherSalaryPage from "./Pages/admin/HR/TeacherSalaryPage.jsx";
 import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
 import Assignment from "./Pages/admin/DownloadCenter/Assignment.jsx";
-import QuestionTypePage from "./Pages/admin/modules/QuestionTypePage.jsx";
-import QuestionPaperPage from "./Pages/admin/modules/QuestionPaperPage.jsx";
 import TransportModulePage from "./Pages/admin/modules/TransportModulePage.jsx";
 import HostelModulePage from "./Pages/admin/modules/HostelModulePage.jsx";
 import InventoryModulePage from "./Pages/admin/modules/InventoryModulePage.jsx";
@@ -136,6 +133,10 @@ import LibraryModulePage from "./Pages/admin/modules/LibraryModulePage.jsx";
 // Certificates
 import StudentIdPage from "./Pages/admin/Certificates/StudentIdPage.jsx";
 import StaffIdCard from "./Pages/admin/Certificates/StaffIdCard.jsx";
+import SchoolTimesPage from "./Pages/admin/Settings/SchoolTimesPage.jsx";
+import ClassPeriodPage from "./Pages/admin/Settings/ClassPeriodPage.jsx";
+import TemplatePage from "./Pages/admin/Settings/TemplatePage.jsx";
+import ReportsPage from "./Pages/admin/Settings/ReportsPage.jsx";
 import AdminNotes from "./Pages/admin/AdminNotes";
 
 // online learning
@@ -184,7 +185,8 @@ const routes = {
     { path: "/teacher/dashboard", element: <TeacherPortal /> },
     { path: "/teacher/subjects", element: <TeacherSubject /> },
     { path: "/teacher/attendance", element: <TeacherAttendance /> },
-    { path: "/teacher/results", element: <TeacherResult /> },
+    { path: "/teacher/exam", element: <TeacherResult /> },
+    { path: "/teacher/exam/:section", element: <TeacherResult /> },
     { path: "/teacher/timetable", element: <TeacherTimetable /> },
     { path: "/teacher/transportation", element: <TeacherTransportation /> },
     { path: "/teacher/assignment", element: <TeacherAssignment /> },
@@ -279,19 +281,16 @@ const routes = {
     { path: "/admin/class-time-table-page", element: <ClassTimeTablePage/> },
 
     // exam routes
-    { path: "/admin/admit-card-page", element: <AdmitCardPage/> },
-    { path: "/admin/view-class-admit-cards", element: <ViewClassAdmitCardsPage/> },
     { path: "/admin/exam-attendance-page", element: <ExamAttendancePage/> },
+    { path: "/admin/marks-register-page", element: <MarksRegisterPage/> },
+    { path: "/admin/mark-attendance-page", element: <MarkAttendancePage/> },
+    { path: "/admin/publish-result-page", element: <PublishResultPage/> },
+    { path: "/admin/admit-card-page", element: <AdmitCardGeneratorPage/> },
     { path: "/admin/exam-time-table-page", element: <ExamTimeTablePage/> },
     { path: "/admin/view-exam-time-table-page", element: <ViewExamTimeTablePage/> },
-    { path: "/admin/marks-register-page", element: <MarksRegisterPage/> },
-    { path: "/admin/enter-marks", element: <EnterMarks/> },
-    { path: "/admin/report-card-page", element: <ReportCardPage/> },
     { path: "/admin/term-list-page", element: <TermListPage/> },
     { path: "/admin/exam-list-page", element: <ExamListPage/> },
-    { path: "/admin/exam-report-page", element: <ExamReportPage/> },
-    { path: "/admin/question-type", element: <QuestionTypePage/> },
-    { path: "/admin/question-paper", element: <QuestionPaperPage/> },
+    { path: "/admin/report-card-generator", element: <ReportCardGeneratorPage/> },
     { path: "/admin/notes", element: <AdminNotes/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },
     { path: "/admin/hr-reports", element: <HRReports/> },
@@ -307,6 +306,10 @@ const routes = {
     // Certificates
     { path: "/admin/student-id-page", element: <StudentIdPage /> },
     { path: "/admin/staff-id-card", element: <StaffIdCard /> },
+    { path: "/admin/settings/school-times", element: <SchoolTimesPage /> },
+    { path: "/admin/settings/class-period", element: <ClassPeriodPage /> },
+    { path: "/admin/settings/template", element: <TemplatePage /> },
+    { path: "/admin/settings/reports", element: <ReportsPage /> },
 
       
 

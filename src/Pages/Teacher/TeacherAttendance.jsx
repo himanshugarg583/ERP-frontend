@@ -19,7 +19,7 @@ const ClassCard = ({ cls, onClick, studentCount, todayStats }) => {
       className="bg-white rounded-xl shadow-md hover:shadow-xl cursor-pointer transform hover:-translate-y-1 transition-all duration-300 border border-gray-200 overflow-hidden"
       onClick={onClick}
     >
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-5">
+      <div className="bg-linear-to-r from-indigo-600 to-indigo-700 p-5">
         <h3 className="text-white text-lg font-semibold">{cls?.display_name || cls?.name || ''}</h3>
         <p className="text-indigo-200 text-sm mt-1">Class: {cls?.class_name || ''} - {cls?.section_name || ''}</p>
       </div>
@@ -164,19 +164,19 @@ const AttendanceView = ({
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-        <div className="p-4 rounded-xl shadow-sm bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200">
+        <div className="p-4 rounded-xl shadow-sm bg-linear-to-br from-indigo-50 to-indigo-100 border border-indigo-200">
           <p className="text-xs md:text-sm text-gray-600 mb-1">Total Students</p>
           <p className="text-xl md:text-2xl font-bold text-indigo-600">{stats?.total ?? 0}</p>
         </div>
-        <div className="p-4 rounded-xl shadow-sm bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
+        <div className="p-4 rounded-xl shadow-sm bg-linear-to-br from-green-50 to-green-100 border border-green-200">
           <p className="text-xs md:text-sm text-gray-600 mb-1">Present</p>
           <p className="text-xl md:text-2xl font-bold text-green-600">{stats?.present ?? 0}</p>
         </div>
-        <div className="p-4 rounded-xl shadow-sm bg-gradient-to-br from-red-50 to-red-100 border border-red-200">
+        <div className="p-4 rounded-xl shadow-sm bg-linear-to-br from-red-50 to-red-100 border border-red-200">
           <p className="text-xs md:text-sm text-gray-600 mb-1">Absent</p>
           <p className="text-xl md:text-2xl font-bold text-red-600">{stats?.absent ?? 0}</p>
         </div>
-        <div className="p-4 rounded-xl shadow-sm bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+        <div className="p-4 rounded-xl shadow-sm bg-linear-to-br from-gray-50 to-gray-100 border border-gray-200">
           <p className="text-xs md:text-sm text-gray-600 mb-1">Unmarked</p>
           <p className="text-xl md:text-2xl font-bold text-gray-600">{stats?.unmarked ?? 0}</p>
         </div>
@@ -215,7 +215,7 @@ const AttendanceView = ({
         <div className="overflow-x-auto">
           <div className="min-w-full">
             {/* Table Header */}
-            <div className="grid grid-cols-12 bg-gradient-to-r from-indigo-50 to-indigo-100 p-3 md:p-4 font-semibold text-gray-700 text-sm border-b-2 border-indigo-200 rounded-t-lg">
+            <div className="grid grid-cols-12 bg-linear-to-r from-indigo-50 to-indigo-100 p-3 md:p-4 font-semibold text-gray-700 text-sm border-b-2 border-indigo-200 rounded-t-lg">
               <div className="col-span-1 text-center">No.</div>
               <div className="col-span-2 md:col-span-2">Roll No</div>
               <div className="col-span-5 md:col-span-6">Name</div>
@@ -223,7 +223,7 @@ const AttendanceView = ({
             </div>
             
             {/* Table Body */}
-            <div className="max-h-[400px] md:max-h-[500px] overflow-y-auto border border-gray-200 rounded-b-lg">
+            <div className="max-h-100 md:max-h-125 overflow-y-auto border border-gray-200 rounded-b-lg">
               {attendance?.[classId]?.length > 0 ? (
                 attendance[classId].map((s, i) => (
                   <div 

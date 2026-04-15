@@ -16,6 +16,7 @@ import {
   Library,
   FileQuestion,
   Award,
+  Settings2,
   User,
   ChevronRight,
   ChevronsRight,
@@ -102,15 +103,13 @@ const SIDEBAR_ITEMS = [
     subItems: [
       { name: "Exam Term", href: "/admin/term-list-page" },
       { name: "Exam List", href: "/admin/exam-list-page" },
+      { name: "Mark Register", href: "/admin/marks-register-page" },
+      { name: "Mark Attendance", href: "/admin/mark-attendance-page" },
+      { name: "Publish Result", href: "/admin/publish-result-page" },
+      { name: "Admit Card", href: "/admin/admit-card-page" },
       { name: "Exam Timetable", href: "/admin/exam-time-table-page" },
       { name: "View Exam Timetable", href: "/admin/view-exam-time-table-page" },
-      { name: "Admit Card", href: "/admin/admit-card-page" },
-      { name: "Class Admit Cards", href: "/admin/view-class-admit-cards" },
-      { name: "Marks Register", href: "/admin/marks-register-page" },
-      { name: "Report Card", href: "/admin/report-card-page" },
-      { name: "Examination Report", href: "/admin/exam-report-page" },
-      { name: "Question Type", href: "/admin/question-type" },
-      { name: "Question Paper", href: "/admin/question-paper" },
+      { name: "Report Card", href: "/admin/report-card-generator" },
     ],
   },
   {
@@ -170,6 +169,16 @@ const SIDEBAR_ITEMS = [
     subItems: [
       { name: "Student Id Card", href: "/admin/student-id-page" },
       { name: "Staff Id Card", href: "/admin/staff-id-card" },
+    ],
+  },
+  {
+    name: "Setting",
+    icon: Settings2,
+    subItems: [
+      { name: "School Times", href: "/admin/settings/school-times" },
+      { name: "Class Period", href: "/admin/settings/class-period" },
+      { name: "Template", href: "/admin/settings/template" },
+      { name: "Reports", href: "/admin/settings/reports" },
     ],
   },
   {
@@ -257,7 +266,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="relative flex-shrink-0">
+    <div className="relative shrink-0">
       {/* Mobile overlay */}
       {isMobile && isSidebarOpen && (
         <motion.div
@@ -275,11 +284,11 @@ const Sidebar = () => {
         animate={{ width: isSidebarOpen ? 288 : 80 }}
         transition={{ type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white px-4 py-4 flex flex-col border-r border-slate-700/50 overflow-visible shadow-2xl">
+        <div className="h-full bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 text-white px-4 py-4 flex flex-col border-r border-slate-700/50 overflow-visible shadow-2xl">
           {/* Header: Logo */}
           <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-700/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <AnimatePresence>
@@ -289,7 +298,7 @@ const Sidebar = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
                   >
-                    <h2 className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                    <h2 className="text-lg font-bold bg-linear-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                       EduManage
                     </h2>
                     <p className="text-xs text-slate-400">Admin Panel</p>
@@ -312,7 +321,7 @@ const Sidebar = () => {
 
           {/* Sidebar Navigation */}
           <nav
-            className="mt-4 flex-grow overflow-y-auto space-y-1.5 custom-scrollbar"
+            className="mt-4 grow overflow-y-auto space-y-1.5 custom-scrollbar"
             ref={navRef}
             onScroll={persistScroll}
           >
@@ -336,7 +345,7 @@ const Sidebar = () => {
                   >
                     <div
                       className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
-                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/30'
+                          ? 'bg-linear-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/30'
                           : 'hover:bg-slate-700/50'
                         }`}
                       onMouseEnter={(e) => showCollapsedTooltip(e, item.name)}
@@ -392,7 +401,7 @@ const Sidebar = () => {
                                     : 'text-slate-400 hover:text-white hover:bg-slate-700/30'
                                   }`}
                               >
-                                <ChevronsRight className="w-3.5 h-3.5 flex-shrink-0" />
+                                <ChevronsRight className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">{subItem.name}</span>
                               </motion.div>
                             </Link>
@@ -442,7 +451,7 @@ const Sidebar = () => {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={toggleSidebar}
-          className="absolute -right-4 top-20 z-20 w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex items-center justify-center text-white cursor-pointer"
+          className="absolute -right-4 top-20 z-20 w-8 h-8 rounded-full bg-linear-to-r from-indigo-600 to-purple-600 shadow-lg flex items-center justify-center text-white cursor-pointer"
         >
           <motion.div
             animate={{ rotate: isSidebarOpen ? 180 : 0 }}

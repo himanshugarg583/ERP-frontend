@@ -84,7 +84,7 @@ const AnnouncementList = () => {
   const handleAttachmentClick = (attachmentUrl) => {
     if (attachmentUrl) {
       // Open attachment in new tab
-      const baseUrl = 'https://xd363v4j-5000.inc1.devtunnels.ms';
+      const baseUrl = 'https://xd363v4j-5001.inc1.devtunnels.ms';
       window.open(`${baseUrl}/${attachmentUrl}`, '_blank');
     }
   };

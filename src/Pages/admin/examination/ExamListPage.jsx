@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus } from 'lucide-react';
+import { useDispatch } from 'react-redux';
 import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
 import CommonTable from '../../../components/tables/CommonTable';
@@ -7,13 +8,14 @@ import ExamForm from '../../../components/examanitaion/ExamForm';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
-  getAllExams,
-  updateExam,
-  deleteExam
-} from '../../../helper/requests-method/apiMethods';
+  listExamEventsV2Thunk,
+  updateExamEventV2Thunk,
+  deleteExamEventV2Thunk,
+} from '../../../store/slices/examSlice';
 import Modal from '../../../components/comman_components/Modal';
 
 const ExamListPage = () => {
+  const dispatch = useDispatch();
   const [exams, setExams] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -26,26 +28,34 @@ const ExamListPage = () => {
   const fetchExams = useCallback(async () => {
     setTableLoading(true);
     try {
-      const response = await getAllExams();
-      // API response structure: { success: true, statusCode: 200, message: "...", data: [...] }
+      const response = await dispatch(listExamEventsV2Thunk({})).unwrap();
       const payload = Array.isArray(response?.data)
         ? response.data
-        : Array.isArray(response?.exams)
-          ? response.exams
+        : Array.isArray(response?.events)
+          ? response.events
           : Array.isArray(response)
             ? response
             : [];
 
       const normalizedExams = payload.map((exam) => ({
-        id: exam.id,
-        term_id: exam.term_id || null,
-        exam_name: exam.exam_name || '',
+        id: exam.id || exam.uuid || exam.exam_event_id,
+        exam_type_id: exam.exam_type_id || exam.examTypeId || exam.exam_type?.id || null,
+        exam_name: exam.name || exam.exam_name || '',
         description: exam.description || '',
         start_date: exam.start_date || null,
         end_date: exam.end_date || null,
-        status: exam.status || 'active',
-        term_name: exam.term?.term_name || '',
-        academic_year: exam.term?.academic_year || ''
+        status: exam.status || 'scheduled',
+        exam_term_name:
+          exam.exam_term_name ||
+          exam.exam_term?.term_name ||
+          exam.term?.term_name ||
+          exam.exam_type?.name ||
+          exam.exam_type_name ||
+          '',
+        exam_type_name: exam.exam_type?.name || exam.exam_type_name || '',
+        academic_year: exam.academic_year || '',
+        marks_entry_deadline: exam.marks_entry_deadline || null,
+        result_publish_at: exam.result_publish_at || null,
       }));
 
       setExams(normalizedExams);
@@ -55,7 +65,7 @@ const ExamListPage = () => {
     } finally {
       setTableLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     fetchExams();
@@ -82,14 +92,14 @@ const ExamListPage = () => {
         placeholder: 'e.g. Mid-Term Exam'
       },
       {
-        key: 'term_name',
-        header: 'Term',
+        key: 'exam_term_name',
+        header: 'Exam Term',
         type: 'text',
         render: (value, item) => {
-          if (item.term_name && item.academic_year) {
-            return `${item.term_name} (${item.academic_year})`;
+          if (item.exam_term_name && item.academic_year) {
+            return `${item.exam_term_name} (${item.academic_year})`;
           }
-          return item.term_name || 'N/A';
+          return item.exam_term_name || 'N/A';
         }
       },
       {
@@ -124,20 +134,28 @@ const ExamListPage = () => {
         }
       },
       {
+        key: 'academic_year',
+        header: 'Academic Year',
+        type: 'text',
+        render: (value) => value || 'N/A'
+      },
+      {
         key: 'status',
         header: 'Status',
         type: 'select',
         required: true,
         options: [
-          { value: 'active', label: 'Active' },
-          { value: 'inactive', label: 'Inactive' },
-          { value: 'completed', label: 'Completed' }
+          { value: 'scheduled', label: 'Scheduled' },
+          { value: 'ongoing', label: 'Ongoing' },
+          { value: 'completed', label: 'Completed' },
+          { value: 'cancelled', label: 'Cancelled' }
         ],
         render: (value) => {
           const statusColors = {
-            active: 'bg-green-100 text-green-800',
-            inactive: 'bg-gray-100 text-gray-800',
-            completed: 'bg-blue-100 text-blue-800'
+            scheduled: 'bg-amber-100 text-amber-800',
+            ongoing: 'bg-indigo-100 text-indigo-800',
+            completed: 'bg-green-100 text-green-800',
+            cancelled: 'bg-rose-100 text-rose-800',
           };
           const colorClass = statusColors[value] || 'bg-gray-100 text-gray-800';
           return (
@@ -151,18 +169,19 @@ const ExamListPage = () => {
     []
   );
 
-  const filterFields = useMemo(
+  const _filterFields = useMemo(
     () => [
       { key: 'exam_name', label: 'Exam Name', type: 'text', placeholder: 'Search by exam name' },
-      { key: 'term_name', label: 'Term', type: 'text', placeholder: 'Search by term name' },
+      { key: 'exam_term_name', label: 'Exam Term', type: 'text', placeholder: 'Search by exam term' },
       {
         key: 'status',
         label: 'Status',
         type: 'select',
         options: [
-          { value: 'active', label: 'Active' },
-          { value: 'inactive', label: 'Inactive' },
-          { value: 'completed', label: 'Completed' }
+          { value: 'scheduled', label: 'Scheduled' },
+          { value: 'ongoing', label: 'Ongoing' },
+          { value: 'completed', label: 'Completed' },
+          { value: 'cancelled', label: 'Cancelled' }
         ]
       }
     ],
@@ -172,9 +191,9 @@ const ExamListPage = () => {
   const handleUpdateExam = useCallback(
     async (id, data) => {
       const payload = {
-        term_id: data.term_id ? Number(data.term_id) : undefined,
-        exam_name: data.exam_name?.trim(),
+        name: data.exam_name?.trim(),
         description: data.description?.trim() || null,
+        academic_year: data.academic_year?.trim() || undefined,
         start_date: data.start_date || null,
         end_date: data.end_date || null,
         status: data.status
@@ -196,13 +215,11 @@ const ExamListPage = () => {
       }
 
       try {
-        const response = await updateExam(id, payload);
-        if (response?.success) {
-          toast.success(response.message || 'Exam updated successfully');
-          await fetchExams();
-        } else {
-          toast.error(response?.message || 'Failed to update exam');
-        }
+        const response = await dispatch(
+          updateExamEventV2Thunk({ examEventUuid: id, payload })
+        ).unwrap();
+        toast.success(response?.message || 'Exam event updated successfully');
+        await fetchExams();
         return response;
       } catch (error) {
         console.error('Error updating exam:', error);
@@ -210,7 +227,7 @@ const ExamListPage = () => {
         throw error;
       }
     },
-    [fetchExams]
+    [dispatch, fetchExams]
   );
 
   const handleDeleteClick = useCallback(async (exam) => {
@@ -222,20 +239,18 @@ const ExamListPage = () => {
     if (!examToDelete) return;
 
     try {
-      const response = await deleteExam(examToDelete.id);
-      if (response?.success) {
-        toast.success(response.message || 'Exam deleted successfully');
-        setExams((prev) => prev.filter((exam) => exam.id !== examToDelete.id));
-        setDeleteModalOpen(false);
-        setExamToDelete(null);
-      } else {
-        toast.error(response?.message || 'Failed to delete exam');
-      }
+      const response = await dispatch(
+        deleteExamEventV2Thunk({ examEventUuid: examToDelete.id })
+      ).unwrap();
+      toast.success(response?.message || 'Exam event deleted successfully');
+      setExams((prev) => prev.filter((exam) => exam.id !== examToDelete.id));
+      setDeleteModalOpen(false);
+      setExamToDelete(null);
     } catch (error) {
       console.error('Error deleting exam:', error);
       toast.error(error?.response?.data?.message || 'Failed to delete exam');
     }
-  }, [examToDelete]);
+  }, [dispatch, examToDelete]);
 
   const handleViewClick = useCallback(async (exam) => {
     setExamToView(exam);
@@ -267,7 +282,7 @@ const ExamListPage = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-xl md:text-2xl font-semibold text-slate-800 mb-2">Exam Management</h1>
-                <p className="text-sm text-slate-600">Manage exams, schedules, and term mapping</p>
+                <p className="text-sm text-slate-600">Manage exam events with V2 schedule and publish flow</p>
               </div>
               <button
                 onClick={() => setAddModalOpen(true)}
@@ -309,7 +324,7 @@ const ExamListPage = () => {
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         title="Add New Exam"
-        subtitle="Define exam details and link to an academic term"
+        subtitle="Create a V2 exam event"
         size="lg"
       >
         <ExamForm onExamAdded={handleExamAdded} inModal={true} onCancel={() => setAddModalOpen(false)} />
@@ -327,10 +342,10 @@ const ExamListPage = () => {
         {examToDelete && (
           <div className="p-4">
             <p className="text-gray-700 mb-4">
-              Are you sure you want to delete the exam <strong>"{examToDelete.exam_name}"</strong>?
+              Are you sure you want to delete the exam event <strong>"{examToDelete.exam_name}"</strong>?
             </p>
             <div className="bg-gray-50 p-3 rounded-md mb-4">
-              <p className="text-sm text-gray-600"><strong>Term:</strong> {examToDelete.term_name || 'N/A'}</p>
+              <p className="text-sm text-gray-600"><strong>Exam Term:</strong> {examToDelete.exam_term_name || 'N/A'}</p>
               <p className="text-sm text-gray-600"><strong>Start Date:</strong> {examToDelete.start_date ? new Date(examToDelete.start_date).toLocaleDateString('en-GB') : 'N/A'}</p>
               <p className="text-sm text-gray-600"><strong>End Date:</strong> {examToDelete.end_date ? new Date(examToDelete.end_date).toLocaleDateString('en-GB') : 'N/A'}</p>
             </div>
@@ -374,11 +389,11 @@ const ExamListPage = () => {
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">{examToView.exam_name || 'N/A'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Term</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Exam Term</label>
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  {examToView.term_name && examToView.academic_year
-                    ? `${examToView.term_name} (${examToView.academic_year})`
-                    : examToView.term_name || 'N/A'}
+                  {examToView.exam_term_name && examToView.academic_year
+                    ? `${examToView.exam_term_name} (${examToView.academic_year})`
+                    : examToView.exam_term_name || 'N/A'}
                 </p>
               </div>
               <div>
@@ -410,9 +425,10 @@ const ExamListPage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <p className="text-gray-900 bg-gray-50 p-2 rounded-md">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${examToView.status === 'active' ? 'bg-green-100 text-green-800' :
-                    amToView.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                      'bgray-100 text-gray-800'
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${examToView.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
+                    examToView.status === 'ongoing' ? 'bg-indigo-100 text-indigo-800' :
+                      examToView.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        'bg-rose-100 text-rose-800'
                     }`}>
                     {examToView.status ? examToView.status.charAt(0).toUpperCase() + examToView.status.slice(1) : 'N/A'}
                   </span>

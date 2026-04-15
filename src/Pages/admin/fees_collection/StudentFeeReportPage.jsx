@@ -9,7 +9,7 @@ import {
   getAllClassesDropdown,
   getStudentsByClass,
   getStudentCompleteFeeDetails,
-} from "../../../helper/requests-method/apiMethods";
+} from "../../../helper/requests-method/feeV1Api";
 import { toast } from "react-toastify";
 
 const StudentFeeReport = () => {
@@ -462,7 +462,7 @@ const StudentFeeReport = () => {
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">Academic Year Wise Details</h3>
                       {feeDetails.fees_by_academic_year.map((yearData, yearIndex) => (
                         <div key={yearIndex} className="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                          <div className="bg-gradient-to-r from-violet-50 to-purple-50 px-4 py-3 border-b border-gray-200">
+                          <div className="bg-linear-to-r from-violet-50 to-purple-50 px-4 py-3 border-b border-gray-200">
                             <div className="flex items-center justify-between">
                               <h4 className="font-semibold text-gray-900">{yearData.academic_year}</h4>
                               <div className="flex gap-4 text-sm">

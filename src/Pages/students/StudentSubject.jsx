@@ -5,7 +5,7 @@ import Header from '../../components/comman_components/Header';
 import StudentAllSubject from './StudentAllSubject';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getStudentTimetable } from '../../helper/requests-method/apiMethods';
+import { getStudentMyTimetable } from '../../helper/requests-method/timetableApi';
 
 const StudentSubject = () => {
   const [timetable, setTimetable] = useState(null);
@@ -19,7 +19,7 @@ const StudentSubject = () => {
   const fetchTimetable = async () => {
     try {
       setLoading(true);
-      const response = await getStudentTimetable();
+      const response = await getStudentMyTimetable();
       if (response.success && response.data) {
         setClassInfo(response.data.class_info);
         setTimetable(response.data.timetable);
@@ -96,7 +96,7 @@ const StudentSubject = () => {
             ) : timetable ? (
               <table className="w-full border-separate border-spacing-2">
                 <thead>
-                  <tr className="bg-gradient-to-r from-indigo-50 to-indigo-100 text-gray-700">
+                  <tr className="bg-linear-to-r from-indigo-50 to-indigo-100 text-gray-700">
                     <th className="px-4 py-3 w-32 text-left text-sm font-extrabold uppercase tracking-wider sticky left-0 z-10 bg-indigo-50 border-b border-gray-200 rounded-tl-lg">Day</th>
                     {getTimeSlots().map((time, index) => (
                       <th
@@ -119,14 +119,14 @@ const StudentSubject = () => {
                           if (!period) {
                             return (
                               <td key={slotIndex} className="px-4 py-3 w-32 h-16 text-sm text-center border-b border-gray-200 bg-gray-100 text-gray-800 rounded-md">
-                                <span className="inline-block w-full h-full flex items-center justify-center px-2 py-1 rounded-md">-</span>
+                                <span className="w-full h-full flex items-center justify-center px-2 py-1 rounded-md">-</span>
                               </td>
                             );
                           }
                           if (period.is_break) {
                             return (
                               <td key={slotIndex} className="px-4 py-3 w-32 h-16 text-sm text-center border-b border-gray-200 bg-gray-200 text-gray-800 font-extrabold rounded-md">
-                                <span className="inline-block w-full h-full flex items-center justify-center px-2 py-1 rounded-md">Break</span>
+                                <span className="w-full h-full flex items-center justify-center px-2 py-1 rounded-md">Break</span>
                               </td>
                             );
                           }

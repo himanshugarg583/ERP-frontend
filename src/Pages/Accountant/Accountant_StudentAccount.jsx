@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaUsers, FaEye, FaTimes, FaCheckCircle, FaClock, FaTimesCircle } from 'react-icons/fa';
 import Sidebar from './Accountant_Sidebar';
 import Header from './Accountant_Header';
-import { getClassSectionDropdown, getStudentsByClass, getStudentFeeDetails } from '../../helper/requests-method/apiMethods';
+import { getClassSectionDropdown, getStudentsByClass, getStudentFeeDetails } from '../../helper/requests-method/feeV1Api';
 import { toast } from 'react-toastify';
 
 const AccountantStudentAccounts = () => {
@@ -239,7 +239,7 @@ const AccountantStudentAccounts = () => {
                                         ) : feeDetails ? (
                                             <div className="space-y-6 max-h-[70vh] overflow-y-auto">
                                                 {/* Student Info */}
-                                                <div className="bg-gradient-to-r from-teal-50 to-blue-50 p-4 rounded-lg">
+                                                <div className="bg-linear-to-r from-teal-50 to-blue-50 p-4 rounded-lg">
                                                     <h4 className="font-semibold text-lg mb-3 text-gray-800">Student Information</h4>
                                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                                         <div>

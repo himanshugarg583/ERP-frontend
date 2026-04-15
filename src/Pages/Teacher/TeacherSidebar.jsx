@@ -49,9 +49,15 @@ const SIDEBAR_ITEMS = [
     subItems: [{ name: "Timetable", href: "/teacher/timetable" }],
   },
   {
-    name: "Results",
+    name: "Exam",
     icon: ClipboardCheck,
-    subItems: [{ name: "Results", href: "/teacher/results" }],
+    subItems: [
+      { name: "Assigned Papers", href: "/teacher/exam/assigned-papers" },
+      { name: "Exam Timetable", href: "/teacher/exam/timetable" },
+      { name: "Mark Register", href: "/teacher/exam/mark-register" },
+      { name: "Paper Students", href: "/teacher/exam/paper-students" },
+      { name: "Attendance", href: "/teacher/exam/attendance" },
+    ],
   },
   {
     name: "Notice",

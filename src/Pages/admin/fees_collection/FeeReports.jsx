@@ -4,7 +4,7 @@ import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import { BarChart3, AlertCircle, User, Calendar, DollarSign, Clock, FileText } from "lucide-react";
-import { getOverdueInstallments } from "../../../helper/requests-method/apiMethods";
+import { getOverdueInstallments } from "../../../helper/requests-method/feeV1Api";
 import { toast } from "react-toastify";
 
 const FeeReportsComponent = () => {

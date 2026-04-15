@@ -5,7 +5,8 @@ import Header from '../../components/comman_components/Header';
 import { FaClipboardList, FaCalendarAlt, FaExclamationCircle } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getStudentAttendance, getStudentSubjects, getStudentTimetable } from '../../helper/requests-method/apiMethods';
+import { getStudentAttendance, getStudentSubjects } from '../../helper/requests-method/apiMethods';
+import { getStudentMyTimetable } from '../../helper/requests-method/timetableApi';
 
 const StudentAttendance = () => {
   const [attendanceData, setAttendanceData] = useState({
@@ -57,7 +58,7 @@ const StudentAttendance = () => {
     try {
       const [subjectsResponse, timetableResponse] = await Promise.all([
         getStudentSubjects(),
-        getStudentTimetable(),
+        getStudentMyTimetable(),
       ]);
 
       if (subjectsResponse?.success && subjectsResponse?.data) {

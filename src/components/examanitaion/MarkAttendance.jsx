@@ -7,38 +7,40 @@ import {
   listExamTypesV2Thunk,
   listExamEventsV2Thunk,
   listExamPapersV2Thunk,
-  listMarksRegistersV2Thunk,
-  getMarksRegisterByPaperV2Thunk,
-  createMarksRegistersV2Thunk,
-  updateMarksRegistersV2Thunk,
+  createExamAttendanceBulkV2Thunk,
+  listExamAttendanceV2Thunk,
+  updateExamAttendanceV2Thunk,
 } from '../../store/slices/examSlice';
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
-
 const getPaperId = (paper) => String(paper.id || paper.uuid || '');
-
+const toApiId = (id) => {
+  const parsed = Number(id);
+  return Number.isNaN(parsed) ? id : parsed;
+};
 const getPaperLabel = (paper) =>
   paper.subject_name ||
   paper.subject?.name ||
   paper.subject?.subject_name ||
   `Subject ${paper.subject_id || getPaperId(paper)}`;
 
-const getStatusClass = (status) => {
-  const normalized = String(status || '').toLowerCase();
-  if (normalized === 'submitted') return 'bg-indigo-100 text-indigo-700';
-  if (normalized === 'approved') return 'bg-emerald-100 text-emerald-700';
-  if (normalized === 'locked') return 'bg-rose-100 text-rose-700';
-  return 'bg-slate-100 text-slate-700';
-};
+const ATTENDANCE_OPTIONS = [
+  { value: 'present', label: 'Present' },
+  { value: 'absent', label: 'Absent' },
+  { value: 'late', label: 'Late' },
+  { value: 'excused', label: 'Excused' },
+];
 
-const MarkRegister = () => {
+const getCellKey = (studentId, paperId) => `${studentId}::${paperId}`;
+
+const MarkAttendance = () => {
   const dispatch = useDispatch();
   const subjectDropdownRef = useRef(null);
 
   const [loadingBase, setLoadingBase] = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [loadingRegister, setLoadingRegister] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [savingAll, setSavingAll] = useState(false);
 
   const [examTypes, setExamTypes] = useState([]);
   const [examEvents, setExamEvents] = useState([]);
@@ -50,19 +52,18 @@ const MarkRegister = () => {
   const [selectedExamEventId, setSelectedExamEventId] = useState('');
   const [selectedClassSectionId, setSelectedClassSectionId] = useState('');
   const [selectedPaperIds, setSelectedPaperIds] = useState([]);
-  const [activeMode, setActiveMode] = useState('fill');
   const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false);
 
-  const [marksByKey, setMarksByKey] = useState({});
   const [statusByKey, setStatusByKey] = useState({});
-  const [hasExistingRegister, setHasExistingRegister] = useState(false);
-  const [isRegisterLoaded, setIsRegisterLoaded] = useState(false);
+  const [remarksByKey, setRemarksByKey] = useState({});
+  const [attendanceIdByKey, setAttendanceIdByKey] = useState({});
+
+  const [isAttendanceLoaded, setIsAttendanceLoaded] = useState(false);
 
   useEffect(() => {
     const loadBase = async () => {
       try {
         setLoadingBase(true);
-
         const [typesResponse, eventsResponse, classesResponse] = await Promise.all([
           dispatch(listExamTypesV2Thunk()).unwrap(),
           dispatch(listExamEventsV2Thunk({})).unwrap(),
@@ -72,11 +73,9 @@ const MarkRegister = () => {
         const typeRows = toArray(typesResponse?.data).length
           ? toArray(typesResponse.data)
           : toArray(typesResponse);
-
         const eventRows = toArray(eventsResponse?.data).length
           ? toArray(eventsResponse.data)
           : toArray(eventsResponse);
-
         const classRows = toArray(classesResponse?.data?.classes).length
           ? toArray(classesResponse.data.classes)
           : toArray(classesResponse?.data);
@@ -85,7 +84,6 @@ const MarkRegister = () => {
         setExamEvents(eventRows);
         setClassSections(classRows);
       } catch (error) {
-        console.error('Failed to load mark register base data', error);
         toast.error(error?.message || 'Failed to load dropdown data');
       } finally {
         setLoadingBase(false);
@@ -100,7 +98,7 @@ const MarkRegister = () => {
       if (!selectedExamEventId) {
         setAllPapers([]);
         setSelectedPaperIds([]);
-        setIsRegisterLoaded(false);
+        setIsAttendanceLoaded(false);
         return;
       }
 
@@ -115,19 +113,11 @@ const MarkRegister = () => {
 
         setAllPapers(rows);
         setSelectedPaperIds([]);
-        setMarksByKey({});
-        setStatusByKey({});
-        setHasExistingRegister(false);
-        setIsRegisterLoaded(false);
+        setIsAttendanceLoaded(false);
       } catch (error) {
-        console.error('Failed to load exam papers', error);
         toast.error(error?.message || 'Failed to load subjects for exam');
         setAllPapers([]);
         setSelectedPaperIds([]);
-        setMarksByKey({});
-        setStatusByKey({});
-        setHasExistingRegister(false);
-        setIsRegisterLoaded(false);
       }
     };
 
@@ -144,10 +134,8 @@ const MarkRegister = () => {
       try {
         setLoadingStudents(true);
         const response = await getAllStudentsByClass(selectedClassSectionId);
-        const rows = toArray(response?.data);
-        setStudents(rows);
+        setStudents(toArray(response?.data));
       } catch (error) {
-        console.error('Failed to load students', error);
         toast.error(error?.message || 'Failed to load students');
         setStudents([]);
       } finally {
@@ -179,9 +167,7 @@ const MarkRegister = () => {
 
   const availablePapers = useMemo(() => {
     if (!selectedClassSectionId) return [];
-    return allPapers.filter(
-      (paper) => String(paper.class_id || '') === String(selectedClassSectionId)
-    );
+    return allPapers.filter((paper) => String(paper.class_id || '') === String(selectedClassSectionId));
   }, [allPapers, selectedClassSectionId]);
 
   const selectedPapers = useMemo(() => {
@@ -189,12 +175,8 @@ const MarkRegister = () => {
     return availablePapers.filter((paper) => selectedSet.has(getPaperId(paper)));
   }, [availablePapers, selectedPaperIds]);
 
-  const allSubjectsSelected = availablePapers.length > 0 && selectedPaperIds.length === availablePapers.length;
-
-  const hasAnyLoadedMarks = useMemo(() => {
-    if (!isRegisterLoaded) return false;
-    return Object.values(marksByKey).some((value) => value !== undefined && value !== '');
-  }, [isRegisterLoaded, marksByKey]);
+  const allSubjectsSelected =
+    availablePapers.length > 0 && selectedPaperIds.length === availablePapers.length;
 
   const selectedSubjectsLabel = useMemo(() => {
     if (allSubjectsSelected) return 'All Subjects';
@@ -205,15 +187,21 @@ const MarkRegister = () => {
   }, [allSubjectsSelected, selectedPapers]);
 
   const studentRows = useMemo(
-    () => students.map((student, index) => ({
-      id: student.id || student.student_id || student.user_id || `${index + 1}`,
-      name: student.name || student.student_name || student.User?.name || 'N/A',
-      rollNumber: student.roll_number || student.roll_no || 'N/A',
-    })),
+    () =>
+      students.map((student, index) => ({
+        id: student.id || student.student_id || student.user_id || `${index + 1}`,
+        name: student.name || student.student_name || student.User?.name || 'N/A',
+        rollNumber: student.roll_number || student.roll_no || 'N/A',
+      })),
     [students]
   );
 
-  const getCellKey = (studentId, paperId) => `${studentId}::${paperId}`;
+  const resetAttendanceData = () => {
+    setStatusByKey({});
+    setRemarksByKey({});
+    setAttendanceIdByKey({});
+    setIsAttendanceLoaded(false);
+  };
 
   const handleTogglePaper = (paperId) => {
     const idAsString = String(paperId);
@@ -226,28 +214,30 @@ const MarkRegister = () => {
       }
       return Array.from(set);
     });
-    setIsRegisterLoaded(false);
+    resetAttendanceData();
   };
 
   const handleToggleAllSubjects = () => {
     if (allSubjectsSelected) {
       setSelectedPaperIds([]);
-      setIsRegisterLoaded(false);
+      resetAttendanceData();
       return;
     }
     setSelectedPaperIds(availablePapers.map((paper) => getPaperId(paper)));
-    setIsRegisterLoaded(false);
+    resetAttendanceData();
   };
 
-  const handleMarkChange = (studentId, paperId, value) => {
+  const handleStatusChange = (studentId, paperId, status) => {
     const key = getCellKey(studentId, paperId);
-    setMarksByKey((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setStatusByKey((prev) => ({ ...prev, [key]: status }));
   };
 
-  const handleLoadRegister = async () => {
+  const handleRemarksChange = (studentId, paperId, remarks) => {
+    const key = getCellKey(studentId, paperId);
+    setRemarksByKey((prev) => ({ ...prev, [key]: remarks }));
+  };
+
+  const handleLoadAttendance = async () => {
     if (!selectedExamTypeId || !selectedExamEventId || !selectedClassSectionId) {
       toast.error('Please select exam term, exam, and class section');
       return;
@@ -264,202 +254,154 @@ const MarkRegister = () => {
     }
 
     try {
-      setLoadingRegister(true);
-
-      let existingFound = false;
-
-      try {
-        const listResponse = await dispatch(
-          listMarksRegistersV2Thunk({
-            class_id: selectedClassSectionId,
-            exam_event_id: selectedExamEventId,
-          })
-        ).unwrap();
-
-        const listRows = toArray(listResponse?.data).length
-          ? toArray(listResponse.data)
-          : toArray(listResponse);
-
-        if (listRows.length > 0) {
-          existingFound = true;
-        }
-      } catch {
-        // Continue with paper-wise GET even if list API shape differs.
-      }
+      setLoadingAttendance(true);
 
       const selectedIds = selectedPaperIds.map((id) => String(id));
       const responses = await Promise.all(
-        selectedIds.map((examPaperId) =>
+        selectedIds.map((paperId) =>
           dispatch(
-            getMarksRegisterByPaperV2Thunk({
-              examPaperId,
-              params: { class_id: selectedClassSectionId },
+            listExamAttendanceV2Thunk({
+              exam_paper_id: paperId,
+              class_id: selectedClassSectionId,
             })
           ).unwrap()
         )
       );
 
-      const nextMarks = {};
       const nextStatus = {};
+      const nextRemarks = {};
+      const nextIds = {};
 
       responses.forEach((response, responseIndex) => {
         const paperId = selectedIds[responseIndex];
-        const rows = toArray(response?.data?.marks_entries).length
-          ? toArray(response.data.marks_entries)
-          : toArray(response?.marks_entries).length
-            ? toArray(response.marks_entries)
-            : toArray(response?.data).length
-              ? toArray(response.data)
-              : toArray(response);
-
-        if (rows.length > 0) {
-          existingFound = true;
-        }
+        const rows = toArray(response?.data).length
+          ? toArray(response.data)
+          : toArray(response?.attendance).length
+            ? toArray(response.attendance)
+            : toArray(response);
 
         rows.forEach((entry) => {
           const sid = entry.student_id || entry.student?.id;
           if (!sid) return;
-          const value =
-            entry.total_marks ??
-            entry.marks?.theory ??
-            entry.marks_obtained ??
-            '';
-          nextMarks[getCellKey(sid, paperId)] = String(value ?? '');
-          nextStatus[getCellKey(sid, paperId)] = entry.status || 'draft';
+
+          const key = getCellKey(sid, paperId);
+          nextStatus[key] = entry.status || 'present';
+          nextRemarks[key] = entry.remarks || '';
+          nextIds[key] = entry.id;
         });
       });
 
-      setHasExistingRegister(existingFound);
-      setMarksByKey(nextMarks);
       setStatusByKey(nextStatus);
-      setIsRegisterLoaded(true);
-      toast.success('Mark register loaded');
+      setRemarksByKey(nextRemarks);
+      setAttendanceIdByKey(nextIds);
+      setIsAttendanceLoaded(true);
+      toast.success('Attendance loaded');
     } catch (error) {
-      console.error('Failed to load marks register data', error);
-      toast.error(error?.message || 'Failed to load marks register');
+      toast.error(error?.message || 'Failed to load attendance');
     } finally {
-      setLoadingRegister(false);
+      setLoadingAttendance(false);
     }
   };
 
-  const handleSaveMarks = async () => {
+  const buildRecord = (student, paperId) => {
+    const key = getCellKey(student.id, paperId);
+    const status = statusByKey[key];
+    if (!status) return null;
+
+    return {
+      student_id: Number(student.id),
+      status,
+      remarks: remarksByKey[key] || '',
+      malpractice_flag: false,
+    };
+  };
+
+  const handleSaveAll = async () => {
     if (selectedPapers.length === 0 || studentRows.length === 0) {
-      toast.error('No mark rows to save');
+      toast.error('No attendance rows to save');
       return;
     }
 
     try {
-      setSaving(true);
+      setSavingAll(true);
 
-      const entries = selectedPapers
-        .map((paper) => {
-          const paperId = paper.id || paper.uuid;
-          const studentsPayload = studentRows
-            .map((student) => {
-              const key = getCellKey(student.id, String(paperId));
-              const rawValue = marksByKey[key];
-              if (rawValue === undefined || rawValue === '') return null;
+      let createdCount = 0;
+      let updatedCount = 0;
 
-              const marksValue = Number(rawValue);
-              if (Number.isNaN(marksValue)) return null;
+      for (const paper of selectedPapers) {
+        const paperId = getPaperId(paper);
+        const newRecords = [];
+        const updateTasks = [];
 
-              return {
-                student_id: Number(student.id),
-                marks: {
-                  theory: marksValue,
-                  practical: 0,
-                },
-                total_marks: marksValue,
-                is_absent: false,
-                is_exempt: false,
-                grace_marks: 0,
-                status: 'draft',
-              };
+        for (const student of studentRows) {
+          const key = getCellKey(student.id, paperId);
+          const record = buildRecord(student, paperId);
+          if (!record) continue;
+
+          const attendanceId = attendanceIdByKey[key];
+          if (attendanceId) {
+            updateTasks.push(
+              dispatch(
+                updateExamAttendanceV2Thunk({
+                  attendanceId,
+                  payload: {
+                    status: record.status,
+                    remarks: record.remarks,
+                    malpractice_flag: record.malpractice_flag,
+                  },
+                })
+              ).unwrap()
+            );
+          } else {
+            newRecords.push(record);
+          }
+        }
+
+        if (newRecords.length > 0) {
+          const bulkResponse = await dispatch(
+            createExamAttendanceBulkV2Thunk({
+              exam_paper_id: toApiId(paperId),
+              records: newRecords,
             })
-            .filter(Boolean);
+          ).unwrap();
 
-          if (studentsPayload.length === 0) return null;
+          createdCount += newRecords.length;
 
-          return {
-            exam_paper_id: Number.isNaN(Number(paperId)) ? paperId : Number(paperId),
-            students: studentsPayload,
-          };
-        })
-        .filter(Boolean);
+          const createdRows = toArray(bulkResponse?.data).length
+            ? toArray(bulkResponse.data)
+            : toArray(bulkResponse?.attendance).length
+              ? toArray(bulkResponse.attendance)
+              : [];
 
-      if (entries.length === 0) {
-        toast.error('Please enter at least one mark before saving');
-        return;
-      }
+          if (createdRows.length > 0) {
+            const nextIds = {};
+            createdRows.forEach((entry) => {
+              const sid = entry.student_id || entry.student?.id;
+              if (!sid || !entry.id) return;
+              nextIds[getCellKey(sid, paperId)] = entry.id;
+            });
+            setAttendanceIdByKey((prev) => ({ ...prev, ...nextIds }));
+          }
+        }
 
-      const payload = {
-        class_id: Number(selectedClassSectionId),
-        entries,
-      };
-
-      if (hasExistingRegister) {
-        await dispatch(updateMarksRegistersV2Thunk(payload)).unwrap();
-        toast.success('Marks register updated successfully');
-      } else {
-        await dispatch(createMarksRegistersV2Thunk(payload)).unwrap();
-        toast.success('Marks register created successfully');
-      }
-
-      setHasExistingRegister(true);
-      setIsRegisterLoaded(true);
-      await handleLoadRegister();
-    } catch (error) {
-      const statusCode = error?.statusCode || error?.status || error?.response?.status;
-      if (!hasExistingRegister && (statusCode === 409 || statusCode === 400)) {
-        try {
-          const payload = {
-            class_id: Number(selectedClassSectionId),
-            entries: selectedPapers
-              .map((paper) => {
-                const paperId = paper.id || paper.uuid;
-                const studentsPayload = studentRows
-                  .map((student) => {
-                    const key = getCellKey(student.id, String(paperId));
-                    const rawValue = marksByKey[key];
-                    if (rawValue === undefined || rawValue === '') return null;
-                    const marksValue = Number(rawValue);
-                    if (Number.isNaN(marksValue)) return null;
-                    return {
-                      student_id: Number(student.id),
-                      marks: { theory: marksValue, practical: 0 },
-                      total_marks: marksValue,
-                      is_absent: false,
-                      is_exempt: false,
-                      grace_marks: 0,
-                      status: 'draft',
-                    };
-                  })
-                  .filter(Boolean);
-
-                if (studentsPayload.length === 0) return null;
-                return {
-                  exam_paper_id: Number.isNaN(Number(paperId)) ? paperId : Number(paperId),
-                  students: studentsPayload,
-                };
-              })
-              .filter(Boolean),
-          };
-
-          await dispatch(updateMarksRegistersV2Thunk(payload)).unwrap();
-          toast.success('Marks register updated successfully');
-          setHasExistingRegister(true);
-          setIsRegisterLoaded(true);
-          await handleLoadRegister();
-          return;
-        } catch (updateError) {
-          console.error('Fallback update failed', updateError);
+        if (updateTasks.length > 0) {
+          const results = await Promise.allSettled(updateTasks);
+          updatedCount += results.filter((item) => item.status === 'fulfilled').length;
         }
       }
 
-      console.error('Failed to save marks', error);
-      toast.error(error?.message || 'Failed to save marks');
+      if (createdCount === 0 && updatedCount === 0) {
+        toast.error('Please fill at least one attendance status before save');
+        return;
+      }
+
+      toast.success(`Attendance saved. Created ${createdCount}, Updated ${updatedCount}`);
+      setIsAttendanceLoaded(true);
+      await handleLoadAttendance();
+    } catch (error) {
+      toast.error(error?.message || 'Failed to save bulk attendance');
     } finally {
-      setSaving(false);
+      setSavingAll(false);
     }
   };
 
@@ -467,33 +409,10 @@ const MarkRegister = () => {
     <main className="flex-1 p-4 md:p-6 overflow-y-auto">
       <div className="container mx-auto max-w-full">
         <div className="bg-white shadow-xl rounded-xl p-4 md:p-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-violet-700 mb-2 text-center">Mark Register</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-violet-700 mb-2 text-center">Mark Attendance</h2>
           <p className="text-center text-sm text-slate-600 mb-6">
-            Select exam term, exam, class section, and subjects to fill or view student marks.
+            Select exam term, exam, class section, and subjects to mark student attendance.
           </p>
-
-          <div className="flex justify-center mb-5">
-            <div className="inline-flex p-1 rounded-lg bg-slate-100 border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setActiveMode('fill')}
-                className={`px-4 py-2 text-sm rounded-md transition-colors ${
-                  activeMode === 'fill' ? 'bg-violet-600 text-white' : 'text-slate-700'
-                }`}
-              >
-                Fill Marks
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMode('view')}
-                className={`px-4 py-2 text-sm rounded-md transition-colors ${
-                  activeMode === 'view' ? 'bg-violet-600 text-white' : 'text-slate-700'
-                }`}
-              >
-                View Marks
-              </button>
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
             <div>
@@ -504,10 +423,7 @@ const MarkRegister = () => {
                   setSelectedExamTypeId(event.target.value);
                   setSelectedExamEventId('');
                   setSelectedPaperIds([]);
-                  setMarksByKey({});
-                  setStatusByKey({});
-                  setHasExistingRegister(false);
-                  setIsRegisterLoaded(false);
+                  resetAttendanceData();
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                 disabled={loadingBase}
@@ -528,10 +444,7 @@ const MarkRegister = () => {
                 onChange={(event) => {
                   setSelectedExamEventId(event.target.value);
                   setSelectedPaperIds([]);
-                  setMarksByKey({});
-                  setStatusByKey({});
-                  setHasExistingRegister(false);
-                  setIsRegisterLoaded(false);
+                  resetAttendanceData();
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                 disabled={!selectedExamTypeId || loadingBase}
@@ -552,10 +465,7 @@ const MarkRegister = () => {
                 onChange={(event) => {
                   setSelectedClassSectionId(event.target.value);
                   setSelectedPaperIds([]);
-                  setMarksByKey({});
-                  setStatusByKey({});
-                  setHasExistingRegister(false);
-                  setIsRegisterLoaded(false);
+                  resetAttendanceData();
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                 disabled={loadingBase}
@@ -572,11 +482,11 @@ const MarkRegister = () => {
             <div className="flex items-end">
               <button
                 type="button"
-                onClick={handleLoadRegister}
+                onClick={handleLoadAttendance}
                 className="w-full h-10 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
-                disabled={loadingRegister || loadingStudents || !selectedClassSectionId || !selectedExamEventId || selectedPaperIds.length === 0}
+                disabled={loadingAttendance || loadingStudents || !selectedClassSectionId || !selectedExamEventId || selectedPaperIds.length === 0}
               >
-                {loadingRegister ? 'Loading...' : activeMode === 'view' ? 'Get Marks' : 'Load Register'}
+                {loadingAttendance ? 'Loading...' : 'Load Attendance'}
               </button>
             </div>
           </div>
@@ -646,7 +556,7 @@ const MarkRegister = () => {
             </div>
           )}
 
-          {!loadingStudents && studentRows.length > 0 && selectedPapers.length > 0 && isRegisterLoaded && (
+          {!loadingStudents && studentRows.length > 0 && selectedPapers.length > 0 && isAttendanceLoaded && (
             <>
               <div className="overflow-auto border border-slate-200 rounded-lg">
                 <table className="min-w-full text-sm">
@@ -654,14 +564,11 @@ const MarkRegister = () => {
                     <tr>
                       <th className="px-3 py-2 text-left sticky left-0 bg-violet-600 z-10 min-w-24">Roll No</th>
                       <th className="px-3 py-2 text-left sticky left-24 bg-violet-600 z-10 min-w-44">Student</th>
-                      {selectedPapers.map((paper) => {
-                        const label = getPaperLabel(paper);
-                        return (
-                          <th key={String(paper.id || paper.uuid)} className="px-3 py-2 text-center min-w-44">
-                            {label}
-                          </th>
-                        );
-                      })}
+                      {selectedPapers.map((paper) => (
+                        <th key={getPaperId(paper)} className="px-3 py-2 text-center min-w-72">
+                          {getPaperLabel(paper)}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -670,31 +577,34 @@ const MarkRegister = () => {
                         <td className="px-3 py-2 sticky left-0 bg-inherit z-10">{student.rollNumber}</td>
                         <td className="px-3 py-2 sticky left-24 bg-inherit z-10 font-medium">{student.name}</td>
                         {selectedPapers.map((paper) => {
-                          const paperId = String(paper.id || paper.uuid);
+                          const paperId = getPaperId(paper);
                           const key = getCellKey(student.id, paperId);
-                          const status = statusByKey[key] || 'draft';
+
                           return (
-                            <td key={key} className="px-3 py-2">
-                              {activeMode === 'fill' ? (
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.5"
-                                  value={marksByKey[key] || ''}
-                                  onChange={(event) => handleMarkChange(student.id, paperId, event.target.value)}
+                            <td key={key} className="px-3 py-2 align-top">
+                              <div className="space-y-2">
+                                <select
+                                  value={statusByKey[key] || ''}
+                                  onChange={(event) => handleStatusChange(student.id, paperId, event.target.value)}
                                   className="w-full border border-slate-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                  placeholder="Enter marks"
+                                >
+                                  <option value="">Select status</option>
+                                  {ATTENDANCE_OPTIONS.map((statusItem) => (
+                                    <option key={statusItem.value} value={statusItem.value}>
+                                      {statusItem.label}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                <input
+                                  type="text"
+                                  value={remarksByKey[key] || ''}
+                                  onChange={(event) => handleRemarksChange(student.id, paperId, event.target.value)}
+                                  className="w-full border border-slate-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                  placeholder="Remarks"
                                 />
-                              ) : (
-                                <div className="space-y-1">
-                                  <div className="w-full border border-slate-200 rounded-md px-2 py-1.5 bg-slate-50">
-                                    {marksByKey[key] === undefined || marksByKey[key] === '' ? '--' : marksByKey[key]}
-                                  </div>
-                                  <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium ${getStatusClass(status)}`}>
-                                    {String(status).toUpperCase()}
-                                  </span>
-                                </div>
-                              )}
+
+                              </div>
                             </td>
                           );
                         })}
@@ -704,27 +614,21 @@ const MarkRegister = () => {
                 </table>
               </div>
 
-              {activeMode === 'fill' && (
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSaveMarks}
-                    disabled={saving}
-                    className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-                  >
-                    {saving ? 'Saving...' : 'Save Marks'}
-                  </button>
-                </div>
-              )}
-
-              {activeMode === 'view' && !hasAnyLoadedMarks && (
-                <p className="text-sm text-slate-500 mt-4">No marks entries found for selected filters.</p>
-              )}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveAll}
+                  disabled={savingAll}
+                  className="px-5 py-2.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
+                >
+                  {savingAll ? 'Saving...' : 'Save All Attendance'}
+                </button>
+              </div>
             </>
           )}
 
-          {!loadingStudents && studentRows.length > 0 && selectedPapers.length > 0 && !isRegisterLoaded && (
-            <p className="text-sm text-slate-500">Click {activeMode === 'view' ? 'Get Marks' : 'Load Register'} to fetch marks for selected subjects.</p>
+          {!loadingStudents && studentRows.length > 0 && selectedPapers.length > 0 && !isAttendanceLoaded && (
+            <p className="text-sm text-slate-500">Click Load Attendance to fetch and mark attendance.</p>
           )}
 
           {!loadingStudents && selectedClassSectionId && studentRows.length === 0 && (
@@ -736,4 +640,4 @@ const MarkRegister = () => {
   );
 };
 
-export default MarkRegister;
+export default MarkAttendance;

@@ -4,7 +4,7 @@ import StudentSidebar from './StudentSidebar';
 import Header from '../../components/comman_components/Header';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getStudentFeesDetails, getStudentInstallments, getStudentPaymentHistory, createPaymentOrder, verifyPayment } from '../../helper/requests-method/apiMethods';
+import { getStudentFeesDetails, getStudentInstallments, getStudentPaymentHistory, createPaymentOrder, verifyPayment } from '../../helper/requests-method/feeV1Api';
 
 const StudentFees = () => {
   const [feesData, setFeesData] = useState(null);
@@ -410,7 +410,7 @@ const StudentFees = () => {
                                     <p className="text-xs text-gray-500 mt-1 italic">{fee.discount_reason}</p>
                                   )}
                                 </div>
-                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-lg shadow-sm border border-indigo-200">
+                                <div className="bg-linear-to-br from-indigo-50 to-purple-50 p-4 rounded-lg shadow-sm border border-indigo-200">
                                   <p className="text-xs text-indigo-600 mb-1 flex items-center gap-1 font-medium">
                                     <FaCheckCircle className="text-indigo-500" />
                                     Final Amount
@@ -450,7 +450,7 @@ const StudentFees = () => {
                       <div className="space-y-6">
                         {/* Summary and Action Bar */}
                         {selectedInstallments.length > 0 && (
-                          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 sticky top-0 z-10 shadow-md">
+                          <div className="bg-linear-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 sticky top-0 z-10 shadow-md">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                               <div>
                                 <p className="text-sm font-medium text-indigo-700 mb-1">
@@ -470,7 +470,7 @@ const StudentFees = () => {
                                 <button
                                   onClick={handlePaySelected}
                                   disabled={paymentLoading}
-                                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 text-sm font-medium flex items-center gap-2 cursor-pointer"
+                                  className="px-6 py-2 bg-linear-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 text-sm font-medium flex items-center gap-2 cursor-pointer"
                                 >
                                   <FaMoneyBillWave />
                                   {paymentLoading ? 'Processing...' : 'Pay Now'}

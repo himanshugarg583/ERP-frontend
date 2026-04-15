@@ -25,7 +25,7 @@ import {
   getAllClassesDropdown,
   getAllStudentsByClass,
   getStudentInstallments
-} from "../../../helper/requests-method/apiMethods";
+} from "../../../helper/requests-method/feeV1Api";
 import { toast } from "react-toastify";
 
 const PaymentReceived = () => {
@@ -47,7 +47,12 @@ const PaymentReceived = () => {
     amount_paid: "",
     payment_method: "cash",
     installment_ids: [],
-    late_fee_paid: ""
+    late_fee_paid: "",
+    transaction_id: "",
+    payment_for: "",
+    remarks: "",
+    cheque_number: "",
+    bank_name: "",
   });
   const [installments, setInstallments] = useState([]);
   const [selectedInstallments, setSelectedInstallments] = useState([]);
@@ -247,7 +252,12 @@ const PaymentReceived = () => {
         amount_paid: Number(paymentForm.amount_paid),
         payment_method: paymentForm.payment_method,
         installment_ids: selectedInstallments,
-        late_fee_paid: Number(paymentForm.late_fee_paid) || 0
+        late_fee_paid: Number(paymentForm.late_fee_paid) || 0,
+        transaction_id: paymentForm.transaction_id || null,
+        cheque_number: paymentForm.cheque_number || null,
+        bank_name: paymentForm.bank_name || null,
+        payment_for: paymentForm.payment_for,
+        remarks: paymentForm.remarks || "",
       };
 
       const response = await createPayment(payload);
@@ -261,7 +271,12 @@ const PaymentReceived = () => {
         amount_paid: "",
         payment_method: "cash",
         installment_ids: [],
-        late_fee_paid: ""
+        late_fee_paid: "",
+        transaction_id: "",
+        payment_for: "",
+        remarks: "",
+        cheque_number: "",
+        bank_name: "",
       });
       setStudents([]);
       setInstallments([]);
@@ -916,6 +931,53 @@ const PaymentReceived = () => {
                   </div>
                 )}
 
+                {paymentForm.payment_method === 'cheque' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Cheque Number
+                      </label>
+                      <input
+                        type="text"
+                        name="cheque_number"
+                        value={paymentForm.cheque_number}
+                        onChange={handlePaymentFormChange}
+                        placeholder="Enter cheque number"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Bank Name
+                      </label>
+                      <input
+                        type="text"
+                        name="bank_name"
+                        value={paymentForm.bank_name}
+                        onChange={handlePaymentFormChange}
+                        placeholder="Enter bank name"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {paymentForm.payment_method === 'bank_transfer' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bank Name
+                    </label>
+                    <input
+                      type="text"
+                      name="bank_name"
+                      value={paymentForm.bank_name}
+                      onChange={handlePaymentFormChange}
+                      placeholder="Enter bank name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                  </div>
+                )}
+
                 {/* Payment For */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -929,36 +991,6 @@ const PaymentReceived = () => {
                     placeholder="e.g., Tuition Fee Q1"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                     required
-                  />
-                </div>
-
-                {/* Student Fee ID (Optional) */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Student Fee ID (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    name="student_fee_id"
-                    value={paymentForm.student_fee_id}
-                    onChange={handlePaymentFormChange}
-                    placeholder="Enter student fee ID"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  />
-                </div>
-
-                {/* Installment ID (Optional) */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Installment ID (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    name="installment_id"
-                    value={paymentForm.installment_id}
-                    onChange={handlePaymentFormChange}
-                    placeholder="Enter installment ID"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
                 </div>
 
@@ -989,7 +1021,6 @@ const PaymentReceived = () => {
                 </button>
                 <button
                   type="submit"
-                  onClick={handleCreatePayment}
                   className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 cursor-pointer"
                   disabled={loading}
                 >

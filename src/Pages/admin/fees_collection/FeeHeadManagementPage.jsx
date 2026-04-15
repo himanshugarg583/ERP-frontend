@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from "react";
-import { getAllFeeHeads, createFeeHead, updateFeeHead, deleteFeeHead } from "../../../helper/requests-method/apiMethods";
+import { getAllFeeHeads, createFeeHead, updateFeeHead, deleteFeeHead } from "../../../helper/requests-method/feeV1Api";
 import Modal from "../../../components/comman_components/Modal";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import Sidebar from "../Sidebar";
@@ -21,7 +21,12 @@ const FeeHeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [form, setForm] = useState({ 
     name: "", 
-    description: "" 
+    category: "general",
+    description: "",
+    ledger_code: "",
+    is_optional: false,
+    is_refundable: false,
+    is_active: true,
   });
 
   const fetchFeeHeads = async () => {
@@ -66,7 +71,11 @@ const FeeHeadManagement = () => {
   }, [success, error]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -89,7 +98,15 @@ const FeeHeadManagement = () => {
         setSuccess(successMessage);
         toast.success(successMessage);
       }
-      setForm({ name: "", description: "" });
+      setForm({
+        name: "",
+        category: "general",
+        description: "",
+        ledger_code: "",
+        is_optional: false,
+        is_refundable: false,
+        is_active: true,
+      });
       setIsModalOpen(false);
       setEditMode(false);
       setCurrentFeeHead(null);
@@ -111,7 +128,12 @@ const FeeHeadManagement = () => {
     setCurrentFeeHead(feeHead);
     setForm({
       name: feeHead.name || "",
-      description: feeHead.description || ""
+      category: feeHead.category || "general",
+      description: feeHead.description || "",
+      ledger_code: feeHead.ledger_code || "",
+      is_optional: Boolean(feeHead.is_optional),
+      is_refundable: Boolean(feeHead.is_refundable),
+      is_active: feeHead.is_active !== undefined ? Boolean(feeHead.is_active) : feeHead.status !== "inactive",
     });
     setEditMode(true);
     setIsModalOpen(true);
@@ -136,7 +158,15 @@ const FeeHeadManagement = () => {
   };
 
   const openAddModal = () => {
-    setForm({ name: "", description: "" });
+    setForm({
+      name: "",
+      category: "general",
+      description: "",
+      ledger_code: "",
+      is_optional: false,
+      is_refundable: false,
+      is_active: true,
+    });
     setEditMode(false);
     setCurrentFeeHead(null);
     setIsModalOpen(true);
@@ -144,7 +174,9 @@ const FeeHeadManagement = () => {
 
   const filteredFeeHeads = feeHeads.filter(fh => 
     (fh.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (fh.description || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (fh.description || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (fh.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (fh.ledger_code || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -171,14 +203,14 @@ const FeeHeadManagement = () => {
         {/* Alert Messages */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-700">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
         
         {success && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-700">
-            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            <CheckCircle className="w-5 h-5 shrink-0" />
             <span>{success}</span>
           </div>
         )}
@@ -249,7 +281,10 @@ const FeeHeadManagement = () => {
                       Description
                     </th>
                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Mandatory
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Type
                     </th>
                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Status
@@ -272,10 +307,15 @@ const FeeHeadManagement = () => {
                         {fh.description || "-"}
                       </td>
                       <td className="px-6 py-4 text-center">
+                        <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 capitalize">
+                          {fh.category || "general"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                          fh.is_mandatory ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'
+                          fh.is_optional ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
                         }`}>
-                          {fh.is_mandatory ? 'Yes' : 'No'}
+                          {fh.is_optional ? 'Optional' : 'Mandatory'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -335,7 +375,15 @@ const FeeHeadManagement = () => {
                 setIsModalOpen(false);
                 setEditMode(false);
                 setCurrentFeeHead(null);
-                setForm({ name: "", description: "" });
+                setForm({
+                  name: "",
+                  category: "general",
+                  description: "",
+                  ledger_code: "",
+                  is_optional: false,
+                  is_refundable: false,
+                  is_active: true,
+                });
               }}
               title={editMode ? "Edit Fee Head" : "Add New Fee Head"}
               subtitle={editMode ? "Update the fee head information" : "Create a new fee head for your institution"}
@@ -359,6 +407,41 @@ const FeeHeadManagement = () => {
                 </div>
 
                 {/* Description Field */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category
+                    </label>
+                    <select
+                      name="category"
+                      value={form.category}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    >
+                      <option value="general">General</option>
+                      <option value="academic">Academic</option>
+                      <option value="transport">Transport</option>
+                      <option value="hostel">Hostel</option>
+                      <option value="library">Library</option>
+                      <option value="sports">Sports</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ledger Code
+                    </label>
+                    <input
+                      type="text"
+                      name="ledger_code"
+                      value={form.ledger_code}
+                      onChange={handleChange}
+                      placeholder="e.g., LED-101"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Description Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
@@ -373,6 +456,39 @@ const FeeHeadManagement = () => {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <label className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_optional"
+                      checked={form.is_optional}
+                      onChange={handleChange}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700">Optional Fee</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_refundable"
+                      checked={form.is_refundable}
+                      onChange={handleChange}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700">Refundable</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={form.is_active}
+                      onChange={handleChange}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
                   <button
@@ -381,7 +497,15 @@ const FeeHeadManagement = () => {
                       setIsModalOpen(false);
                       setEditMode(false);
                       setCurrentFeeHead(null);
-                      setForm({ name: "", description: "" });
+                      setForm({
+                        name: "",
+                        category: "general",
+                        description: "",
+                        ledger_code: "",
+                        is_optional: false,
+                        is_refundable: false,
+                        is_active: true,
+                      });
                     }}
                     className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
                   >
@@ -460,12 +584,41 @@ const FeeHeadManagement = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Mandatory
+                      Category
+                    </label>
+                    <p className="text-base text-gray-700 bg-gray-50 p-3 rounded-lg capitalize">
+                      {viewFeeHead.category || 'general'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Type
                     </label>
                     <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                      viewFeeHead.is_mandatory ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'
+                      viewFeeHead.is_optional ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
                     }`}>
-                      {viewFeeHead.is_mandatory ? 'Yes' : 'No'}
+                      {viewFeeHead.is_optional ? 'Optional' : 'Mandatory'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Ledger Code
+                    </label>
+                    <p className="text-base text-gray-700 bg-gray-50 p-3 rounded-lg">
+                      {viewFeeHead.ledger_code || '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Refundable
+                    </label>
+                    <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                      viewFeeHead.is_refundable ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {viewFeeHead.is_refundable ? 'Yes' : 'No'}
                     </span>
                   </div>
 

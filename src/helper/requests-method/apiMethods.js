@@ -29,7 +29,7 @@ export const getOverdueInstallments = async () => {
 
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000'; // Backend base URL
+const API_BASE_URL = 'http://localhost:5001'; // Backend base URL
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
@@ -262,6 +262,7 @@ export const API_ENDPOINTS = {
   GET_STUDENTS_BY_SUBJECT: (examId, classSectionId, subjectId) => `/admin/examMark/getStudentsBySubject?exam_id=${examId}&class_section_id=${classSectionId}&subject_id=${subjectId}`,
   UPDATE_SUBJECT_MARKS: '/admin/examMark/updateSubject',
   GET_STUDENT_EXAM_HISTORY: (studentId) => `/admin/examMark/getStudentExamHistory?student_id=${studentId}`,
+  GET_REPORT_CARD_DATA: '/admin/examMark/getReportCardData',
   
   // Admin profile endpoints
   GET_ADMIN_PROFILE: '/admin/setting/profile',
@@ -1094,7 +1095,7 @@ export const getTeacherClasses = async () => {
 export const getStudentsByClassForAttendance = async (classId) => {
   try {
     return await authorizedGet(API_ENDPOINTS.GET_CLASS_STUDENT_LIST(classId));
-  } catch (error) {
+  } catch {
     return authorizedGet(API_ENDPOINTS.GET_STUDENTS_BY_CLASS_FOR_TEACHER(classId));
   }
 };
@@ -1619,6 +1620,10 @@ export const updateSubjectMarks = async (marksData) => {
 
 export const getStudentExamHistory = async (studentId) => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_EXAM_HISTORY(studentId));
+};
+
+export const getReportCardData = async (data) => {
+  return authorizedPost(API_ENDPOINTS.GET_REPORT_CARD_DATA, data);
 };
 
 // Student exam result endpoint
