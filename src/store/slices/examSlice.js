@@ -158,6 +158,15 @@ export const upsertTeacherExamMarksRegistersV2Thunk = createExamThunk('upsertTea
 // V2 Student
 export const getStudentTimetableV2Thunk = createExamThunk('getStudentTimetableV2', (params) => studentExamApi.getStudentTimetableV2(params));
 export const getStudentResultsV2Thunk = createExamThunk('getStudentResultsV2', (params) => studentExamApi.getStudentResultsV2(params));
+export const getStudentEventWiseSubjectMarksV2Thunk = createExamThunk('getStudentEventWiseSubjectMarksV2', (params) =>
+  studentExamApi.getStudentEventWiseSubjectMarksV2(params)
+);
+export const getStudentExamSchedulesV2Thunk = createExamThunk('getStudentExamSchedulesV2', (params) =>
+  studentExamApi.getStudentExamSchedulesV2(params)
+);
+export const getStudentExamScheduleTimetableV2Thunk = createExamThunk('getStudentExamScheduleTimetableV2', ({ examEventId }) =>
+  studentExamApi.getStudentExamScheduleTimetableV2(examEventId)
+);
 export const getStudentDocumentsV2Thunk = createExamThunk('getStudentDocumentsV2', (params) => studentExamApi.getStudentDocumentsV2(params));
 export const downloadStudentDocumentV2Thunk = createExamThunk('downloadStudentDocumentV2', ({ documentUuid }) =>
   studentExamApi.downloadStudentDocumentV2(documentUuid)

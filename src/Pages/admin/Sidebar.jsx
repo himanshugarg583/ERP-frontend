@@ -110,6 +110,7 @@ const SIDEBAR_ITEMS = [
       { name: "Exam Timetable", href: "/admin/exam-time-table-page" },
       { name: "View Exam Timetable", href: "/admin/view-exam-time-table-page" },
       { name: "Report Card", href: "/admin/report-card-generator" },
+      { name: "Examination Report", href: "/admin/examination-report" },
     ],
   },
   {
@@ -201,7 +202,12 @@ const Sidebar = () => {
   const [openDropdown, setOpenDropdown] = useState(() => {
     const saved = localStorage.getItem('sidebar:openDropdown');
     if (saved) return saved || null;
-    const parent = SIDEBAR_ITEMS.find((item) => item.subItems && item.subItems.some((s) => s.href === window.location.pathname));
+    const parent = SIDEBAR_ITEMS.find(
+      (item) =>
+        item.subItems &&
+        item.subItems.length > 1 &&
+        item.subItems.some((s) => s.href === window.location.pathname)
+    );
     return parent ? parent.name : null;
   });
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -224,7 +230,12 @@ const Sidebar = () => {
   }, [isMobile]);
 
   useEffect(() => {
-    const parent = SIDEBAR_ITEMS.find((item) => item.subItems && item.subItems.some((s) => s.href === location.pathname));
+    const parent = SIDEBAR_ITEMS.find(
+      (item) =>
+        item.subItems &&
+        item.subItems.length > 1 &&
+        item.subItems.some((s) => s.href === location.pathname)
+    );
     const next = parent ? parent.name : null;
     setOpenDropdown(next);
     localStorage.setItem('sidebar:openDropdown', next || '');
@@ -258,6 +269,25 @@ const Sidebar = () => {
   };
 
   const hideCollapsedTooltip = () => setTooltip((t) => ({ ...t, visible: false }));
+
+  const handleMenuItemClick = (item) => {
+    const subItems = Array.isArray(item?.subItems) ? item.subItems : [];
+
+    if (subItems.length === 1 && subItems[0]?.href) {
+      persistScroll();
+      navigate(subItems[0].href);
+      return;
+    }
+
+    if (subItems.length > 1) {
+      if (!isSidebarOpen && isMobile) {
+        setIsSidebarOpen(true);
+      }
+      const next = openDropdown === item.name ? null : item.name;
+      setOpenDropdown(next);
+      localStorage.setItem('sidebar:openDropdown', next || '');
+    }
+  };
 
   const toggleSidebar = () => {
     const next = !isSidebarOpen;
@@ -327,7 +357,9 @@ const Sidebar = () => {
           >
             {SIDEBAR_ITEMS.map((item) => {
               const Icon = item.icon;
-              const isActive = item.subItems && item.subItems.some((sub) => sub.href === location.pathname);
+              const subItems = Array.isArray(item.subItems) ? item.subItems : [];
+              const hasMultipleSubItems = subItems.length > 1;
+              const isActive = subItems.some((sub) => sub.href === location.pathname);
               const isOpen = openDropdown === item.name;
 
               return (
@@ -335,13 +367,7 @@ const Sidebar = () => {
                   <motion.div
                     whileHover={{ x: isSidebarOpen ? 4 : 0 }}
                     className="cursor-pointer"
-                    onClick={() => {
-                      if (item.subItems) {
-                        const next = openDropdown === item.name ? null : item.name;
-                        setOpenDropdown(next);
-                        localStorage.setItem('sidebar:openDropdown', next || '');
-                      }
-                    }}
+                    onClick={() => handleMenuItemClick(item)}
                   >
                     <div
                       className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
@@ -365,7 +391,7 @@ const Sidebar = () => {
                             className="flex-1 flex items-center justify-between"
                           >
                             <span className="font-medium text-sm">{item.name}</span>
-                            {item.subItems && (
+                            {hasMultipleSubItems && (
                               <motion.div
                                 animate={{ rotate: isOpen ? 90 : 0 }}
                                 transition={{ duration: 0.2 }}
@@ -381,7 +407,7 @@ const Sidebar = () => {
 
                   {/* Dropdown Items */}
                   <AnimatePresence initial={false}>
-                    {item.subItems && isOpen && isSidebarOpen && (
+                    {hasMultipleSubItems && isOpen && isSidebarOpen && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -389,7 +415,7 @@ const Sidebar = () => {
                         transition={{ duration: 0.2 }}
                         className="ml-6 mt-1 space-y-1 border-l-2 border-slate-700/50 pl-4"
                       >
-                        {item.subItems.map((subItem) => {
+                        {subItems.map((subItem) => {
                           const isSubActive = location.pathname === subItem.href;
 
                           return (

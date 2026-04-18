@@ -262,6 +262,35 @@ const normalizeScheduleTableRow = (raw = {}, index = 0) => {
   };
 };
 
+const normalizeTodayClass = (raw = {}, index = 0) => {
+  const slot = raw.slot || raw.slot_info || {};
+  const classInfo = raw.class_info || raw.classSection || raw.class_section || {};
+  const subjectInfo = raw.subject_info || raw.subject || {};
+
+  return {
+    id: raw.id ?? raw.class_schedule_id ?? raw.timetable_entry_id ?? index + 1,
+    slot: {
+      slot_number: toNumber(slot.slot_number ?? raw.slot_number, index + 1) || index + 1,
+      slot_label: slot.slot_label || raw.slot_label || raw.period_name || `Period ${index + 1}`,
+      start_time: slot.start_time || raw.start_time || "",
+      end_time: slot.end_time || raw.end_time || "",
+      is_break: Boolean(slot.is_break ?? raw.is_break),
+    },
+    class_info: {
+      id: classInfo.id || classInfo.class_id || raw.class_section_id || raw.class_id || null,
+      display:
+        classInfo.display ||
+        classInfo.display_name ||
+        raw.class_display ||
+        [raw.class_name, raw.section_name].filter(Boolean).join(" "),
+    },
+    subject_info: {
+      id: subjectInfo.id || raw.subject_id || null,
+      name: subjectInfo.name || subjectInfo.subject_name || raw.subject_name || "N/A",
+    },
+  };
+};
+
 const success = (response, extra = {}) => ({
   success: response?.success ?? true,
   message: response?.message || "Success",
@@ -397,6 +426,35 @@ export const getTeacherClassTimetable = async (classSectionId) => {
   );
   const normalized = normalizeTimetablePayload(response?.data || {}, { classId: classSectionId });
   return success(response, { data: normalized });
+};
+
+export const getTeacherTodayClasses = async () => {
+  const response = await safePrimaryWithFallback(
+    () => authorizedGet(`/teachertimetable/getTodayClasses`),
+    () =>
+      safePrimaryWithFallback(
+        () => authorizedGet(`/teacherTimetable/getTodayClasses`),
+        () => authorizedGet(`/teacher/dashboard/today-classes`)
+      )
+  );
+
+  const payload = response?.data?.data || response?.data || {};
+  const classes = toArray(payload.classes).map(normalizeTodayClass).sort((a, b) => {
+    return toNumber(a?.slot?.slot_number, 9999) - toNumber(b?.slot?.slot_number, 9999);
+  });
+
+  const normalized = {
+    today: payload.today || "",
+    total_classes: toNumber(payload.total_classes, classes.length) || 0,
+    classes,
+  };
+
+  return success(response, {
+    data: normalized,
+    classes: normalized.classes,
+    today: normalized.today,
+    total_classes: normalized.total_classes,
+  });
 };
 
 // Student endpoints

@@ -5,8 +5,7 @@ import Header from '../../components/comman_components/Header';
 import { FaClipboardList, FaCalendarAlt, FaExclamationCircle } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getStudentAttendance, getStudentSubjects } from '../../helper/requests-method/apiMethods';
-import { getStudentMyTimetable } from '../../helper/requests-method/timetableApi';
+import { getStudentAttendance, applyStudentLeave } from '../../helper/requests-method/apiMethods';
 
 const StudentAttendance = () => {
   const [attendanceData, setAttendanceData] = useState({
@@ -17,22 +16,15 @@ const StudentAttendance = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [filters, setFilters] = useState({ subject: '' });
-  const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', status: 'Pending' });
-  const [leaveRequests, setLeaveRequests] = useState([]);
+  const [leaveForm, setLeaveForm] = useState({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
+  const [isLeaveSubmitting, setIsLeaveSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [selectedSubject, setSelectedSubject] = useState(null);
-  const [studentClassInfo, setStudentClassInfo] = useState(null);
-  const [studentSubjects, setStudentSubjects] = useState([]);
-  const [todayTimetable, setTodayTimetable] = useState([]);
 
   useEffect(() => {
     fetchAttendance();
   }, [selectedMonth, selectedYear]);
-
-  useEffect(() => {
-    fetchStudentAttendanceSupportData();
-  }, []);
 
   const fetchAttendance = async () => {
     try {
@@ -54,27 +46,6 @@ const StudentAttendance = () => {
     }
   };
 
-  const fetchStudentAttendanceSupportData = async () => {
-    try {
-      const [subjectsResponse, timetableResponse] = await Promise.all([
-        getStudentSubjects(),
-        getStudentMyTimetable(),
-      ]);
-
-      if (subjectsResponse?.success && subjectsResponse?.data) {
-        setStudentClassInfo(subjectsResponse.data.class_info || null);
-        setStudentSubjects(subjectsResponse.data.subjects || []);
-      }
-
-      if (timetableResponse?.success && timetableResponse?.data?.timetable) {
-        const dayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-        setTodayTimetable(timetableResponse.data.timetable[dayName] || []);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to load class and timetable details');
-    }
-  };
-
   const pieData = [
     { id: 0, value: attendanceData.summary.present || 0, label: 'Present', color: '#10B981' },
     { id: 1, value: attendanceData.summary.absent || 0, label: 'Absent', color: '#EF4444' },
@@ -85,17 +56,58 @@ const StudentAttendance = () => {
   const classesAttended = attendanceData.summary.present || 0;
   const attendancePercentage = parseFloat(attendanceData.summary.attendance_percentage || 0);
 
-  const handleLeaveFormChange = e => setLeaveForm({ ...leaveForm, [e.target.name]: e.target.value });
-  const handleLeaveSubmit = e => {
+  const handleLeaveFormChange = (e) => {
+    setLeaveForm({ ...leaveForm, [e.target.name]: e.target.value });
+    if (formError) setFormError('');
+  };
+
+  const handleLeaveSubmit = async (e) => {
     e.preventDefault();
-    const { startDate, endDate, reason } = leaveForm;
-    if (!startDate || !endDate || !reason) return setFormError('Please fill all required fields'), setFormSuccess('');
-    if (new Date(endDate) < new Date(startDate)) return setFormError('End date cannot be before start date'), setFormSuccess('');
-    setLeaveRequests(prev => [...prev, { ...leaveForm, id: Date.now(), submittedDate: new Date().toISOString().split('T')[0] }]);
-    setFormSuccess('Leave request submitted successfully!');
-    setFormError('');
-    setLeaveForm({ startDate: '', endDate: '', reason: '', status: 'Pending' });
-    setTimeout(() => setFormSuccess(''), 3000);
+    const { leaveType, startDate, endDate, reason } = leaveForm;
+
+    if (!startDate || !endDate || !reason.trim()) {
+      setFormError('Please fill all required fields');
+      setFormSuccess('');
+      return;
+    }
+
+    if (new Date(endDate) < new Date(startDate)) {
+      setFormError('End date cannot be before start date');
+      setFormSuccess('');
+      return;
+    }
+
+    const payload = {
+      leave_type: leaveType || 'casual',
+      start_date: startDate,
+      end_date: endDate,
+      reason: reason.trim(),
+    };
+
+    try {
+      setIsLeaveSubmitting(true);
+      const response = await applyStudentLeave(payload);
+
+      if (response?.success) {
+        setFormSuccess(response?.message || 'Leave request submitted successfully!');
+        setFormError('');
+        setLeaveForm({ leaveType: 'casual', startDate: '', endDate: '', reason: '' });
+        toast.success(response?.message || 'Leave request submitted successfully');
+      } else {
+        const message = response?.message || 'Failed to submit leave request';
+        setFormError(message);
+        setFormSuccess('');
+        toast.error(message);
+      }
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to submit leave request';
+      setFormError(message);
+      setFormSuccess('');
+      toast.error(message);
+    } finally {
+      setIsLeaveSubmitting(false);
+      setTimeout(() => setFormSuccess(''), 3000);
+    }
   };
 
   // Card component used for Total Classes, Classes Attended, and Attendance summary
@@ -228,59 +240,6 @@ const StudentAttendance = () => {
                 classesAttended={classesAttended}
               />
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Class & Subjects</h2>
-                  {studentClassInfo ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-semibold">Class:</span> {studentClassInfo.display_name || `${studentClassInfo.class_name || ''} ${studentClassInfo.section_name || ''}`}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        <span className="font-semibold">Room:</span> {studentClassInfo.room_no || '-'}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        <span className="font-semibold">Total Subjects:</span> {studentSubjects.length}
-                      </p>
-                      <div className="pt-2 border-t border-gray-200 space-y-2 max-h-48 overflow-y-auto">
-                        {studentSubjects.length > 0 ? (
-                          studentSubjects.map((subject) => (
-                            <div key={subject.subject_id} className="flex items-center justify-between text-sm bg-indigo-50 rounded-lg px-3 py-2">
-                              <span className="font-medium text-gray-800">{subject.subject_name}</span>
-                              <span className="text-indigo-700">{subject.subject_code}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-gray-500">No subjects available</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">Class details are not available.</p>
-                  )}
-                </div>
-
-                <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Today&apos;s Timetable</h2>
-                  {todayTimetable.length > 0 ? (
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {todayTimetable.map((period) => (
-                        <div key={period.id} className="rounded-lg border border-gray-200 p-3 bg-gray-50">
-                          <p className="font-semibold text-gray-800 text-sm">{period.period_name}</p>
-                          <p className="text-sm text-gray-600">
-                            {period.start_time} - {period.end_time}
-                          </p>
-                          <p className="text-sm text-indigo-700">
-                            {period.subject?.subject_name || 'No Subject'}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">No timetable periods found for today.</p>
-                  )}
-                </div>
-              </div>
             </>
           )}
           {/* Pie Chart and Leave Form Section */}
@@ -305,6 +264,24 @@ const StudentAttendance = () => {
                 <FaCalendarAlt className="w-6 h-6 mr-2 text-indigo-600" /> Request Leave
               </h2>
               <form onSubmit={handleLeaveSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="leaveType" className="block text-sm font-medium text-gray-700 mb-2">
+                    Leave Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="leaveType"
+                    name="leaveType"
+                    value={leaveForm.leaveType}
+                    onChange={handleLeaveFormChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white shadow-sm transition-all duration-200 hover:border-indigo-400"
+                    required
+                  >
+                    <option value="casual">Casual</option>
+                    <option value="sick">Sick</option>
+                    <option value="emergency">Emergency</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
                 {['startDate', 'endDate'].map(name => (
                   <div key={name}>
                     <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-2">{name === 'startDate' ? 'Start' : 'End'} Date <span className="text-red-500">*</span></label>
@@ -337,7 +314,17 @@ const StudentAttendance = () => {
                 </div>
                 {formError && <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-md text-red-700 text-sm animate-fade-in">{formError}</div>}
                 {formSuccess && <div className="bg-green-50 border-l-4 border-green-500 p-3 rounded-md text-green-700 text-sm animate-fade-in">{formSuccess}</div>}
-                <button type="submit" className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg">Submit Request</button>
+                <button
+                  type="submit"
+                  disabled={isLeaveSubmitting}
+                  className={`w-full sm:w-auto px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md ${
+                    isLeaveSubmitting
+                      ? 'bg-indigo-400 text-white cursor-not-allowed'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg'
+                  }`}
+                >
+                  {isLeaveSubmitting ? 'Submitting...' : 'Submit Request'}
+                </button>
               </form>
             </div>
           </div>

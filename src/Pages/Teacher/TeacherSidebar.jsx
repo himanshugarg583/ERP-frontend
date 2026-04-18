@@ -146,8 +146,27 @@ const TeacherSidebar = () => {
   };
   const hideCollapsedTooltip = () => setTooltip((t) => ({ ...t, visible: false }));
 
+  const handleMenuItemClick = (item) => {
+    const subItems = Array.isArray(item?.subItems) ? item.subItems : [];
+
+    if (subItems.length === 1 && subItems[0]?.href) {
+      persistScroll();
+      navigate(subItems[0].href);
+      return;
+    }
+
+    if (subItems.length > 1) {
+      if (!isSidebarOpen && isMobile) {
+        setIsSidebarOpen(true);
+      }
+      const next = openDropdown === item.name ? null : item.name;
+      setOpenDropdown(next);
+      localStorage.setItem('teacherSidebar:openDropdown', next || '');
+    }
+  };
+
   return (
-    <div className="relative flex-shrink-0">
+    <div className="relative shrink-0">
       {/* Mobile overlay */}
       {isMobile && isSidebarOpen && (
         <div
@@ -178,99 +197,102 @@ const TeacherSidebar = () => {
 
           {/* Sidebar Navigation without Scrollbar */}
           <nav
-            className="mt-3 flex-grow overflow-y-auto border-t border-white/10 space-y-2"
+            className="mt-3 grow overflow-y-auto border-t border-white/10 space-y-2"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             ref={navRef}
             onScroll={persistScroll}
           >
             {SIDEBAR_ITEMS.map((item) => (
               <div key={item.name}>
-                <motion.div
-                  className={`flex items-center justify-between text-sm cursor-pointer`}
-                  onClick={() =>
-                    item.subItems &&
-                    (() => {
-                      const next = openDropdown === item.name ? null : item.name;
-                      setOpenDropdown(next);
-                      localStorage.setItem('teacherSidebar:openDropdown', next || '');
-                    })()
-                  }
-                >
-                  <div className={`flex items-center w-full ${isSidebarOpen ? '' : 'justify-center'}`}>
-                    {/* Whole link card */}
-                    <div className={`group relative flex items-center w-full bg-white text-slate-800 rounded-xl px-3 py-2 shadow-sm border hover:shadow hover:border-violet-500 transition ${
-                      item.subItems && item.subItems.some((sub) => sub.href === location.pathname)
-                        ? 'border-violet-600'
-                        : 'border-slate-200'
-                    } ${isSidebarOpen ? '' : 'px-0 py-0 justify-center'}`}>
-                      <span onMouseEnter={(e)=>showCollapsedTooltip(e, item.name)} onMouseLeave={hideCollapsedTooltip} className={`flex items-center justify-center rounded-full w-9 h-9 min-w-[36px] flex-shrink-0 ${isSidebarOpen ? 'mr-3' : 'mr-0'} transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white ${
-                        item.subItems && item.subItems.some((sub) => sub.href === location.pathname)
-                          ? 'bg-violet-600 text-white'
-                          : 'bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white'
-                      }`}>
-                        <item.icon size={18} />
-                      </span>
-                      <AnimatePresence>
-                        {isSidebarOpen && (
-                          <motion.span
-                            className="flex-1 font-semibold text-slate-800 group-hover:text-violet-700"
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -8 }}
-                            transition={{ duration: 0.2 }}
+                {(() => {
+                  const subItems = Array.isArray(item.subItems) ? item.subItems : [];
+                  const hasMultipleSubItems = subItems.length > 1;
+                  const isActive = subItems.some((sub) => sub.href === location.pathname);
+
+                  return (
+                    <>
+                      <motion.div
+                        className={`flex items-center justify-between text-sm cursor-pointer`}
+                        onClick={() => handleMenuItemClick(item)}
+                      >
+                        <div className={`flex items-center w-full ${isSidebarOpen ? '' : 'justify-center'}`}>
+                          {/* Whole link card */}
+                          <div className={`group relative flex items-center w-full bg-white text-slate-800 rounded-xl px-3 py-2 shadow-sm border hover:shadow hover:border-violet-500 transition ${
+                            isActive
+                              ? 'border-violet-600'
+                              : 'border-slate-200'
+                          } ${isSidebarOpen ? '' : 'px-0 py-0 justify-center'}`}>
+                            <span onMouseEnter={(e)=>showCollapsedTooltip(e, item.name)} onMouseLeave={hideCollapsedTooltip} className={`flex items-center justify-center rounded-full w-9 h-9 min-w-9 shrink-0 ${isSidebarOpen ? 'mr-3' : 'mr-0'} transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white ${
+                              isActive
+                                ? 'bg-violet-600 text-white'
+                                : 'bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white'
+                            }`}>
+                              <item.icon size={18} />
+                            </span>
+                            <AnimatePresence>
+                              {isSidebarOpen && (
+                                <motion.span
+                                  className="flex-1 font-semibold text-slate-800 group-hover:text-violet-700"
+                                  initial={{ opacity: 0, x: -8 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -8 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  {item.name}
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                            {/* Removed inline tooltip to avoid clipping; using fixed tooltip */}
+                            {hasMultipleSubItems && isSidebarOpen && (
+                              <motion.div
+                                animate={{ rotate: openDropdown === item.name ? 90 : 0 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <ChevronRight size={16} className="text-slate-400 group-hover:text-violet-500" />
+                              </motion.div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      {/* Dropdown Items */}
+                      <AnimatePresence initial={false}>
+                        {hasMultipleSubItems && openDropdown === item.name && (
+                          <motion.div
+                            initial={false}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                          className={`pl-6 overflow-visible space-y-2 pt-2 ${
+                            isSidebarOpen ? "" : "hidden"
+                          }`}
                           >
-                            {item.name}
-                          </motion.span>
+                            {subItems.map((subItem) => (
+                            <Link key={subItem.href} to={subItem.href} className="block" onClick={persistScroll}>
+                              <motion.div
+                                  className={`flex items-center text-sm rounded-lg cursor-pointer subitems py-0.5`}
+                                >
+                                  <div className={`group flex items-center w-full bg-white rounded-xl px-3 py-2 shadow-sm border hover:shadow hover:border-violet-500 transition ${
+                                    location.pathname === subItem.href ? 'border-violet-600' : 'border-slate-200'
+                                  }`}>
+                                    <span className={`flex items-center justify-center rounded-full w-7 h-7 min-w-7 mr-3 transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white ${
+                                      location.pathname === subItem.href ? 'bg-violet-600 text-white' : 'bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white'
+                                    }`}>
+                                      <ChevronsRight size={14} />
+                                    </span>
+                                    {isSidebarOpen && (
+                                      <span className={`font-medium ${location.pathname === subItem.href ? 'text-violet-700' : 'text-slate-700 group-hover:text-violet-700'}`}>{subItem.name}</span>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              </Link>
+                            ))}
+                          </motion.div>
                         )}
                       </AnimatePresence>
-                      {/* Removed inline tooltip to avoid clipping; using fixed tooltip */}
-                      {item.subItems && isSidebarOpen && (
-                        <motion.div
-                          animate={{ rotate: openDropdown === item.name ? 90 : 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <ChevronRight size={16} className="text-slate-400 group-hover:text-violet-500" />
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Dropdown Items */}
-                <AnimatePresence initial={false}>
-                  {item.subItems && openDropdown === item.name && (
-                    <motion.div
-                      initial={false}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    className={`pl-6 overflow-visible space-y-2 pt-2 ${
-                      isSidebarOpen ? "" : "hidden"
-                    }`}
-                    >
-                      {item.subItems.map((subItem) => (
-                      <Link key={subItem.href} to={subItem.href} className="block" onClick={persistScroll}>
-                        <motion.div
-                            className={`flex items-center text-sm rounded-lg cursor-pointer subitems py-0.5`}
-                          >
-                            <div className={`group flex items-center w-full bg-white rounded-xl px-3 py-2 shadow-sm border hover:shadow hover:border-violet-500 transition ${
-                              location.pathname === subItem.href ? 'border-violet-600' : 'border-slate-200'
-                            }`}>
-                              <span className={`flex items-center justify-center rounded-full w-7 h-7 min-w-[28px] mr-3 transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white ${
-                                location.pathname === subItem.href ? 'bg-violet-600 text-white' : 'bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white'
-                              }`}>
-                                <ChevronsRight size={14} />
-                              </span>
-                              {isSidebarOpen && (
-                                <span className={`font-medium ${location.pathname === subItem.href ? 'text-violet-700' : 'text-slate-700 group-hover:text-violet-700'}`}>{subItem.name}</span>
-                              )}
-                            </div>
-                          </motion.div>
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </>
+                  );
+                })()}
               </div>
             ))}
           </nav>
@@ -289,7 +311,7 @@ const TeacherSidebar = () => {
               className={`group flex items-center gap-2 py-2 px-4 rounded-xl bg-white text-slate-800 font-semibold shadow hover:shadow-md border border-slate-200 hover:border-violet-500 transition-colors w-full cursor-pointer ${isSidebarOpen ? '' : 'justify-center px-2'}`}
               style={{ minWidth: isSidebarOpen ? '100%' : '48px' }}
             >
-              <span className="flex items-center justify-center rounded-full min-w-[32px] min-h-[32px] bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white">
+              <span className="flex items-center justify-center rounded-full min-w-8 min-h-8 bg-slate-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all ring-0 group-hover:ring-4 group-hover:ring-violet-300 group-hover:ring-offset-2 group-hover:ring-offset-white">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
                 </svg>
@@ -317,7 +339,7 @@ const TeacherSidebar = () => {
       {/* Fixed tooltip for collapsed mode */}
       {tooltip.visible && !isSidebarOpen && (
         <div
-          className="pointer-events-none fixed z-[9999] bg-white text-slate-800 text-sm rounded-lg px-3 py-1 shadow-xl border border-slate-200"
+          className="pointer-events-none fixed z-9999 bg-white text-slate-800 text-sm rounded-lg px-3 py-1 shadow-xl border border-slate-200"
           style={{ top: tooltip.top, left: tooltip.left, transform: 'translateY(-50%)' }}
         >
           {tooltip.text}

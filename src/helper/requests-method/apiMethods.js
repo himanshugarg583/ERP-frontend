@@ -205,6 +205,7 @@ export const API_ENDPOINTS = {
   GET_FEE_ASSIGNMENT_COLLECTION: '/admin/dashboard/fee-assignment-collection',
   GET_STUDENT_DASHBOARD_STATS: '/student/dashboard/stats',
   GET_TODAY_CLASSES: '/student/dashboard/today-classes',
+  GET_WEEKLY_TIMETABLE: '/student/dashboard/weekly-timetable',
   GET_PENDING_ASSIGNMENTS: '/student/dashboard/pending-assignments',
   GET_STUDENT_NOTICES: '/student/dashboard/notices',
   GET_ACADEMIC_PERFORMANCE: (examId) => `/student/dashboard/academic-performance?exam_id=${examId}`,
@@ -262,7 +263,14 @@ export const API_ENDPOINTS = {
   GET_STUDENTS_BY_SUBJECT: (examId, classSectionId, subjectId) => `/admin/examMark/getStudentsBySubject?exam_id=${examId}&class_section_id=${classSectionId}&subject_id=${subjectId}`,
   UPDATE_SUBJECT_MARKS: '/admin/examMark/updateSubject',
   GET_STUDENT_EXAM_HISTORY: (studentId) => `/admin/examMark/getStudentExamHistory?student_id=${studentId}`,
+  GET_STUDENT_REPORT_HISTORY: '/api/v2/admin/exam/reports/students/history',
   GET_REPORT_CARD_DATA: '/admin/examMark/getReportCardData',
+  GET_PUBLISHED_RESULTS_BY_EXAM_TYPES: '/api/v2/admin/exam/results/published/by-exam-types',
+  GET_PUBLISHED_RESULTS_BY_EVENT_STUDENTS: '/api/v2/admin/exam/results/published/by-event-students',
+  GET_PUBLISHED_FAILED_STUDENTS_BY_EVENT: '/api/v2/admin/exam/results/published/failed-students',
+  GET_PUBLISHED_RESULTS_CLASS_WISE: '/api/v2/admin/exam/results/published/class-wise',
+  GET_PUBLISHED_RESULTS_SUBJECT_WISE: '/api/v2/admin/exam/results/published/subject-wise',
+  GENERATE_EXAM_DOCUMENT: '/api/v2/admin/exam/documents/generate',
   
   // Admin profile endpoints
   GET_ADMIN_PROFILE: '/admin/setting/profile',
@@ -1577,6 +1585,10 @@ export const getTodayClasses = async () => {
   return authorizedGet(API_ENDPOINTS.GET_TODAY_CLASSES);
 };
 
+export const getWeeklyTimetable = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_WEEKLY_TIMETABLE);
+};
+
 export const getPendingAssignments = async () => {
   return authorizedGet(API_ENDPOINTS.GET_PENDING_ASSIGNMENTS);
 };
@@ -1622,8 +1634,111 @@ export const getStudentExamHistory = async (studentId) => {
   return authorizedGet(API_ENDPOINTS.GET_STUDENT_EXAM_HISTORY(studentId));
 };
 
+export const getStudentReportHistory = async ({ studentId } = {}) => {
+  const normalizedStudentId = Number(studentId);
+  if (!Number.isFinite(normalizedStudentId) || normalizedStudentId <= 0) {
+    throw new Error('Valid student_id is required');
+  }
+
+  return authorizedGet(
+    `${API_ENDPOINTS.GET_STUDENT_REPORT_HISTORY}?student_id=${normalizedStudentId}`
+  );
+};
+
 export const getReportCardData = async (data) => {
   return authorizedPost(API_ENDPOINTS.GET_REPORT_CARD_DATA, data);
+};
+
+export const getPublishedResultsByExamTypes = async ({ examTypeIds = [], studentIds = [] } = {}) => {
+  const normalizedExamTypeIds = (Array.isArray(examTypeIds) ? examTypeIds : [examTypeIds])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  const normalizedStudentIds = (Array.isArray(studentIds) ? studentIds : [studentIds])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  const params = new URLSearchParams();
+  if (normalizedExamTypeIds.length > 0) {
+    params.set('exam_type_ids', normalizedExamTypeIds.join(','));
+  }
+  normalizedStudentIds.forEach((id) => params.append('student_ids', String(id)));
+
+  const query = params.toString();
+  const endpoint = query
+    ? `${API_ENDPOINTS.GET_PUBLISHED_RESULTS_BY_EXAM_TYPES}?${query}`
+    : API_ENDPOINTS.GET_PUBLISHED_RESULTS_BY_EXAM_TYPES;
+
+  return authorizedGet(endpoint);
+};
+
+export const getPublishedResultsByEventStudents = async ({ examEventId, studentIds = [] } = {}) => {
+  const normalizedExamEventId = Number(examEventId);
+  if (!Number.isFinite(normalizedExamEventId) || normalizedExamEventId <= 0) {
+    throw new Error('Valid exam_event_id is required');
+  }
+
+  const normalizedStudentIds = (Array.isArray(studentIds) ? studentIds : [studentIds])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  const params = new URLSearchParams();
+  params.set('exam_event_id', String(normalizedExamEventId));
+  normalizedStudentIds.forEach((id) => params.append('student_id', String(id)));
+
+  const endpoint = `${API_ENDPOINTS.GET_PUBLISHED_RESULTS_BY_EVENT_STUDENTS}?${params.toString()}`;
+  return authorizedGet(endpoint);
+};
+
+export const getPublishedFailedStudentsByEvent = async ({ examEventId } = {}) => {
+  const normalizedExamEventId = Number(examEventId);
+  if (!Number.isFinite(normalizedExamEventId) || normalizedExamEventId <= 0) {
+    throw new Error('Valid exam_event_id is required');
+  }
+
+  const endpoint = `${API_ENDPOINTS.GET_PUBLISHED_FAILED_STUDENTS_BY_EVENT}?exam_event_id=${normalizedExamEventId}`;
+  return authorizedGet(endpoint);
+};
+
+export const getPublishedResultsClassWise = async ({ examEventId, classId } = {}) => {
+  const normalizedExamEventId = Number(examEventId);
+  const normalizedClassId = Number(classId);
+
+  if (!Number.isFinite(normalizedExamEventId) || normalizedExamEventId <= 0) {
+    throw new Error('Valid exam_event_id is required');
+  }
+
+  if (!Number.isFinite(normalizedClassId) || normalizedClassId <= 0) {
+    throw new Error('Valid class_id is required');
+  }
+
+  const endpoint = `${API_ENDPOINTS.GET_PUBLISHED_RESULTS_CLASS_WISE}?exam_event_id=${normalizedExamEventId}&class_id=${normalizedClassId}`;
+  return authorizedGet(endpoint);
+};
+
+export const getPublishedResultsSubjectWise = async ({ examEventId, classId, subjectId } = {}) => {
+  const normalizedExamEventId = Number(examEventId);
+  const normalizedClassId = Number(classId);
+  const normalizedSubjectId = Number(subjectId);
+
+  if (!Number.isFinite(normalizedExamEventId) || normalizedExamEventId <= 0) {
+    throw new Error('Valid exam_event_id is required');
+  }
+
+  if (!Number.isFinite(normalizedClassId) || normalizedClassId <= 0) {
+    throw new Error('Valid class_id is required');
+  }
+
+  if (!Number.isFinite(normalizedSubjectId) || normalizedSubjectId <= 0) {
+    throw new Error('Valid subject_id is required');
+  }
+
+  const endpoint = `${API_ENDPOINTS.GET_PUBLISHED_RESULTS_SUBJECT_WISE}?exam_event_id=${normalizedExamEventId}&class_id=${normalizedClassId}&subject_id=${normalizedSubjectId}`;
+  return authorizedGet(endpoint);
+};
+
+export const generateExamDocument = async (payload) => {
+  return authorizedPost(API_ENDPOINTS.GENERATE_EXAM_DOCUMENT, payload);
 };
 
 // Student exam result endpoint

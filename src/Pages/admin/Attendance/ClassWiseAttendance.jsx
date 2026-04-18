@@ -17,12 +17,27 @@ const ClassWiseAttendance = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [holidayInfo, setHolidayInfo] = useState(null);
 
   useEffect(() => {
     fetchClasses();
   }, []);
 
   useEffect(() => {
+    const checkHoliday = async () => {
+      try {
+        const response = await getHolidayByDate(selectedDate);
+        if (response?.success && response?.data) {
+          setHolidayInfo(response.data.holiday || response.data);
+        } else {
+          setHolidayInfo(null);
+        }
+      } catch (_error) {
+        setHolidayInfo(null);
+      }
+    };
+    checkHoliday();
+    
     if (activeClass) {
       loadAttendanceForClassAndDate(activeClass, selectedDate);
     }
@@ -312,26 +327,42 @@ const ClassWiseAttendance = () => {
 
                 {/* Action Buttons Section */}
                 <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
-                  <div className="flex flex-col sm:flex-row justify-between gap-3">
-                    <button
-                      onClick={() => handleAllPresent(activeClass)}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base"
-                    >
-                      <Check size={18} />
-                      Mark All Present
-                    </button>
-                    <button 
-                      onClick={handleSaveAttendance}
-                      disabled={isSaving}
-                      className={`px-6 py-2.5 rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base ${
-                        isSaving 
-                          ? 'bg-gray-400 text-white cursor-not-allowed' 
-                          : 'bg-violet-600 hover:bg-violet-700 text-white'
-                      }`}
-                    >
-                      {isSaving ? 'Saving...' : isEditingExisting ? 'Update Attendance' : 'Save Attendance'}
-                    </button>
-                  </div>
+                  {holidayInfo ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3 animate-pulse">
+                      <div className="p-2 bg-amber-100 rounded-full">
+                        <Calendar className="text-amber-600 w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-amber-800 font-bold text-sm sm:text-base">
+                          Today is a Holiday!
+                        </p>
+                        <p className="text-amber-700 text-xs sm:text-sm">
+                          Reason: {holidayInfo.reason || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row justify-between gap-3">
+                      <button
+                        onClick={() => handleAllPresent(activeClass)}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base"
+                      >
+                        <Check size={18} />
+                        Mark All Present
+                      </button>
+                      <button 
+                        onClick={handleSaveAttendance}
+                        disabled={isSaving}
+                        className={`px-6 py-2.5 rounded-lg transition-colors shadow-sm hover:shadow-md cursor-pointer text-sm sm:text-base ${
+                          isSaving 
+                            ? 'bg-gray-400 text-white cursor-not-allowed' 
+                            : 'bg-violet-600 hover:bg-violet-700 text-white'
+                        }`}
+                      >
+                        {isSaving ? 'Saving...' : isEditingExisting ? 'Update Attendance' : 'Save Attendance'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Students Table Section */}
@@ -452,7 +483,7 @@ const ClassWiseAttendance = () => {
                       className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
                       onClick={() => handleClassClick(classItem.id)}
                     >
-                      <div className="bg-gradient-to-r from-violet-600 to-violet-700 p-4">
+                      <div className="bg-linear-to-r from-violet-600 to-violet-700 p-4">
                         <h3 className="text-white text-base sm:text-lg font-semibold">
                           {classItem.name}
                         </h3>

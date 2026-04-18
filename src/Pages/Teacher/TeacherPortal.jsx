@@ -4,7 +4,8 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import TeacherSidebar from './TeacherSidebar';
 import Header from '../../components/comman_components/Header';
-import { getTeacherDashboardStats, getTeacherTodayClasses } from '../../helper/requests-method/apiMethods';
+import { getTeacherDashboardStats } from '../../helper/requests-method/apiMethods';
+import { getTeacherTodayClasses } from '../../helper/requests-method/timetableApi';
 
 const TeacherPortal = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -12,6 +13,7 @@ const TeacherPortal = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [todayClasses, setTodayClasses] = useState([]);
+  const [todayLabel, setTodayLabel] = useState('');
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [leaveApplications, setLeaveApplications] = useState([
     { type: 'Sick Leave', reason: 'Fever and Flu', date: '2025-03-07 to 2025-03-09', status: 'Pending' },
@@ -89,27 +91,14 @@ const TeacherPortal = () => {
       try {
         setLoadingClasses(true);
         const response = await getTeacherTodayClasses();
-        
-        console.log('Teacher Today Classes Response:', response);
-        
-        // Handle both response formats
-        let apiData = null;
-        if (response?.data?.data) {
-          apiData = response.data.data;
-        } else if (response?.data) {
-          apiData = response.data;
-        }
-        
-        if (apiData?.classes && Array.isArray(apiData.classes)) {
-          console.log('Today Classes Data:', apiData.classes);
-          setTodayClasses(apiData.classes);
-        } else {
-          console.error('Invalid data structure:', apiData);
-          setTodayClasses([]);
-        }
+
+        const apiData = response?.data || {};
+        setTodayClasses(Array.isArray(apiData.classes) ? apiData.classes : []);
+        setTodayLabel(apiData.today || '');
       } catch (error) {
         console.error('Error fetching teacher today classes:', error);
         setTodayClasses([]);
+        setTodayLabel('');
       } finally {
         setLoadingClasses(false);
       }
@@ -270,37 +259,57 @@ const TeacherPortal = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-4 md:gap-6">
               <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 md:p-5 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-center mb-4 md:mb-5">
-                  <h3 className="font-bold text-sm sm:text-base md:text-lg">Today's Schedule</h3>
-                  <button className="text-indigo-600 hover:text-indigo-800 transition-colors flex items-center text-xs sm:text-sm">
-                    View All <FaArrowRight className="ml-1 text-xs sm:text-sm" />
-                  </button>
+                <div className="mb-4 md:mb-5">
+                  <h3 className="font-bold text-sm sm:text-base md:text-lg">
+                    Today's Schedule {todayLabel ? `(${todayLabel})` : ''}
+                  </h3>
                 </div>
                 {loadingClasses ? (
                   <Box display="flex" justifyContent="center" py={4}>
                     <CircularProgress size={40} sx={{ color: '#6366f1' }} />
                   </Box>
                 ) : todayClasses.length > 0 ? (
-                  <div className="space-y-2 sm:space-y-3">
+                  <div className="max-h-96 overflow-y-auto pr-1 space-y-2 sm:space-y-3">
                     {todayClasses.map((schedule, index) => {
                       const bgColors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-amber-100', 'bg-pink-100', 'bg-indigo-100'];
                       const bgColor = bgColors[index % bgColors.length];
+                      const slot = schedule?.slot || {};
+                      const classDisplay =
+                        schedule?.class_info?.display ||
+                        [schedule?.class_name, schedule?.section_name].filter(Boolean).join(' ') ||
+                        'Class TBA';
+                      const subjectName =
+                        schedule?.subject_info?.name ||
+                        schedule?.subject_info?.subject_name ||
+                        schedule?.subject_name ||
+                        'Subject TBA';
+                      const slotLabel = slot?.slot_label || schedule?.period_name || 'Period';
+                      const startTime = slot?.start_time || schedule?.start_time || '';
+                      const endTime = slot?.end_time || schedule?.end_time || '';
+                      const isBreak = Boolean(slot?.is_break || schedule?.is_break);
+                      const statusText = isBreak ? 'Break' : 'Scheduled';
+                      const cardBg = isBreak ? 'bg-yellow-100' : bgColor;
                       
                       return (
-                        <div key={index} className={`flex flex-col sm:flex-row p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors ${bgColor}`}>
-                          <div className="w-full sm:w-20 md:w-24 text-center sm:text-left mb-1 sm:mb-0">
-                            <p className="text-xs text-gray-500">{schedule?.start_time || ''}</p>
-                            <p className="text-xs text-gray-400">{schedule?.duration || ''}</p>
+                        <div key={index} className={`p-3 rounded-lg transition-colors ${cardBg}`}>
+                          <div className="flex items-start gap-3">
+                            <div className="w-20 sm:w-24 shrink-0 text-left">
+                              <p className="text-xs sm:text-sm text-gray-600 leading-tight">{startTime || '-'}</p>
+                              <p className="text-xs sm:text-sm text-gray-500 leading-tight mt-1">{endTime || '-'}</p>
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-semibold text-sm sm:text-base text-gray-900 leading-snug break-normal">
+                                {subjectName}
+                              </h4>
+                              <p className="text-sm sm:text-base text-gray-900 leading-snug break-normal mt-0.5">- {classDisplay}</p>
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1">{slotLabel}</p>
+                            </div>
                           </div>
-                          <div className="ml-0 sm:ml-3 md:ml-4 flex-1">
-                            <h4 className="font-semibold text-xs sm:text-sm md:text-base">
-                              {schedule?.subject_name || ''} - {schedule?.class_name || ''} {schedule?.section_name || ''}
-                            </h4>
-                            <p className="text-xs text-gray-500">{schedule?.room_number || 'Room TBA'}</p>
-                          </div>
-                          <div className="flex items-center mt-1 sm:mt-0">
-                            <span className={`inline-block w-2 h-2 ${schedule?.status === 'Ongoing' ? 'bg-green-500' : 'bg-gray-300'} rounded-full mr-1 sm:mr-2`}></span>
-                            <span className="text-gray-500 text-xs">{schedule?.status || 'Scheduled'}</span>
+
+                          <div className="mt-2 flex items-center justify-end">
+                            <span className={`inline-block w-2 h-2 ${isBreak ? 'bg-amber-500' : 'bg-gray-300'} rounded-full mr-1 sm:mr-2`}></span>
+                            <span className="text-gray-600 text-xs sm:text-sm">{statusText}</span>
                           </div>
                         </div>
                       );
@@ -471,7 +480,7 @@ const TeacherPortal = () => {
                     <p className="text-lg sm:text-xl md:text-2xl font-bold">{attendanceData?.[3]?.value ?? 0}</p>
                   </div>
                 </div>
-                <div className="h-[120px] sm:h-[150px] w-full flex items-center justify-center mb-4 sm:mb-6">
+                <div className="h-30 sm:h-37.5 w-full flex items-center justify-center mb-4 sm:mb-6">
                   <PieChart
                     series={[{ data: attendanceData ?? [], innerRadius: 25, outerRadius: 50 }]}
                     width={150}

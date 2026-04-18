@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaCalendarAlt, FaClock, FaClipboardList } from 'react-icons/fa';
+import { FaClipboardList } from 'react-icons/fa';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
@@ -229,49 +229,50 @@ const ViewExamTimetable = () => {
                 Exam Schedule
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {entries.map((entry) => {
-                  const linkedPaper = papersById[entry.exam_paper_id] || {};
-                  const subjectName =
-                    entry.subject?.subject_name ||
-                    entry.subject?.name ||
-                    linkedPaper.subject?.subject_name ||
-                    linkedPaper.subject?.name ||
-                    `Subject #${entry.subject_id}`;
+              <div className="border border-gray-200 rounded-lg overflow-x-auto bg-white">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-100 text-slate-700">
+                    <tr>
+                      <th className="text-left p-3 font-semibold">Exam Date</th>
+                      <th className="text-left p-3 font-semibold">Slot</th>
+                      <th className="text-left p-3 font-semibold">Subject</th>
+                      <th className="text-left p-3 font-semibold">Time</th>
+                      <th className="text-left p-3 font-semibold">Room</th>
+                      <th className="text-left p-3 font-semibold">Invigilator</th>
+                      <th className="text-left p-3 font-semibold">Max / Pass</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((entry) => {
+                      const linkedPaper = papersById[entry.exam_paper_id] || {};
+                      const subjectName =
+                        entry.subject?.subject_name ||
+                        entry.subject?.name ||
+                        linkedPaper.subject?.subject_name ||
+                        linkedPaper.subject?.name ||
+                        `Subject #${entry.subject_id}`;
 
-                  return (
-                    <div
-                      key={entry.id || entry.uuid}
-                      className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all"
-                    >
-                      <div className="mb-3">
-                        <h4 className="font-bold text-gray-800 text-lg">{subjectName}</h4>
-                        <p className="text-xs text-gray-500">Slot {entry.slot_number || 'N/A'}</p>
-                      </div>
+                      const invigilatorLabel =
+                        entry.invigilator_teacher?.name ||
+                        linkedPaper.assigned_teacher?.name ||
+                        entry.invigilator_name ||
+                        entry.invigilator_teacher_id ||
+                        'N/A';
 
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <FaCalendarAlt className="mr-2 text-violet-500" />
-                          <span>{formatDate(entry.exam_date)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <FaClock className="mr-2 text-violet-500" />
-                          <span>{entry.start_time || 'N/A'} - {entry.end_time || 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Room:</span> {entry.room_label || 'N/A'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Invigilator:</span> {entry.invigilator_teacher_id || 'N/A'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Max/Pass:</span>{' '}
-                          {linkedPaper.max_marks ?? 'N/A'} / {linkedPaper.passing_marks ?? 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      return (
+                        <tr key={entry.id || entry.uuid} className="border-t border-slate-200 align-top">
+                          <td className="p-3 whitespace-nowrap">{formatDate(entry.exam_date)}</td>
+                          <td className="p-3 whitespace-nowrap">{entry.slot_number ? `Slot ${entry.slot_number}` : 'N/A'}</td>
+                          <td className="p-3 font-medium text-slate-800">{subjectName}</td>
+                          <td className="p-3 whitespace-nowrap">{entry.start_time || 'N/A'} - {entry.end_time || 'N/A'}</td>
+                          <td className="p-3 whitespace-nowrap">{entry.room_label || 'N/A'}</td>
+                          <td className="p-3 whitespace-nowrap">{invigilatorLabel}</td>
+                          <td className="p-3 whitespace-nowrap">{linkedPaper.max_marks ?? 'N/A'} / {linkedPaper.passing_marks ?? 'N/A'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

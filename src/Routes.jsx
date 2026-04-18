@@ -49,11 +49,13 @@ import ParentSettings from "./Pages/parents/Parent_Setting.jsx";
 // **Student Pages**
 import Student from './Pages/students/Student';
 import StudentAttendance from './Pages/students/StudentAttendance';
+import StudentTimetable from './Pages/students/StudentTimetable';
 import StudentSubject from './Pages/students/StudentSubject';
 import StudentAssignment from './Pages/students/StudentAssignment';
 import ClassResources from './Pages/students/Resources/ClassResources';
 import SubjectResources from './Pages/students/Resources/SubjectResources';
 import StudentResult from './Pages/students/StudentResult';
+import StudentExaminationSchedule from './Pages/students/StudentExaminationSchedule';
 import StudentProgress from './Pages/students/StudentProgress';
 import StudentTransport from "./Pages/students/StudentTransport";
 import StudentFees from "./Pages/students/StudentFees";
@@ -119,6 +121,7 @@ import PublishResultPage from "./Pages/admin/examination/PublishResultPage.jsx";
 import AdmitCardGeneratorPage from "./Pages/admin/examination/AdmitCardGeneratorPage.jsx";
 import TermListPage from "./Pages/admin/examination/TermListPage.jsx";
 import ExamListPage from "./Pages/admin/examination/ExamListPage.jsx";
+import ExamReportPage from "./Pages/admin/examination/ExamReportPage.jsx";
 import ReportCardGeneratorPage from "./Pages/admin/examination/ReportCardGeneratorPage.jsx";
 import TeacherManagement from "./Pages/admin/HR/TeacherManagement.jsx";
 import HRReports from "./Pages/admin/HR/HRReports.jsx";
@@ -230,11 +233,13 @@ const routes = {
   student: [
     { path: "/student/dashboard", element: <Student /> },
     { path: "/student/attendance", element: <StudentAttendance /> },
+    { path: "/student/timetable", element: <StudentTimetable /> },
     { path: "/student/subjects", element: <StudentSubject /> },
     { path: "/student/assignments", element: <StudentAssignment /> },
     { path: "/student/class-resources", element: <ClassResources /> },
     { path: "/student/subject-resources", element: <SubjectResources /> },
     { path: "/student/results", element: <StudentResult /> },
+    { path: "/student/examination-schedule", element: <StudentExaminationSchedule /> },
     { path: "/student/progress", element: <StudentProgress /> },
     { path: "/student/transport", element: <StudentTransport /> },
     { path: "/student/fees", element: <StudentFees /> },
@@ -290,6 +295,7 @@ const routes = {
     { path: "/admin/view-exam-time-table-page", element: <ViewExamTimeTablePage/> },
     { path: "/admin/term-list-page", element: <TermListPage/> },
     { path: "/admin/exam-list-page", element: <ExamListPage/> },
+    { path: "/admin/examination-report", element: <ExamReportPage/> },
     { path: "/admin/report-card-generator", element: <ReportCardGeneratorPage/> },
     { path: "/admin/notes", element: <AdminNotes/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },

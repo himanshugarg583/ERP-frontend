@@ -137,14 +137,6 @@ const AddClass = () => {
       })),
       hideInTable: true
     },
-    { 
-      key: 'teacher_name', 
-      header: 'Teacher Name', 
-      required: false,
-      type: 'text',
-      placeholder: 'Teacher Name',
-      render: (value) => value || 'Not Assigned'
-    },
   ];
 
   // Filter columns for table display

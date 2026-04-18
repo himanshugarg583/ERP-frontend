@@ -1,9 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { 
   getAllClassesDropdown,
   getAllStudentsByClass,
-  getStudentExamHistory
+  getStudentReportHistory
 } from '../../helper/requests-method/apiMethods';
+
+const normalizeArray = (value) => (Array.isArray(value) ? value : []);
+
+const formatNumber = (value) => {
+  if (value === null || value === undefined || value === '') return 'N/A';
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue.toFixed(2) : String(value);
+};
+
+const formatDateTime = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
 const StudentWiseList = () => {
   const [classes, setClasses] = useState([]);
@@ -12,6 +34,7 @@ const StudentWiseList = () => {
   const [loading, setLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [examHistory, setExamHistory] = useState(null);
+  const [historyMeta, setHistoryMeta] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Fetch classes on component mount
@@ -20,11 +43,10 @@ const StudentWiseList = () => {
       try {
         setLoading(true);
         const response = await getAllClassesDropdown();
-        if (response?.data) {
-          setClasses(response.data);
-        }
+        setClasses(normalizeArray(response?.data?.classes || response?.data));
       } catch (error) {
         console.error('Error fetching classes:', error);
+        toast.error('Failed to load class sections');
       } finally {
         setLoading(false);
       }
@@ -44,11 +66,20 @@ const StudentWiseList = () => {
       try {
         setLoading(true);
         const response = await getAllStudentsByClass(selectedClass);
-        if (response?.data) {
-          setStudents(response.data);
-        }
+        const normalizedStudents = normalizeArray(response?.data).map((student, index) => ({
+          ...student,
+          id: student?.id ?? student?.student_id ?? student?.user_id ?? `${index + 1}`,
+          name: student?.name || student?.student_name || student?.User?.name || 'N/A',
+          roll_number: student?.roll_number || student?.roll_no || 'N/A',
+          email: student?.email || 'N/A',
+          phone_no: student?.phone_no || student?.phone || 'N/A',
+          gender: student?.gender || 'N/A',
+          father_name: student?.father_name || student?.fatherName || 'N/A',
+        }));
+        setStudents(normalizedStudents);
       } catch (error) {
         console.error('Error fetching students:', error);
+        toast.error('Failed to load students list');
         setStudents([]);
       } finally {
         setLoading(false);
@@ -64,13 +95,15 @@ const StudentWiseList = () => {
     setLoadingHistory(true);
     
     try {
-      const response = await getStudentExamHistory(student.id);
-      if (response?.data) {
-        setExamHistory(response.data);
-      }
+      const response = await getStudentReportHistory({ studentId: student?.id });
+      const payload = response?.data?.data || response?.data || null;
+      setExamHistory(payload);
+      setHistoryMeta(response?.data?.meta || null);
     } catch (error) {
       console.error('Error fetching exam history:', error);
       setExamHistory(null);
+      setHistoryMeta(null);
+      toast.error('Failed to load student exam history');
     } finally {
       setLoadingHistory(false);
     }
@@ -79,6 +112,7 @@ const StudentWiseList = () => {
   const handleCloseModal = () => {
     setSelectedStudent(null);
     setExamHistory(null);
+    setHistoryMeta(null);
   };
 
   return (
@@ -100,8 +134,8 @@ const StudentWiseList = () => {
         >
           <option value="">-- Select Class Section --</option>
           {classes.map((classItem) => (
-            <option key={classItem.id} value={classItem.id}>
-              {classItem.class_name} - {classItem.section_name}
+            <option key={classItem.id || classItem.class_section_id} value={classItem.id || classItem.class_section_id}>
+              {classItem.class_name || classItem.class || 'Class'} - {classItem.section_name || classItem.section || 'Section'}
             </option>
           ))}
         </select>
@@ -217,149 +251,128 @@ const StudentWiseList = () => {
               ) : examHistory ? (
                 <div>
                   {/* Student Info Card */}
-                  <div className="bg-gradient-to-r from-violet-100 to-blue-100 p-4 rounded-lg mb-4">
+                  <div className="bg-linear-to-r from-violet-100 to-blue-100 p-4 rounded-lg mb-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
                         <p className="text-xs text-gray-600">Student Name</p>
-                        <p className="font-semibold text-base">{examHistory.student_info?.student_name}</p>
+                        <p className="font-semibold text-base">{examHistory.student?.student_name || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600">Email</p>
-                        <p className="font-semibold text-sm">{examHistory.student_info?.email}</p>
+                        <p className="font-semibold text-sm">{examHistory.student?.email || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600">Class</p>
-                        <p className="font-semibold text-sm">{examHistory.student_info?.class}</p>
+                        <p className="font-semibold text-sm">{examHistory.student?.class_label || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-3">
                       <div>
-                        <p className="text-xs text-gray-600">Total Terms</p>
-                        <p className="font-bold text-xl text-violet-700">{examHistory.total_terms}</p>
+                        <p className="text-xs text-gray-600">Roll Number</p>
+                        <p className="font-bold text-xl text-violet-700">{examHistory.student?.roll_number || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-600">Total Exams</p>
-                        <p className="font-bold text-xl text-blue-700">{examHistory.total_exams}</p>
+                        <p className="text-xs text-gray-600">Total Exam Records</p>
+                        <p className="font-bold text-xl text-blue-700">
+                          {historyMeta?.total_exam_records ?? normalizeArray(examHistory.exam_history).length}
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Exam History */}
-                  {examHistory.exam_history?.length > 0 ? (
-                    examHistory.exam_history.map((term) => (
-                      <div key={term.term_id} className="mb-6">
-                        {/* Term Header */}
-                        <div className="bg-violet-600 text-white p-3 rounded-t-lg">
-                          <h3 className="text-lg font-bold">{term.term_name}</h3>
-                          <p className="text-violet-200 text-sm">
-                            {term.academic_year} • {term.start_date} to {term.end_date}
-                          </p>
-                          <p className="text-xs text-violet-200 mt-1">Total Exams: {term.total_exams}</p>
-                        </div>
-
-                        {/* Exams */}
-                        {term.exams?.map((exam) => (
-                          <div key={exam.exam_id} className="border border-gray-300 mb-3">
-                            {/* Exam Header */}
-                            <div className="bg-gray-100 p-3">
-                              <div className="flex flex-wrap justify-between items-start gap-3">
-                                <div>
-                                  <h4 className="text-base font-bold text-gray-800">{exam.exam_name}</h4>
-                                  <p className="text-xs text-gray-600">{exam.description}</p>
-                                  <p className="text-xs text-gray-600 mt-1">
-                                    {exam.start_date} to {exam.end_date}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                    exam.status === 'completed' ? 'bg-green-200 text-green-800' :
-                                    exam.status === 'scheduled' ? 'bg-yellow-200 text-yellow-800' :
-                                    'bg-gray-200 text-gray-800'
-                                  }`}>
-                                    {exam.status.toUpperCase()}
-                                  </span>
-                                  {exam.is_passed !== null && (
-                                    <div className="mt-2">
-                                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                        exam.is_passed ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                                      }`}>
-                                        {exam.is_passed ? 'PASSED' : 'FAILED'}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
+                  {normalizeArray(examHistory.exam_history).length > 0 ? (
+                    normalizeArray(examHistory.exam_history).map((record, index) => {
+                      const recordKey = `${record?.exam_event?.exam_event_id || 'event'}-${record?.result?.result_id || index}`;
+                      return (
+                        <div key={recordKey} className="mb-5 border border-slate-200 rounded-lg overflow-hidden">
+                          <div className="bg-violet-50 px-4 py-3 border-b border-slate-200">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <h3 className="text-base font-semibold text-violet-800">
+                                  {record?.exam_event?.exam_event_name || 'Exam Event'}
+                                </h3>
+                                <p className="text-sm text-slate-600 mt-1">
+                                  Term: {record?.exam_term?.exam_type_name || 'N/A'} | Academic Year: {record?.exam_event?.academic_year || 'N/A'}
+                                </p>
                               </div>
-
-                              {/* Exam Summary */}
-                              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">
-                                <div>
-                                  <p className="text-xs text-gray-600">Total Marks</p>
-                                  <p className="font-bold text-base text-blue-700">{exam.total_marks}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-600">Passing Marks</p>
-                                  <p className="font-bold text-base text-orange-700">{exam.passing_marks}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-600">Marks Obtained</p>
-                                  <p className="font-bold text-base text-green-700">{exam.total_marks_obtained || 'N/A'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-600">Total Subjects</p>
-                                  <p className="font-bold text-base text-purple-700">{exam.total_subjects}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-600">Marked Subjects</p>
-                                  <p className="font-bold text-base text-indigo-700">{exam.marked_subjects}</p>
-                                </div>
-                              </div>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                  record?.result?.is_pass ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                }`}
+                              >
+                                {record?.result?.is_pass ? 'PASS' : 'FAIL'}
+                              </span>
                             </div>
 
-                            {/* Subjects Table */}
-                            {exam.subjects?.length > 0 && (
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-xs">
-                                  <thead className="bg-gray-200">
-                                    <tr>
-                                      <th className="py-2 px-2 text-left">Subject</th>
-                                      <th className="py-2 px-2 text-left">Code</th>
-                                      <th className="py-2 px-2 text-left">Date</th>
-                                      <th className="py-2 px-2 text-center">Time</th>
-                                      <th className="py-2 px-2 text-center">Max Marks</th>
-                                      <th className="py-2 px-2 text-center">Marks Obtained</th>
-                                      <th className="py-2 px-2 text-center">Status</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {exam.subjects.map((subject) => (
-                                      <tr key={subject.subject_id} className="border-b hover:bg-gray-50">
-                                        <td className="py-2 px-2 font-medium">{subject.subject_name}</td>
-                                        <td className="py-2 px-2 text-gray-600">{subject.subject_code}</td>
-                                        <td className="py-2 px-2">{subject.exam_date}</td>
-                                        <td className="py-2 px-2 text-center text-xs">
-                                          {subject.start_time} - {subject.end_time}
-                                        </td>
-                                        <td className="py-2 px-2 text-center font-semibold">{subject.max_marks}</td>
-                                        <td className="py-2 px-2 text-center font-bold text-blue-700">
-                                          {subject.marks_obtained !== null ? subject.marks_obtained : '-'}
-                                        </td>
-                                        <td className="py-2 px-2 text-center">
-                                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                            subject.is_marked ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
-                                          }`}>
-                                            {subject.is_marked ? 'Marked' : 'Pending'}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3 text-sm">
+                              <div>
+                                <p className="text-slate-500">Total / Max</p>
+                                <p className="font-semibold text-slate-800">
+                                  {formatNumber(record?.result?.total_marks)} / {formatNumber(record?.result?.max_marks)}
+                                </p>
                               </div>
-                            )}
+                              <div>
+                                <p className="text-slate-500">Percentage</p>
+                                <p className="font-semibold text-slate-800">{formatNumber(record?.result?.percentage)}%</p>
+                              </div>
+                              <div>
+                                <p className="text-slate-500">Grade</p>
+                                <p className="font-semibold text-slate-800">{record?.result?.grade || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-slate-500">Rank</p>
+                                <p className="font-semibold text-slate-800">{record?.result?.rank ?? 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-slate-500">Published At</p>
+                                <p className="font-semibold text-slate-800">{formatDateTime(record?.result?.published_at)}</p>
+                              </div>
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    ))
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs md:text-sm">
+                              <thead className="bg-slate-100">
+                                <tr>
+                                  <th className="py-2 px-3 text-left">Subject</th>
+                                  <th className="py-2 px-3 text-left">Code</th>
+                                  <th className="py-2 px-3 text-center">Marks</th>
+                                  <th className="py-2 px-3 text-center">Max</th>
+                                  <th className="py-2 px-3 text-center">Passing</th>
+                                  <th className="py-2 px-3 text-center">Grade</th>
+                                  <th className="py-2 px-3 text-center">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {normalizeArray(record?.details_breakdown).map((detail, detailIndex) => (
+                                  <tr
+                                    key={`${detail?.marks_entry_id || detail?.subject_id || detailIndex}`}
+                                    className="border-t border-slate-200"
+                                  >
+                                    <td className="py-2 px-3 font-medium">{detail?.subject_name || 'N/A'}</td>
+                                    <td className="py-2 px-3">{detail?.subject_code || 'N/A'}</td>
+                                    <td className="py-2 px-3 text-center">{formatNumber(detail?.marks_obtained)}</td>
+                                    <td className="py-2 px-3 text-center">{formatNumber(detail?.max_marks)}</td>
+                                    <td className="py-2 px-3 text-center">{formatNumber(detail?.passing_marks)}</td>
+                                    <td className="py-2 px-3 text-center">{detail?.grade || 'N/A'}</td>
+                                    <td className="py-2 px-3 text-center">
+                                      {detail?.is_absent ? (
+                                        <span className="px-2 py-1 rounded text-[11px] font-semibold bg-amber-100 text-amber-700">Absent</span>
+                                      ) : detail?.is_pass ? (
+                                        <span className="px-2 py-1 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-700">Pass</span>
+                                      ) : (
+                                        <span className="px-2 py-1 rounded text-[11px] font-semibold bg-rose-100 text-rose-700">Fail</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-gray-600">No exam history found for this student.</p>
