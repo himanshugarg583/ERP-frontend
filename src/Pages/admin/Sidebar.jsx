@@ -144,8 +144,10 @@ const SIDEBAR_ITEMS = [
   {
     name: "Communication",
     icon: MessageSquare,
+    defaultHref: "/admin/communication",
     subItems: [
-      { name: "Notices", href: "/admin/notes" },
+      { name: "Notices", href: "/admin/communication" },
+      { name: "Messages", href: "/admin/messages" },
     ],
   },
   {
@@ -286,6 +288,11 @@ const Sidebar = () => {
       const next = openDropdown === item.name ? null : item.name;
       setOpenDropdown(next);
       localStorage.setItem('sidebar:openDropdown', next || '');
+
+      if (next && item.defaultHref && location.pathname !== item.defaultHref) {
+        persistScroll();
+        navigate(item.defaultHref);
+      }
     }
   };
 

@@ -141,6 +141,7 @@ import ClassPeriodPage from "./Pages/admin/Settings/ClassPeriodPage.jsx";
 import TemplatePage from "./Pages/admin/Settings/TemplatePage.jsx";
 import ReportsPage from "./Pages/admin/Settings/ReportsPage.jsx";
 import AdminNotes from "./Pages/admin/AdminNotes";
+import AdminMessages from "./Pages/admin/AdminMessages.jsx";
 
 // online learning
 import OnlineLearningDash from "./Pages/OnlineLearning/OnlineLearningDash";
@@ -297,7 +298,9 @@ const routes = {
     { path: "/admin/exam-list-page", element: <ExamListPage/> },
     { path: "/admin/examination-report", element: <ExamReportPage/> },
     { path: "/admin/report-card-generator", element: <ReportCardGeneratorPage/> },
+    { path: "/admin/communication", element: <AdminNotes/> },
     { path: "/admin/notes", element: <AdminNotes/> },
+    { path: "/admin/messages", element: <AdminMessages/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },
     { path: "/admin/hr-reports", element: <HRReports/> },
     { path: "/admin/hr/teacher-credentials", element: <TeacherCredentialsPage/> },

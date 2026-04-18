@@ -1312,14 +1312,20 @@ export const getAdminNotices = async () => {
 export const addAdminNotice = async (noticeData, attachmentFile = null) => {
   if (attachmentFile) {
     const formData = new FormData();
-    Object.keys(noticeData).forEach(key => {
-      if (noticeData[key] !== null && noticeData[key] !== undefined) {
-        formData.append(key, noticeData[key]);
+    Object.keys(noticeData).forEach((key) => {
+      const value = noticeData[key];
+      if (value === null || value === undefined) return;
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          formData.append(key, item);
+        });
+      } else {
+        formData.append(key, value);
       }
     });
-    if (attachmentFile) {
-      formData.append('attachment', attachmentFile);
-    }
+
+    formData.append('attachment', attachmentFile);
     return authorizedPostFormData(API_ENDPOINTS.ADD_ADMIN_NOTICE, formData);
   } else {
     return authorizedPost(API_ENDPOINTS.ADD_ADMIN_NOTICE, noticeData);
@@ -1329,14 +1335,20 @@ export const addAdminNotice = async (noticeData, attachmentFile = null) => {
 export const updateAdminNotice = async (id, noticeData, attachmentFile = null) => {
   if (attachmentFile) {
     const formData = new FormData();
-    Object.keys(noticeData).forEach(key => {
-      if (noticeData[key] !== null && noticeData[key] !== undefined) {
-        formData.append(key, noticeData[key]);
+    Object.keys(noticeData).forEach((key) => {
+      const value = noticeData[key];
+      if (value === null || value === undefined) return;
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          formData.append(key, item);
+        });
+      } else {
+        formData.append(key, value);
       }
     });
-    if (attachmentFile) {
-      formData.append('attachment', attachmentFile);
-    }
+
+    formData.append('attachment', attachmentFile);
     return authorizedPutFormData(API_ENDPOINTS.UPDATE_ADMIN_NOTICE(id), formData);
   } else {
     return authorizedPut(API_ENDPOINTS.UPDATE_ADMIN_NOTICE(id), noticeData);

@@ -385,7 +385,7 @@ const StudentLeave = () => {
 
         {/* Apply Leave Form Modal */}
         {isFormOpen && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-slate-900/10 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-indigo-600 text-white p-4 sm:p-6 rounded-t-lg">
                 <div className="flex items-center justify-between">
@@ -543,7 +543,7 @@ const StudentLeave = () => {
 
         {/* Delete Confirmation Modal */}
         {isDeleteModalOpen && leaveToDelete && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-slate-900/10 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
               <div className="p-4 sm:p-6">
                 <div className="flex items-start gap-4 mb-6">
