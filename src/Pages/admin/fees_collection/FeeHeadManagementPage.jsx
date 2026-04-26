@@ -1,5 +1,11 @@
 import React, { useEffect, useState, memo } from "react";
-import { getAllFeeHeads, createFeeHead, updateFeeHead, deleteFeeHead } from "../../../helper/requests-method/feeV1Api";
+import {
+  getAllFeeHeads,
+  createFeeHead,
+  updateFeeHead,
+  deleteFeeHead,
+  getFeeHeadById,
+} from "../../../helper/requests-method/feeV1Api";
 import Modal from "../../../components/comman_components/Modal";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import Sidebar from "../Sidebar";
@@ -16,12 +22,14 @@ const FeeHeadManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
   const [currentFeeHead, setCurrentFeeHead] = useState(null);
   const [viewFeeHead, setViewFeeHead] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [form, setForm] = useState({ 
     name: "", 
-    category: "general",
+    category: "academic",
     description: "",
     ledger_code: "",
     is_optional: false,
@@ -33,7 +41,7 @@ const FeeHeadManagement = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await getAllFeeHeads();
+      const response = await getAllFeeHeads({ category: "academic", is_active: true });
       let heads = [];
       
       // Handle different response structures
@@ -120,23 +128,60 @@ const FeeHeadManagement = () => {
   };
 
   const handleView = (feeHead) => {
-    setViewFeeHead(feeHead);
-    setIsViewModalOpen(true);
+    const feeHeadId = feeHead?.id || feeHead?._id;
+    if (!feeHeadId) return;
+
+    const loadDetails = async () => {
+      setViewLoading(true);
+      setError("");
+
+      try {
+        const response = await getFeeHeadById(feeHeadId);
+        const details = response?.feeHead || response?.data?.feeHead || feeHead;
+        setViewFeeHead(details);
+        setIsViewModalOpen(true);
+      } catch (err) {
+        const errorMessage = err?.response?.data?.message || "Failed to fetch fee head details";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setViewLoading(false);
+      }
+    };
+
+    loadDetails();
   };
 
-  const handleEdit = (feeHead) => {
-    setCurrentFeeHead(feeHead);
-    setForm({
-      name: feeHead.name || "",
-      category: feeHead.category || "general",
-      description: feeHead.description || "",
-      ledger_code: feeHead.ledger_code || "",
-      is_optional: Boolean(feeHead.is_optional),
-      is_refundable: Boolean(feeHead.is_refundable),
-      is_active: feeHead.is_active !== undefined ? Boolean(feeHead.is_active) : feeHead.status !== "inactive",
-    });
-    setEditMode(true);
-    setIsModalOpen(true);
+  const handleEdit = async (feeHead) => {
+    const feeHeadId = feeHead?.id || feeHead?._id;
+    if (!feeHeadId) return;
+
+    setEditLoading(true);
+    setError("");
+
+    try {
+      const response = await getFeeHeadById(feeHeadId);
+      const details = response?.feeHead || response?.data?.feeHead || feeHead;
+
+      setCurrentFeeHead(details);
+      setForm({
+        name: details.name || "",
+        category: details.category || "academic",
+        description: details.description || "",
+        ledger_code: details.ledger_code || "",
+        is_optional: Boolean(details.is_optional),
+        is_refundable: Boolean(details.is_refundable),
+        is_active: details.is_active !== undefined ? Boolean(details.is_active) : details.status !== "inactive",
+      });
+      setEditMode(true);
+      setIsModalOpen(true);
+    } catch (err) {
+      const errorMessage = err?.response?.data?.message || "Failed to fetch fee head details";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -160,7 +205,7 @@ const FeeHeadManagement = () => {
   const openAddModal = () => {
     setForm({
       name: "",
-      category: "general",
+        category: "academic",
       description: "",
       ledger_code: "",
       is_optional: false,
@@ -320,15 +365,18 @@ const FeeHeadManagement = () => {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                          fh.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          (fh.is_active !== undefined ? fh.is_active : fh.status === 'active')
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
                         }`}>
-                          {fh.status || 'Active'}
+                          {(fh.is_active !== undefined ? fh.is_active : fh.status === 'active') ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleView(fh)}
+                            disabled={viewLoading}
                             className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
                             title="View Details"
                           >
@@ -336,6 +384,7 @@ const FeeHeadManagement = () => {
                           </button>
                           <button
                             onClick={() => handleEdit(fh)}
+                            disabled={editLoading}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                             title="Edit"
                           >
@@ -377,7 +426,7 @@ const FeeHeadManagement = () => {
                 setCurrentFeeHead(null);
                 setForm({
                   name: "",
-                  category: "general",
+                  category: "academic",
                   description: "",
                   ledger_code: "",
                   is_optional: false,
@@ -418,8 +467,8 @@ const FeeHeadManagement = () => {
                       onChange={handleChange}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                     >
-                      <option value="general">General</option>
                       <option value="academic">Academic</option>
+                      <option value="general">General</option>
                       <option value="transport">Transport</option>
                       <option value="hostel">Hostel</option>
                       <option value="library">Library</option>
@@ -557,9 +606,17 @@ const FeeHeadManagement = () => {
                         Status
                       </label>
                       <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                        viewFeeHead.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        (viewFeeHead.is_active !== undefined
+                          ? viewFeeHead.is_active
+                          : viewFeeHead.status === 'active')
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
                       }`}>
-                        {viewFeeHead.status || 'Active'}
+                        {(viewFeeHead.is_active !== undefined
+                          ? viewFeeHead.is_active
+                          : viewFeeHead.status === 'active')
+                          ? 'Active'
+                          : 'Inactive'}
                       </span>
                     </div>
                   </div>

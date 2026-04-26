@@ -1,48 +1,62 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import Modal from "../../../components/comman_components/Modal";
-import { Plus, X, AlertCircle, CheckCircle, Eye, Edit2, Trash2, IndianRupee, Users } from "lucide-react";
+import { AlertCircle, CheckCircle, Eye, Trash2 } from "lucide-react";
 import {
   assignFeeWithInstallments,
-  getAllFeeStructures,
+  deleteClassFeeAssignment,
+  getAcademicYearsDropdown,
   getAllClassesDropdown,
   getClassFeeAssignment,
-  editClassFeeAssignment,
+  getFeeStructuresDropdown,
   viewClassFeeAssignmentStudents,
-  deleteClassFeeAssignment,
 } from "../../../helper/requests-method/feeV1Api";
 import { toast } from "react-toastify";
+
+const getInitialForm = () => ({
+  class_section_id: "",
+  fee_structure_id: "",
+  academic_year_id: "",
+  custom_items: null,
+  excluded_heads: null,
+  override_json: null,
+});
 
 const FeeAssignment = () => {
   const [feeStructures, setFeeStructures] = useState([]);
   const [classSections, setClassSections] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [form, setForm] = useState({
-    class_section_id: "",
-    fee_structure_id: "",
-    discount_amount: "",
-    discount_reason: "",
-    installments: [],
-  });
-  const [showResponseModal, setShowResponseModal] = useState(false);
-  const [apiResponse, setApiResponse] = useState(null);
+
+  const [form, setForm] = useState(getInitialForm());
+
   const [assignments, setAssignments] = useState([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+
   const [viewAssignment, setViewAssignment] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState(null);
   const [viewStudentsData, setViewStudentsData] = useState(null);
   const [loadingViewData, setLoadingViewData] = useState(false);
 
+  const selectedStructure = useMemo(
+    () => feeStructures.find((item) => String(item.id) === String(form.fee_structure_id)),
+    [feeStructures, form.fee_structure_id]
+  );
+
+  const academicYearMap = useMemo(() => {
+    const map = new Map();
+    academicYears.forEach((year) => map.set(String(year.id), year.name || "-"));
+    return map;
+  }, [academicYears]);
+
   useEffect(() => {
-    fetchFeeStructures();
-    fetchClassSections();
+    fetchDropdowns();
     fetchAssignments();
   }, []);
 
@@ -54,133 +68,42 @@ const FeeAssignment = () => {
       }, 5000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [success, error]);
 
-  const fetchFeeStructures = async () => {
-    try {
-      const response = await getAllFeeStructures();
-      let structures = [];
-
-      if (response?.data?.feeStructures && Array.isArray(response.data.feeStructures)) {
-        structures = response.data.feeStructures;
-      } else if (Array.isArray(response?.feeStructures)) {
-        structures = response.feeStructures;
-      } else if (Array.isArray(response)) {
-        structures = response;
-      }
-
-      setFeeStructures(structures);
-    } catch (err) {
-      const errorMessage = "Failed to fetch fee structures";
-      console.error(errorMessage, err);
-      toast.error(errorMessage);
+  useEffect(() => {
+    if (selectedStructure?.academic_year_id) {
+      setForm((prev) => ({
+        ...prev,
+        academic_year_id: String(selectedStructure.academic_year_id),
+      }));
     }
-  };
+  }, [selectedStructure]);
 
-  const fetchClassSections = async () => {
+  const fetchDropdowns = async () => {
     try {
-      const response = await getAllClassesDropdown();
-      let sections = [];
+      const [classSectionsResponse, structuresResponse, academicYearsResponse] = await Promise.all([
+        getAllClassesDropdown(),
+        getFeeStructuresDropdown(),
+        getAcademicYearsDropdown(),
+      ]);
 
-      if (response?.data && Array.isArray(response.data)) {
-        sections = response.data;
-      } else if (Array.isArray(response)) {
-        sections = response;
+      setClassSections(classSectionsResponse?.data || []);
+      setFeeStructures(structuresResponse?.data || []);
+      setAcademicYears(academicYearsResponse?.data || []);
+
+      const currentYear = (academicYearsResponse?.data || []).find((year) => year.is_current);
+      if (currentYear?.id) {
+        setForm((prev) => ({
+          ...prev,
+          academic_year_id: String(currentYear.id),
+        }));
       }
-
-      setClassSections(sections);
     } catch (err) {
-      const errorMessage = "Failed to fetch class sections";
-      console.error(errorMessage, err);
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
-
-  const handleAddInstallment = () => {
-    setForm({
-      ...form,
-      installments: [
-        ...form.installments,
-        { amount: "", due_date: "" },
-      ],
-    });
-  };
-
-  const handleRemoveInstallment = (index) => {
-    const newInstallments = form.installments.filter((_, i) => i !== index);
-    setForm({ ...form, installments: newInstallments });
-  };
-
-  const handleInstallmentChange = (index, field, value) => {
-    const newInstallments = [...form.installments];
-    newInstallments[index][field] = field === "amount" ? Number(value) : value;
-    setForm({ ...form, installments: newInstallments });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-
-    // Validate installments
-    if (form.installments.length === 0) {
-      const errorMessage = "Please add at least one installment";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setLoading(false);
-      return;
-    }
-
-    const payload = {
-      class_section_id: Number(form.class_section_id),
-      fee_structure_id: Number(form.fee_structure_id),
-      discount_amount: Number(form.discount_amount) || 0,
-      discount_reason: form.discount_reason || "",
-      installments: form.installments.map(inst => ({
-        amount: Number(inst.amount),
-        due_date: inst.due_date
-      }))
-    };
-
-    try {
-      let response;
-      if (isEditMode) {
-        response = await editClassFeeAssignment(payload);
-        const successMessage = response?.message || "Fee assignment updated successfully!";
-        setSuccess(successMessage);
-        toast.success(successMessage);
-      } else {
-        response = await assignFeeWithInstallments(payload);
-        const successMessage = response?.message || "Fee assigned successfully with installments!";
-        setSuccess(successMessage);
-        toast.success(successMessage);
-      }
-      
-      setForm({
-        class_section_id: "",
-        fee_structure_id: "",
-        discount_amount: "",
-        discount_reason: "",
-        installments: [],
-      });
-      
-      setIsEditMode(false);
-      setEditingAssignment(null);
-      
-      // Refresh assignments list
-      fetchAssignments();
-    } catch (err) {
-      const errorMessage = err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'assign'} fee`;
+      const errorMessage = err?.response?.data?.message || "Failed to fetch fee assignment dropdowns";
       setError(errorMessage);
       toast.error(errorMessage);
     }
-    setLoading(false);
   };
 
   const fetchAssignments = async () => {
@@ -195,11 +118,85 @@ const FeeAssignment = () => {
         setAssignments([]);
       }
     } catch (err) {
-      console.error("Failed to fetch assignments", err);
-      toast.error("Failed to fetch assignments");
+      const errorMessage = err?.response?.data?.message || "Failed to fetch assignments";
+      toast.error(errorMessage);
       setAssignments([]);
     } finally {
       setLoadingAssignments(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    if (!form.class_section_id || !form.fee_structure_id || !form.academic_year_id) {
+      const message = "Please select class/section, fee structure and academic year";
+      setError(message);
+      toast.error(message);
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      class_section_id: Number(form.class_section_id),
+      fee_structure_id: Number(form.fee_structure_id),
+      class_ids: [Number(form.class_section_id)],
+      student_ids: [],
+      academic_year_id: Number(form.academic_year_id),
+      custom_items: form.custom_items,
+      excluded_heads: form.excluded_heads,
+      override_json: form.override_json,
+      class_name:
+        classSections.find((item) => String(item.id || item._id) === String(form.class_section_id))
+          ?.class_name || "",
+      section_name:
+        classSections.find((item) => String(item.id || item._id) === String(form.class_section_id))
+          ?.section_name || "",
+      fee_structure_name: selectedStructure?.label || selectedStructure?.name || "",
+      fee_structure_total_amount: selectedStructure?.total_amount || 0,
+    };
+
+    try {
+      const response = await assignFeeWithInstallments(payload);
+
+      const backendMessage =
+        response?.message ||
+        response?.error?.message ||
+        response?.error ||
+        "Fee assignment created";
+
+      if (response?.success === false) {
+        setError(String(backendMessage));
+        toast.error(String(backendMessage));
+        return;
+      }
+
+      setSuccess(String(backendMessage));
+      toast.success(String(backendMessage));
+
+      setForm((prev) => ({
+        ...getInitialForm(),
+        academic_year_id: prev.academic_year_id,
+      }));
+      fetchAssignments();
+    } catch (err) {
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.error ||
+        "Failed to create fee assignment";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -207,35 +204,60 @@ const FeeAssignment = () => {
     setViewAssignment(assignment);
     setIsViewModalOpen(true);
     setLoadingViewData(true);
-    
+
     try {
+      const assignmentId = assignment.assignment_id || assignment.id;
+      const detailsResponse = await getClassFeeAssignment(assignmentId);
+      const details = detailsResponse?.data?.assignment || detailsResponse?.assignment || detailsResponse?.data || null;
+
+      if (details) {
+        setViewAssignment({
+          ...assignment,
+          raw: details,
+          fee_structure: details.feeStructure
+            ? {
+                id: details.feeStructure.id,
+                name: details.feeStructure.name || assignment.fee_structure?.name || "-",
+                structure_type: details.feeStructure.structure_type || assignment.fee_structure?.structure_type || "recurring",
+                is_active: details.feeStructure.is_active !== undefined ? Boolean(details.feeStructure.is_active) : true,
+              }
+            : assignment.fee_structure,
+          effective_from: details.effective_from || null,
+          effective_to: details.effective_to || null,
+        });
+      }
+
       const response = await viewClassFeeAssignmentStudents(
-        assignment.class_section.id,
-        assignment.fee_structure.id
+        details?.feeStructure?.class_id || assignment.class_section?.id || assignment.raw?.feeStructure?.class_id,
+        details?.fee_structure_id || assignment.fee_structure?.id || assignment.fee_structure_id
       );
-      
+
       if (response?.data) {
         setViewStudentsData(response.data);
       } else {
         setViewStudentsData(response);
       }
-    } catch (err) {
-      console.error("Failed to fetch students data", err);
-      toast.error("Failed to fetch students data");
+    } catch {
       setViewStudentsData(null);
+      toast.error("Failed to fetch students data");
     } finally {
       setLoadingViewData(false);
     }
   };
 
   const handleDeleteAssignment = async (assignment) => {
-    if (!window.confirm(`Are you sure you want to delete the fee assignment for ${assignment.class_section.class_name} - ${assignment.class_section.section_name}?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to cancel the assignment for ${assignment.fee_structure?.name || "this fee structure"}?`
+      )
+    ) {
       return;
     }
 
     try {
-      await deleteClassFeeAssignment(assignment.class_section.id, assignment.fee_structure.id);
-      toast.success("Fee assignment deleted successfully");
+      const response = await deleteClassFeeAssignment(assignment.assignment_id || assignment.id);
+      const message = response?.message || response?.error?.message || response?.error || "Fee assignment cancelled successfully";
+      toast.success(String(message));
       fetchAssignments();
     } catch (err) {
       const errorMessage = err?.response?.data?.message || "Failed to delete assignment";
@@ -243,41 +265,11 @@ const FeeAssignment = () => {
     }
   };
 
-  const handleEditAssignment = (assignment) => {
-    setIsEditMode(true);
-    setEditingAssignment(assignment);
-    
-    // Populate form with assignment data
-    setForm({
-      class_section_id: assignment.class_section.id,
-      fee_structure_id: assignment.fee_structure.id,
-      discount_amount: assignment.statistics.discount_amount_per_student || "",
-      discount_reason: "",
-      installments: assignment.installment_structure.map(inst => ({
-        amount: inst.amount,
-        due_date: inst.due_date
-      }))
-    });
-
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-    setEditingAssignment(null);
-    setForm({
-      class_section_id: "",
-      fee_structure_id: "",
-      discount_amount: "",
-      discount_reason: "",
-      installments: [],
-    });
-  };
-
   const formatCurrency = (value) => {
     const num = Number(value);
-    return isNaN(num) ? "0.00" : num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return Number.isNaN(num)
+      ? "0.00"
+      : num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   return (
@@ -314,219 +306,93 @@ const FeeAssignment = () => {
               </div>
             )}
 
-            {/* Assign Fee Form */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {isEditMode ? 'Edit Fee Assignment' : 'Assign Fee to Class'}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {isEditMode 
-                      ? `Editing assignment for ${editingAssignment?.class_section.class_name} - ${editingAssignment?.class_section.section_name}`
-                      : 'Assign fee structures with installment plans to class sections'
-                    }
-                  </p>
+                  <h2 className="text-xl font-semibold text-gray-900">Assign Fee to Class</h2>
+                  <p className="text-sm text-gray-600 mt-1">Create recurring fee assignments using structure and class</p>
                 </div>
-                {isEditMode && (
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
-                  >
-                    Cancel Edit
-                  </button>
-                )}
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Information */}
-                <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Class/Section <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="class_section_id"
-                        value={form.class_section_id}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      >
-                        <option value="">Select Class/Section</option>
-                        {classSections.map((cs) => (
-                          <option key={cs.id || cs._id} value={cs.id || cs._id}>
-                            {cs.class_name} - {cs.section_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Fee Structure <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="fee_structure_id"
-                        value={form.fee_structure_id}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      >
-                        <option value="">Select Fee Structure</option>
-                        {feeStructures.map((fs) => (
-                          <option key={fs.id || fs._id} value={fs.id || fs._id}>
-                            {fs.name} - ₹{fs.total_amount || fs.amount || 0}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Discount Information */}
-                <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Discount (Optional)</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Discount Amount
-                      </label>
-                      <input
-                        type="number"
-                        name="discount_amount"
-                        value={form.discount_amount}
-                        onChange={handleChange}
-                        placeholder="500"
-                        min="0"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Discount Reason
-                      </label>
-                      <input
-                        type="text"
-                        name="discount_reason"
-                        value={form.discount_reason}
-                        onChange={handleChange}
-                        placeholder="Early Bird Discount"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Installments */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Installments</h3>
-                    <button
-                      type="button"
-                      onClick={handleAddInstallment}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition-colors text-sm font-medium cursor-pointer"
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Class/Section <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="class_section_id"
+                      value={form.class_section_id}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                     >
-                      <Plus className="w-4 h-4" />
-                      Add Installment
-                    </button>
+                      <option value="">Select Class/Section</option>
+                      {classSections.map((section) => (
+                        <option key={section.id || section._id} value={section.id || section._id}>
+                          {section.label || `${section.class_name}-${section.section_name}`}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  {form.installments.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 mb-3">No installments added yet</p>
-                      <button
-                        type="button"
-                        onClick={handleAddInstallment}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add First Installment
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {form.installments.map((installment, index) => (
-                        <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Installment #{index + 1} Amount <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="number"
-                                  value={installment.amount}
-                                  onChange={(e) => handleInstallmentChange(index, "amount", e.target.value)}
-                                  placeholder="5000"
-                                  required
-                                  min="0"
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Due Date <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="date"
-                                  value={installment.due_date}
-                                  onChange={(e) => handleInstallmentChange(index, "due_date", e.target.value)}
-                                  required
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                />
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveInstallment(index)}
-                              className="mt-6 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                              title="Remove"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fee Structure <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="fee_structure_id"
+                      value={form.fee_structure_id}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    >
+                      <option value="">Select Fee Structure</option>
+                      {feeStructures.map((structure) => (
+                        <option key={structure.id} value={structure.id}>
+                          {structure.label || structure.name}
+                        </option>
                       ))}
-                      <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                        <strong>Total Installments:</strong> {form.installments.length} | 
-                        <strong className="ml-2">Total Amount:</strong> ₹{form.installments.reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0)}
-                      </div>
-                    </div>
-                  )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Academic Year <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="academic_year_id"
+                      value={form.academic_year_id}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    >
+                      <option value="">Select Academic Year</option>
+                      {academicYears.map((year) => (
+                        <option key={year.id} value={year.id}>
+                          {year.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <button
                     type="submit"
                     disabled={loading}
                     className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium cursor-pointer"
                   >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        {isEditMode ? 'Updating...' : 'Assigning...'}
-                      </span>
-                    ) : (
-                      isEditMode ? 'Update Fee Assignment' : 'Assign Fee'
-                    )}
+                    {loading ? "Assigning..." : "Assign Fee"}
                   </button>
                 </div>
               </form>
             </div>
 
-            {/* Assigned Fees Table */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-6">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">Assigned Fees</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  View all fee assignments by class
-                </p>
+                <p className="text-sm text-gray-600 mt-1">Assignments created from this screen</p>
               </div>
 
               {loadingAssignments ? (
@@ -539,95 +405,73 @@ const FeeAssignment = () => {
                     <AlertCircle className="w-8 h-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
-                  <p className="text-gray-500">
-                    Assign fees to classes using the form above
-                  </p>
+                  <p className="text-gray-500">Create an assignment using the form above</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Class/Section
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Fee Structure
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Academic Year
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Total Amount
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Students
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Installments
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Discount
-                        </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Class/Section</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Fee Structure</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Academic Year</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Assignment Type</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Assigned At</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Amount</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {assignments.map((assignment, index) => (
-                        <tr key={index} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            {assignment.class_section.class_name} - {assignment.class_section.section_name}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {assignment.fee_structure.name}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {assignment.fee_structure.academic_year}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                            ₹{formatCurrency(assignment.fee_structure.total_amount)}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              {assignment.statistics.total_students}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {assignment.statistics.installments_per_student} per student
-                          </td>
-                          <td className="px-6 py-4 text-sm text-purple-600 font-semibold">
-                            ₹{formatCurrency(assignment.statistics.discount_amount_per_student)}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleViewAssignment(assignment)}
-                                className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
-                                title="View Details"
+                      {assignments.map((assignment, index) => {
+                        const academicYearDisplay = academicYearMap.get(String(assignment.academic_year_id || ""));
+
+                        return (
+                          <tr key={assignment.id || index} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                    {assignment.raw?.feeStructure?.class_id || assignment.class_section?.id || "-"}
+                                  </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">{assignment.fee_structure?.name || "-"}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{academicYearDisplay || "-"}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600 capitalize">{assignment.assignment_type || "recurring"}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {assignment.assigned_at ? new Date(assignment.assigned_at).toLocaleString("en-IN") : "-"}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              Rs. {formatCurrency(assignment.fee_structure?.total_amount)}
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <span
+                                className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                                  (assignment.status || "active") === "active"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
                               >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleEditAssignment(assignment)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                title="Edit Assignment"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteAssignment(assignment)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                title="Delete Assignment"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                {assignment.status || "active"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleViewAssignment(assignment)}
+                                  className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
+                                  title="View"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteAssignment(assignment)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -636,57 +480,21 @@ const FeeAssignment = () => {
           </div>
         </main>
 
-        {/* API Response Modal */}
-        <Modal
-          isOpen={showResponseModal}
-          onClose={() => {
-            setShowResponseModal(false);
-            setApiResponse(null);
-          }}
-          size="lg"
-        >
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-green-100 rounded-full">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Fee Assignment Successful</h2>
-                <p className="text-sm text-gray-600 mt-1">{apiResponse?.message}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => {
-                  setShowResponseModal(false);
-                  setApiResponse(null);
-                }}
-                className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors font-medium cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* View Assignment Details Modal */}
         <Modal
           isOpen={isViewModalOpen}
           onClose={() => {
             setIsViewModalOpen(false);
             setViewAssignment(null);
+            setViewStudentsData(null);
           }}
           size="xl"
         >
           {viewAssignment && (
             <div className="p-6">
               <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                  Fee Assignment - Student Details
-                </h2>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Fee Assignment - Student Details</h2>
                 <p className="text-gray-600">
-                  {viewAssignment.class_section.class_name} - {viewAssignment.class_section.section_name}
+                  Assignment ID: {viewAssignment.assignment_id || viewAssignment.id}
                 </p>
               </div>
 
@@ -696,29 +504,35 @@ const FeeAssignment = () => {
                 </div>
               ) : viewStudentsData ? (
                 <div className="space-y-6">
-                  {/* Summary */}
                   {viewStudentsData.summary && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                         <p className="text-blue-600 text-sm mb-1">Total Students</p>
-                        <p className="text-2xl font-bold text-blue-900">{viewStudentsData.summary.total_students}</p>
+                        <p className="text-2xl font-bold text-blue-900">
+                          {viewStudentsData.summary.total_students}
+                        </p>
                       </div>
                       <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
                         <p className="text-indigo-600 text-sm mb-1">Original Amount</p>
-                        <p className="text-2xl font-bold text-indigo-900">₹{formatCurrency(viewStudentsData.summary.total_original_amount)}</p>
+                        <p className="text-2xl font-bold text-indigo-900">
+                          Rs. {formatCurrency(viewStudentsData.summary.total_original_amount)}
+                        </p>
                       </div>
                       <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                         <p className="text-purple-600 text-sm mb-1">Total Discount</p>
-                        <p className="text-2xl font-bold text-purple-900">₹{formatCurrency(viewStudentsData.summary.total_discount)}</p>
+                        <p className="text-2xl font-bold text-purple-900">
+                          Rs. {formatCurrency(viewStudentsData.summary.total_discount)}
+                        </p>
                       </div>
                       <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-200">
                         <p className="text-cyan-600 text-sm mb-1">Final Amount</p>
-                        <p className="text-2xl font-bold text-cyan-900">₹{formatCurrency(viewStudentsData.summary.total_final_amount)}</p>
+                        <p className="text-2xl font-bold text-cyan-900">
+                          Rs. {formatCurrency(viewStudentsData.summary.total_final_amount)}
+                        </p>
                       </div>
                     </div>
                   )}
 
-                  {/* Students Table */}
                   {viewStudentsData.students && viewStudentsData.students.length > 0 ? (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">Students List</h3>
@@ -728,25 +542,19 @@ const FeeAssignment = () => {
                             <tr>
                               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Roll No.</th>
                               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Student Name</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Email</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Phone</th>
                               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Original Amount</th>
                               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Discount</th>
                               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Final Amount</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Discount Reason</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-100">
                             {viewStudentsData.students.map((student, idx) => (
                               <tr key={student.student_fee_id || idx} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-gray-900 font-medium">{student.roll_number || '-'}</td>
-                                <td className="px-4 py-3 text-gray-900 font-medium">{student.student_name}</td>
-                                <td className="px-4 py-3 text-gray-600">{student.email}</td>
-                                <td className="px-4 py-3 text-gray-600">{student.phone}</td>
-                                <td className="px-4 py-3 text-gray-900">₹{formatCurrency(student.original_amount)}</td>
-                                <td className="px-4 py-3 text-purple-600 font-medium">₹{formatCurrency(student.discount_amount)}</td>
-                                <td className="px-4 py-3 text-blue-600 font-semibold">₹{formatCurrency(student.final_amount)}</td>
-                                <td className="px-4 py-3 text-gray-600 text-xs">{student.discount_reason || '-'}</td>
+                                <td className="px-4 py-3 text-gray-900 font-medium">{student.roll_number || "-"}</td>
+                                <td className="px-4 py-3 text-gray-900 font-medium">{student.student_name || "-"}</td>
+                                <td className="px-4 py-3 text-gray-900">Rs. {formatCurrency(student.original_amount)}</td>
+                                <td className="px-4 py-3 text-purple-600 font-medium">Rs. {formatCurrency(student.discount_amount)}</td>
+                                <td className="px-4 py-3 text-blue-600 font-semibold">Rs. {formatCurrency(student.final_amount)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -754,15 +562,11 @@ const FeeAssignment = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No students found
-                    </div>
+                    <div className="text-center py-8 text-gray-500">No students found</div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  Failed to load student data
-                </div>
+                <div className="text-center py-8 text-gray-500">Failed to load student data</div>
               )}
 
               <div className="flex justify-end mt-6">

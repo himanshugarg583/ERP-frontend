@@ -8,6 +8,10 @@ import {
 } from "./apiMethods";
 
 const FEES_BASE = "/api/v1/fees";
+const ADMIN_FEE_HEADS_BASE = "/api/admin/fees/fee-heads";
+const ADMIN_FEE_STRUCTURES_BASE = "/api/admin/fees/fee-structures";
+const ADMIN_FEES_DROPDOWN_BASE = "/api/admin/fees/dropdown";
+const ADMIN_FEE_ASSIGNMENTS_BASE = "/api/admin/fees/assignments";
 const ASSIGNMENT_CACHE_KEY = "fee-v1:assignments";
 const DEFAULT_ACADEMIC_YEAR_ID = "00000000-0000-0000-0000-000000000008";
 
@@ -91,6 +95,7 @@ const normalizeFeeHead = (raw = {}) => {
 
 const normalizeFeeHeadList = (response) => {
   const list =
+    response?.data?.data ||
     response?.data?.feeHeads ||
     response?.data?.fee_heads ||
     response?.data?.items ||
@@ -103,8 +108,52 @@ const normalizeFeeHeadList = (response) => {
   return toArray(list).map(normalizeFeeHead);
 };
 
+const buildFeeHeadsQuery = ({ category, is_active } = {}) => {
+  const params = new URLSearchParams();
+
+  if (category !== undefined && category !== null && category !== "") {
+    params.append("category", String(category));
+  }
+
+  if (is_active !== undefined && is_active !== null) {
+    params.append("is_active", String(Boolean(is_active)));
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+};
+
+const getStoredAcademicYearId = () => {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("academicYearId") ||
+    localStorage.getItem("selectedAcademicYearId") ||
+    ""
+  );
+};
+
+const buildFeeStructuresQuery = ({ academic_year_id, is_active, structure_type } = {}) => {
+  const params = new URLSearchParams();
+
+  if (academic_year_id !== undefined && academic_year_id !== null && academic_year_id !== "") {
+    params.append("academic_year_id", String(academic_year_id));
+  }
+
+  if (is_active !== undefined && is_active !== null) {
+    params.append("is_active", String(Boolean(is_active)));
+  }
+
+  if (structure_type !== undefined && structure_type !== null && structure_type !== "") {
+    params.append("structure_type", String(structure_type));
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+};
+
 const normalizeFeeStructure = (raw = {}) => {
   const classIds = toArray(raw.class_ids || raw.classIds).map((value) => toNumber(value));
+  const classId = raw.class_id || classIds[0] || raw.classSection?.id || "";
   const firstInstallment = toArray(raw.installments)[0] || {};
   const items = toArray(raw.items || raw.fee_details || raw.feeDetails).map((item, index) => ({
     id: item.id || `${raw.id || raw._id || "fs"}-${index + 1}`,
@@ -124,8 +173,9 @@ const normalizeFeeStructure = (raw = {}) => {
   return {
     id: raw.id || raw._id,
     name: raw.name || "",
+    class_id: classId,
     class_ids: classIds,
-    class_section_id: classIds[0] || "",
+    class_section_id: classIds[0] || classId || "",
     academic_year_id: raw.academic_year_id || "",
     academic_start_year: raw.academic_start_year || "",
     academic_end_year: raw.academic_end_year || "",
@@ -134,10 +184,26 @@ const normalizeFeeStructure = (raw = {}) => {
     late_fee_type: firstInstallment.late_fine_type || raw.late_fee_type || "flat",
     fee_details: items,
     feeDetails: items,
-    installments: toArray(raw.installments),
+    items,
+    installments: toArray(raw.installments).map((inst, index) => ({
+      id: inst.id || `${raw.id || raw._id || "fs"}-inst-${index + 1}`,
+      fee_structure_id: inst.fee_structure_id || raw.id || raw._id,
+      name: inst.name || `Installment ${index + 1}`,
+      installment_number: inst.installment_number || index + 1,
+      sequence_no: inst.sequence_no || inst.installment_number || index + 1,
+      start_date: toIsoDate(inst.start_date || inst.due_date),
+      due_date: toIsoDate(inst.due_date),
+      percentage: toNumber(inst.percentage, 0),
+      allow_partial_payment:
+        inst.allow_partial_payment !== undefined ? Boolean(inst.allow_partial_payment) : true,
+      fixed_amount: inst.fixed_amount !== undefined && inst.fixed_amount !== null ? toNumber(inst.fixed_amount) : null,
+      late_fine_type: inst.late_fine_type || "none",
+      late_fine_value: toNumber(inst.late_fine_value, 0),
+      grace_period_days: toNumber(inst.grace_period_days, 0),
+    })),
     classSection: raw.classSection || {
-      id: classIds[0] || "",
-      class_name: raw.class_name || `Class ${classIds[0] || ""}`,
+      id: classId || "",
+      class_name: raw.class_name || raw.class_section?.class_name || `Class ${classId || ""}`,
       section_name: raw.section_name || "Section",
     },
     description: raw.description || "",
@@ -150,6 +216,7 @@ const normalizeFeeStructure = (raw = {}) => {
 
 const normalizeFeeStructureList = (response) => {
   const list =
+    response?.data?.data ||
     response?.data?.feeStructures ||
     response?.data?.fee_structures ||
     response?.data?.items ||
@@ -163,16 +230,17 @@ const normalizeFeeStructureList = (response) => {
 };
 
 const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
-  const classIds = toArray(payload.class_ids).length
-    ? toArray(payload.class_ids).map((value) => toNumber(value))
-    : payload.class_section_id
-    ? [toNumber(payload.class_section_id)]
-    : [];
+  const classId =
+    payload.class_id !== undefined && payload.class_id !== null && payload.class_id !== ""
+      ? toNumber(payload.class_id)
+      : payload.class_section_id
+      ? toNumber(payload.class_section_id)
+      : null;
 
   const feeItems = toArray(payload.items).length
     ? toArray(payload.items)
     : toArray(payload.fee_details).map((detail, index) => ({
-        fee_head_id: String(detail.fee_head_id),
+        fee_head_id: toNumber(detail.fee_head_id),
         amount: toNumber(detail.amount),
         is_mandatory: detail.is_mandatory !== undefined ? Boolean(detail.is_mandatory) : true,
         sort_order: detail.sequence_order || index + 1,
@@ -182,8 +250,16 @@ const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
     ? toArray(payload.installments).map((inst, index) => ({
         name: inst.name || `Installment ${inst.installment_number || index + 1}`,
         installment_number: inst.installment_number || index + 1,
+        sequence_no: inst.sequence_no || inst.installment_number || index + 1,
+        start_date: toIsoDate(inst.start_date || inst.due_date),
         due_date: toIsoDate(inst.due_date),
         percentage: inst.percentage || 100,
+        allow_partial_payment:
+          inst.allow_partial_payment !== undefined ? Boolean(inst.allow_partial_payment) : true,
+        fixed_amount:
+          inst.fixed_amount !== undefined && inst.fixed_amount !== null
+            ? toNumber(inst.fixed_amount)
+            : null,
         late_fine_type: inst.late_fine_type || payload.late_fee_type || "none",
         late_fine_value: toNumber(inst.late_fine_value ?? payload.late_fee_amount),
         max_late_fine: inst.max_late_fine !== undefined ? toNumber(inst.max_late_fine) : undefined,
@@ -194,8 +270,12 @@ const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
         {
           name: "Term 1",
           installment_number: 1,
+          sequence_no: 1,
+          start_date: toIsoDate(payload.start_date || payload.due_date),
           due_date: toIsoDate(payload.due_date),
           percentage: 100,
+          allow_partial_payment: true,
+          fixed_amount: null,
           late_fine_type: payload.late_fee_type || "none",
           late_fine_value: toNumber(payload.late_fee_amount),
           grace_period_days: 0,
@@ -203,24 +283,39 @@ const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
       ]
     : [];
 
-  const base = {
-    name: payload.name,
-    academic_year_id: resolveAcademicYearId(payload),
-    applicable_to: payload.applicable_to || "class",
-    class_ids: classIds,
-    description:
+  const base = {};
+
+  if (payload.name !== undefined) {
+    base.name = payload.name;
+  }
+
+  if (!isUpdate || payload.academic_year_id !== undefined) {
+    base.academic_year_id = payload.academic_year_id || resolveAcademicYearId(payload);
+  }
+
+  if (classId !== null) {
+    base.class_id = classId;
+  }
+
+  if (payload.description !== undefined) {
+    base.description = payload.description;
+  } else if (!isUpdate) {
+    base.description =
       payload.description ||
       (payload.academic_start_year && payload.academic_end_year
         ? `Academic session ${payload.academic_start_year}-${payload.academic_end_year}`
-        : "Fee structure"),
-    structure_type: payload.structure_type || "recurring",
-  };
+        : "Fee structure");
+  }
 
-  if (!isUpdate || feeItems.length > 0) {
+  if (!isUpdate || payload.structure_type !== undefined) {
+    base.structure_type = payload.structure_type || "recurring";
+  }
+
+  if ((!isUpdate && feeItems.length > 0) || payload.items || payload.fee_details) {
     base.items = feeItems;
   }
 
-  if (!isUpdate || installments.length > 0) {
+  if ((!isUpdate && installments.length > 0) || payload.installments || payload.due_date) {
     base.installments = installments;
   }
 
@@ -550,10 +645,49 @@ const getPaymentSummary = (response, payments = []) => {
   };
 };
 
-export const getAllClassesDropdown = async () => getAllClassesDropdownBase();
 export const getClassSectionDropdown = async () => {
-  const response = await getAllClassesDropdownBase();
-  const data = toArray(response?.data || response);
+  try {
+    const response = await authorizedGet(`${ADMIN_FEES_DROPDOWN_BASE}/class-sections`);
+    const data = toArray(response?.data?.data || response?.data || response);
+    return withSuccess(response, { data });
+  } catch {
+    const response = await getAllClassesDropdownBase();
+    const data = toArray(response?.data || response);
+    return withSuccess(response, { data });
+  }
+};
+
+export const getAllClassesDropdown = getClassSectionDropdown;
+
+export const getFeeHeadsDropdown = async () => {
+  const response = await authorizedGet(`${ADMIN_FEES_DROPDOWN_BASE}/fee-heads`);
+  const data = toArray(response?.data?.data || response?.data || response).map(normalizeFeeHead);
+  return withSuccess(response, { data });
+};
+
+export const getAcademicYearsDropdown = async () => {
+  const response = await authorizedGet(`${ADMIN_FEES_DROPDOWN_BASE}/academic-years`);
+  const data = toArray(response?.data?.data || response?.data || response).map((item) => ({
+    id: item.id,
+    name: item.name || "",
+    start_date: item.start_date || "",
+    end_date: item.end_date || "",
+    is_current: Boolean(item.is_current),
+  }));
+  return withSuccess(response, { data });
+};
+
+export const getFeeStructuresDropdown = async () => {
+  const response = await authorizedGet(`${ADMIN_FEES_DROPDOWN_BASE}/fee-structures`);
+  const data = toArray(response?.data?.data || response?.data || response).map((item) => ({
+    id: item.id,
+    name: item.name || "",
+    label: item.label || item.name || "",
+    academic_year_id: item.academic_year_id || "",
+    class_id: item.class_id || "",
+    structure_type: item.structure_type || "recurring",
+    is_active: item.is_active !== undefined ? Boolean(item.is_active) : true,
+  }));
   return withSuccess(response, { data });
 };
 
@@ -570,8 +704,8 @@ export const getStudentsByClass = async (classId) => {
 
 export const getAllStudentsByClass = getStudentsByClass;
 
-export const getAllFeeHeads = async () => {
-  const response = await feeGet("/fee-heads");
+export const getAllFeeHeads = async (filters = { category: "academic", is_active: true }) => {
+  const response = await authorizedGet(`${ADMIN_FEE_HEADS_BASE}${buildFeeHeadsQuery(filters)}`);
   const feeHeads = normalizeFeeHeadList(response);
   return withSuccess(response, {
     data: { feeHeads, fee_heads: feeHeads },
@@ -583,27 +717,33 @@ export const getAllFeeHeads = async () => {
 export const createFeeHead = async (feeHeadData) => {
   const payload = {
     name: feeHeadData?.name,
-    category: feeHeadData?.category || "general",
+    category: feeHeadData?.category || "academic",
     description: feeHeadData?.description || "",
     is_optional: feeHeadData?.is_optional ?? !feeHeadData?.is_mandatory,
     is_refundable: Boolean(feeHeadData?.is_refundable),
     ledger_code: feeHeadData?.ledger_code || "",
   };
 
-  const response = await feePost("/fee-heads", payload);
+  const response = await authorizedPost(
+    `${ADMIN_FEE_HEADS_BASE}${buildFeeHeadsQuery({
+      category: payload.category,
+      is_active: true,
+    })}`,
+    payload
+  );
   return withSuccess(response);
 };
 
 export const getFeeHeadById = async (id) => {
-  const response = await feeGet(`/fee-heads/${id}`);
-  const feeHead = normalizeFeeHead(response?.data || response);
+  const response = await authorizedGet(`${ADMIN_FEE_HEADS_BASE}/${id}`);
+  const feeHead = normalizeFeeHead(response?.data?.data || response?.data || response);
   return withSuccess(response, { data: { feeHead }, feeHead });
 };
 
 export const updateFeeHead = async (id, feeHeadData) => {
   const payload = {
     name: feeHeadData?.name,
-    category: feeHeadData?.category || "general",
+    category: feeHeadData?.category || "academic",
     description: feeHeadData?.description || "",
     is_optional: feeHeadData?.is_optional ?? !feeHeadData?.is_mandatory,
     is_refundable: Boolean(feeHeadData?.is_refundable),
@@ -616,17 +756,23 @@ export const updateFeeHead = async (id, feeHeadData) => {
         : true,
   };
 
-  const response = await feePut(`/fee-heads/${id}`, payload);
+  const response = await authorizedPut(`${ADMIN_FEE_HEADS_BASE}/${id}`, payload);
   return withSuccess(response);
 };
 
 export const deleteFeeHead = async (id) => {
-  const response = await feeDelete(`/fee-heads/${id}`);
+  const response = await authorizedDelete(`${ADMIN_FEE_HEADS_BASE}/${id}`);
   return withSuccess(response);
 };
 
-export const getAllFeeStructures = async () => {
-  const response = await feeGet("/fee-structures");
+export const getAllFeeStructures = async (filters = {}) => {
+  const response = await authorizedGet(
+    `${ADMIN_FEE_STRUCTURES_BASE}${buildFeeStructuresQuery({
+      academic_year_id: filters.academic_year_id ?? getStoredAcademicYearId(),
+      is_active: filters.is_active ?? true,
+      structure_type: filters.structure_type || "recurring",
+    })}`
+  );
   const feeStructures = normalizeFeeStructureList(response);
   return withSuccess(response, {
     data: { feeStructures, fee_structures: feeStructures },
@@ -636,13 +782,21 @@ export const getAllFeeStructures = async () => {
 };
 
 export const createFeeStructure = async (feeStructureData) => {
-  const response = await feePost("/fee-structures", toFeeStructurePayload(feeStructureData));
+  const payload = toFeeStructurePayload(feeStructureData);
+  const response = await authorizedPost(
+    `${ADMIN_FEE_STRUCTURES_BASE}${buildFeeStructuresQuery({
+      academic_year_id: payload.academic_year_id,
+      is_active: true,
+      structure_type: payload.structure_type || "recurring",
+    })}`,
+    payload
+  );
   return withSuccess(response);
 };
 
 export const getFeeStructureById = async (id) => {
-  const response = await feeGet(`/fee-structures/${id}`);
-  const feeStructure = normalizeFeeStructure(response?.data || response);
+  const response = await authorizedGet(`${ADMIN_FEE_STRUCTURES_BASE}/${id}`);
+  const feeStructure = normalizeFeeStructure(response?.data?.data || response?.data || response);
   return withSuccess(response, {
     data: {
       feeStructure,
@@ -654,40 +808,89 @@ export const getFeeStructureById = async (id) => {
 };
 
 export const updateFeeStructure = async (id, feeStructureData) => {
-  const response = await feePut(`/fee-structures/${id}`, toFeeStructurePayload(feeStructureData, true));
+  const response = await authorizedPut(
+    `${ADMIN_FEE_STRUCTURES_BASE}/${id}`,
+    toFeeStructurePayload(feeStructureData, true)
+  );
   return withSuccess(response);
 };
 
 export const deleteFeeStructure = async (id) => {
-  const response = await feeDelete(`/fee-structures/${id}`);
+  const response = await authorizedDelete(`${ADMIN_FEE_STRUCTURES_BASE}/${id}`);
   return withSuccess(response);
 };
 
 export const assignFeeWithInstallments = async (assignmentData) => {
+  const academicYearId = assignmentData?.academic_year_id || resolveAcademicYearId(assignmentData);
   const payload = {
-    fee_structure_id: String(assignmentData.fee_structure_id),
+    fee_structure_id: toNumber(assignmentData.fee_structure_id),
     class_ids: [toNumber(assignmentData.class_section_id)],
-    student_ids: [],
-    academic_year_id: resolveAcademicYearId(assignmentData),
-    custom_items: [],
-    excluded_heads: [],
+    student_ids: toArray(assignmentData.student_ids),
+    academic_year_id: toNumber(academicYearId),
+    custom_items: assignmentData?.custom_items ?? null,
+    excluded_heads: assignmentData?.excluded_heads ?? null,
+    effective_from: assignmentData?.effective_from || null,
+    effective_to: assignmentData?.effective_to || null,
+    override_json: assignmentData?.override_json ?? null,
   };
 
-  const response = await feePost("/assignments/bulk", payload);
+  const response = await authorizedPost(`${ADMIN_FEE_ASSIGNMENTS_BASE}/bulk`, payload);
   const assignmentId =
-    response?.data?.assignment_id ||
+    response?.data?.data?.id ||
     response?.data?.id ||
+    response?.data?.assignment_id ||
     response?.data?.assignment?.id ||
+    response?.assignment_id ||
     null;
 
-  const assignmentView = await buildAssignmentViewModel(assignmentData, assignmentId);
+  const baseAssignment = {
+    id: assignmentId,
+    fee_structure_id: payload.fee_structure_id,
+    academic_year_id: payload.academic_year_id,
+    class_id: payload.class_ids[0],
+    effective_from: payload.effective_from,
+    effective_to: payload.effective_to,
+    custom_items: payload.custom_items,
+    excluded_heads: payload.excluded_heads,
+    override_json: payload.override_json,
+    status: "active",
+  };
+
+  const assignmentView = {
+    id: assignmentId || `${payload.class_ids[0]}-${payload.fee_structure_id}-${Date.now()}`,
+    assignment_id: assignmentId || null,
+    class_section: {
+      id: payload.class_ids[0],
+      class_name: assignmentData?.class_name || "Class",
+      section_name: assignmentData?.section_name || "Section",
+    },
+    fee_structure: {
+      id: payload.fee_structure_id,
+      name: assignmentData?.fee_structure_name || `Structure ${payload.fee_structure_id}`,
+      academic_year: payload.academic_year_id,
+      total_amount: toNumber(assignmentData?.fee_structure_total_amount, 0),
+    },
+    installment_structure: [],
+    statistics: {
+      students_assigned: 0,
+      discount_amount_per_student: 0,
+    },
+    effective_from: baseAssignment.effective_from || null,
+    effective_to: baseAssignment.effective_to || null,
+    status: baseAssignment.status || "active",
+    raw: baseAssignment,
+    created_at: nowIso(),
+  };
+
   const cache = readAssignmentCache();
   writeAssignmentCache(mergeAssignment(cache, assignmentView));
 
   return withSuccess(response, {
     data: {
+      assignment_id: assignmentId,
       assignment: assignmentView,
     },
+    assignment_id: assignmentId,
   });
 };
 
@@ -695,13 +898,50 @@ export const editClassFeeAssignment = async (assignmentData) => {
   return assignFeeWithInstallments(assignmentData);
 };
 
-export const getClassFeeAssignment = async () => {
-  const assignments = readAssignmentCache();
+export const getClassFeeAssignment = async (assignmentId) => {
+  if (assignmentId !== undefined && assignmentId !== null && assignmentId !== "") {
+    const response = await authorizedGet(`${ADMIN_FEE_ASSIGNMENTS_BASE}/${assignmentId}`);
+    return withSuccess(response, {
+      data: {
+        assignment: response?.data?.data || response?.data || null,
+      },
+      assignment: response?.data?.data || response?.data || null,
+    });
+  }
+
+  const response = await authorizedGet(`${ADMIN_FEE_ASSIGNMENTS_BASE}`);
+  const assignments = toArray(response?.data?.data || response?.data || response).map((item) => ({
+    id: item.id,
+    assignment_id: item.id,
+    student_id: item.student_id || null,
+    fee_structure_id: item.fee_structure_id,
+    academic_year_id: item.academic_year_id,
+    assignment_type: item.assignment_type || "recurring",
+    status: item.status || "active",
+    assigned_at: item.assigned_at || item.created_at || null,
+    fee_structure: item.feeStructure
+      ? {
+          id: item.feeStructure.id,
+          name: item.feeStructure.name || "",
+          structure_type: item.feeStructure.structure_type || "recurring",
+          is_active: item.feeStructure.is_active !== undefined ? Boolean(item.feeStructure.is_active) : true,
+        }
+      : {
+          id: item.fee_structure_id,
+          name: `Structure ${item.fee_structure_id}`,
+          structure_type: item.assignment_type || "recurring",
+          is_active: true,
+        },
+    raw: item,
+  }));
+
+  writeAssignmentCache(assignments);
   return {
     success: true,
-    message: "Assignments loaded",
-    data: { assignments },
+    message: response?.message || "Assignments loaded",
+    data: { assignments, meta: response?.data?.meta || response?.meta || null },
     assignments,
+    meta: response?.data?.meta || response?.meta || null,
   };
 };
 
@@ -747,33 +987,11 @@ export const viewClassFeeAssignmentStudents = async (classSectionId, feeStructur
   });
 };
 
-export const deleteClassFeeAssignment = async (classSectionId, feeStructureId) => {
-  const cached = readAssignmentCache();
-  const match = cached.find(
-    (item) =>
-      toNumber(item.class_section?.id) === toNumber(classSectionId) &&
-      toNumber(item.fee_structure?.id) === toNumber(feeStructureId)
-  );
-
-  if (match?.assignment_id) {
-    await feePut(`/assignments/${match.assignment_id}/cancel`, {
-      reason: "Cancelled from fee assignment screen",
-    });
-  }
-
-  const filtered = cached.filter(
-    (item) =>
-      !(
-        toNumber(item.class_section?.id) === toNumber(classSectionId) &&
-        toNumber(item.fee_structure?.id) === toNumber(feeStructureId)
-      )
-  );
-
-  writeAssignmentCache(filtered);
-  return {
-    success: true,
-    message: "Assignment deleted",
-  };
+export const deleteClassFeeAssignment = async (assignmentId, reason = "Fee assignment no longer required") => {
+  const response = await authorizedPut(`${ADMIN_FEE_ASSIGNMENTS_BASE}/cancel/${assignmentId}`, {
+    reason,
+  });
+  return withSuccess(response);
 };
 
 export const getOverdueInstallments = async () => {

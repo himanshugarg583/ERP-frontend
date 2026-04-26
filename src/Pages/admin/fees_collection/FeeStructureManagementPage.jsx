@@ -1,52 +1,139 @@
-import React, { useEffect, useState, memo } from "react";
-import { 
-  getAllFeeStructures, 
-  createFeeStructure, 
-  updateFeeStructure, 
+import React, { memo, useEffect, useMemo, useState } from "react";
+import {
+  createFeeStructure,
   deleteFeeStructure,
+  getAcademicYearsDropdown,
+  getAllFeeStructures,
+  getClassSectionDropdown,
+  getFeeHeadsDropdown,
   getFeeStructureById,
-  getAllFeeHeads,
-  getAllClassesDropdown
+  updateFeeStructure,
 } from "../../../helper/requests-method/feeV1Api";
 import Modal from "../../../components/comman_components/Modal";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
-import { Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle, Eye, X } from "lucide-react";
+import ReusableTable from "../../../components/comman_components/ReusableTable";
+import { AlertCircle, CheckCircle, Edit2, Eye, Plus, Trash2, X } from "lucide-react";
 import { toast } from "react-toastify";
+
+const createDefaultInstallment = (index = 1) => ({
+  name: `Term ${index}`,
+  installment_number: index,
+  sequence_no: index,
+  start_date: "",
+  due_date: "",
+  percentage: 100,
+  allow_partial_payment: true,
+  late_fine_type: "none",
+  late_fine_value: 0,
+  grace_period_days: 0,
+});
+
+const getInitialForm = () => ({
+  name: "",
+  academic_year_id: "",
+  class_id: "",
+  description: "",
+  structure_type: "recurring",
+  is_active: true,
+  items: [],
+  installments: [createDefaultInstallment(1)],
+});
 
 const FeeStructureManagement = () => {
   const [feeStructures, setFeeStructures] = useState([]);
   const [feeHeads, setFeeHeads] = useState([]);
   const [classSections, setClassSections] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+
   const [currentFeeStructure, setCurrentFeeStructure] = useState(null);
   const [viewFeeStructure, setViewFeeStructure] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    class_section_id: "",
-    academic_start_year: "",
-    academic_end_year: "",
-    due_date: "",
-    late_fee_amount: "",
-    late_fee_type: "flat",
-    fee_details: []
-  });
+  const [form, setForm] = useState(getInitialForm());
 
-  const fetchFeeStructures = async () => {
+  const classLabelMap = useMemo(() => {
+    const map = new Map();
+    classSections.forEach((section) => {
+      const id = section.id || section._id;
+      if (!id) return;
+      map.set(String(id), section.label || `${section.class_name || ""}-${section.section_name || ""}`);
+    });
+    return map;
+  }, [classSections]);
+
+  const academicYearLabelMap = useMemo(() => {
+    const map = new Map();
+    academicYears.forEach((year) => {
+      map.set(String(year.id), year.name || "-");
+    });
+    return map;
+  }, [academicYears]);
+
+  const resetFormState = () => {
+    setForm((prev) => ({
+      ...getInitialForm(),
+      academic_year_id: prev.academic_year_id || selectedAcademicYearId || "",
+    }));
+    setEditMode(false);
+    setCurrentFeeStructure(null);
+  };
+
+  const fetchDropdowns = async () => {
+    try {
+      const [classSectionsResponse, feeHeadsResponse, academicYearsResponse] = await Promise.all([
+        getClassSectionDropdown(),
+        getFeeHeadsDropdown(),
+        getAcademicYearsDropdown(),
+      ]);
+
+      const classSectionRows = classSectionsResponse?.data || [];
+      const feeHeadRows = feeHeadsResponse?.data || [];
+      const academicYearRows = academicYearsResponse?.data || [];
+
+      setClassSections(classSectionRows);
+      setFeeHeads(feeHeadRows);
+      setAcademicYears(academicYearRows);
+
+      const currentAcademicYear = academicYearRows.find((year) => year.is_current);
+      const fallbackAcademicYear = academicYearRows[0];
+      const initialAcademicYear = currentAcademicYear?.id || fallbackAcademicYear?.id || "";
+
+      if (initialAcademicYear) {
+        setSelectedAcademicYearId(String(initialAcademicYear));
+        setForm((prev) => ({ ...prev, academic_year_id: String(initialAcademicYear) }));
+      }
+    } catch (err) {
+      const errorMessage = err?.response?.data?.message || "Failed to fetch dropdown values";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
+  };
+
+  const fetchFeeStructures = async (academicYearId = selectedAcademicYearId) => {
     setLoading(true);
     setError("");
+
     try {
-      const response = await getAllFeeStructures();
+      const response = await getAllFeeStructures({
+        academic_year_id: academicYearId,
+        is_active: true,
+        structure_type: "recurring",
+      });
+
       let structures = [];
-      
       if (response?.data?.feeStructures && Array.isArray(response.data.feeStructures)) {
         structures = response.data.feeStructures;
       } else if (Array.isArray(response?.feeStructures)) {
@@ -56,61 +143,26 @@ const FeeStructureManagement = () => {
       } else if (Array.isArray(response)) {
         structures = response;
       }
-      
+
       setFeeStructures(structures);
     } catch (err) {
       const errorMessage = err?.response?.data?.message || "Failed to fetch fee structures";
       setError(errorMessage);
       toast.error(errorMessage);
-    }
-    setLoading(false);
-  };
-
-  const fetchFeeHeads = async () => {
-    try {
-      const response = await getAllFeeHeads();
-      let heads = [];
-      
-      if (response?.data?.feeHeads && Array.isArray(response.data.feeHeads)) {
-        heads = response.data.feeHeads;
-      } else if (Array.isArray(response?.feeHeads)) {
-        heads = response.feeHeads;
-      } else if (Array.isArray(response)) {
-        heads = response;
-      }
-      
-      setFeeHeads(heads);
-    } catch (err) {
-      const errorMessage = "Failed to fetch fee heads";
-      console.error(errorMessage, err);
-      toast.error(errorMessage);
-    }
-  };
-
-  const fetchClassSections = async () => {
-    try {
-      const response = await getAllClassesDropdown();
-      let sections = [];
-      
-      if (response?.data && Array.isArray(response.data)) {
-        sections = response.data;
-      } else if (Array.isArray(response)) {
-        sections = response;
-      }
-      
-      setClassSections(sections);
-    } catch (err) {
-      const errorMessage = "Failed to fetch class sections";
-      console.error(errorMessage, err);
-      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchFeeStructures();
-    fetchFeeHeads();
-    fetchClassSections();
+    fetchDropdowns();
   }, []);
+
+  useEffect(() => {
+    if (selectedAcademicYearId) {
+      fetchFeeStructures(selectedAcademicYearId);
+    }
+  }, [selectedAcademicYearId]);
 
   useEffect(() => {
     if (success || error) {
@@ -120,179 +172,255 @@ const FeeStructureManagement = () => {
       }, 5000);
       return () => clearTimeout(timer);
     }
+
+    return undefined;
   }, [success, error]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({ 
-      ...form, 
-      [name]: type === 'checkbox' ? checked : value 
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleAddItem = () => {
+    setForm((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          fee_head_id: "",
+          amount: "",
+          is_mandatory: true,
+          sort_order: prev.items.length + 1,
+        },
+      ],
+    }));
+  };
+
+  const handleRemoveItem = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleItemChange = (index, field, value) => {
+    setForm((prev) => {
+      const nextItems = [...prev.items];
+      nextItems[index] = {
+        ...nextItems[index],
+        [field]: field === "is_mandatory" ? value : value,
+      };
+      return {
+        ...prev,
+        items: nextItems,
+      };
     });
   };
 
-  const handleAddFeeDetail = () => {
-    setForm({
-      ...form,
-      fee_details: [
-        ...form.fee_details,
-        { fee_head_id: "", amount: "", is_mandatory: true, sequence_order: form.fee_details.length + 1 }
-      ]
+  const handleAddInstallment = () => {
+    setForm((prev) => ({
+      ...prev,
+      installments: [...prev.installments, createDefaultInstallment(prev.installments.length + 1)],
+    }));
+  };
+
+  const handleRemoveInstallment = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      installments: prev.installments.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleInstallmentChange = (index, field, value) => {
+    setForm((prev) => {
+      const nextInstallments = [...prev.installments];
+      nextInstallments[index] = {
+        ...nextInstallments[index],
+        [field]: field === "allow_partial_payment" ? value : value,
+      };
+
+      return {
+        ...prev,
+        installments: nextInstallments,
+      };
     });
-  };
-
-  const handleRemoveFeeDetail = (index) => {
-    const newFeeDetails = form.fee_details.filter((_, i) => i !== index);
-    setForm({ ...form, fee_details: newFeeDetails });
-  };
-
-  const handleFeeDetailChange = (index, field, value) => {
-    const newFeeDetails = [...form.fee_details];
-    newFeeDetails[index][field] = field === 'is_mandatory' ? value : 
-                                   (field === 'amount' || field === 'fee_head_id' || field === 'sequence_order') ? 
-                                   Number(value) : value;
-    setForm({ ...form, fee_details: newFeeDetails });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
 
-    // Validate fee details
-    if (form.fee_details.length === 0) {
-      const errorMessage = "Please add at least one fee detail";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setLoading(false);
+    if (!form.name || !form.academic_year_id || !form.class_id) {
+      const validationMessage = "Please fill structure name, academic year, and class/section";
+      setError(validationMessage);
+      toast.error(validationMessage);
+      return;
+    }
+
+    if (form.items.length === 0) {
+      const validationMessage = "Please add at least one fee item";
+      setError(validationMessage);
+      toast.error(validationMessage);
+      return;
+    }
+
+    if (form.installments.length === 0) {
+      const validationMessage = "Please add at least one installment";
+      setError(validationMessage);
+      toast.error(validationMessage);
       return;
     }
 
     const payload = {
-      name: form.name,
-      class_section_id: Number(form.class_section_id),
-      academic_start_year: Number(form.academic_start_year),
-      academic_end_year: Number(form.academic_end_year),
-      due_date: form.due_date,
-      late_fee_amount: Number(form.late_fee_amount),
-      late_fee_type: form.late_fee_type,
-      fee_details: form.fee_details.map(detail => ({
-        fee_head_id: Number(detail.fee_head_id),
-        amount: Number(detail.amount),
-        is_mandatory: detail.is_mandatory,
-        sequence_order: Number(detail.sequence_order)
-      }))
+      name: form.name.trim(),
+      academic_year_id: Number(form.academic_year_id),
+      class_id: Number(form.class_id),
+      description: form.description?.trim() || "",
+      structure_type: "recurring",
+      items: form.items.map((item, idx) => ({
+        fee_head_id: Number(item.fee_head_id),
+        amount: Number(item.amount),
+        is_mandatory: item.is_mandatory !== false,
+        sort_order: Number(item.sort_order || idx + 1),
+      })),
+      installments: form.installments.map((installment, idx) => ({
+        name: installment.name || `Term ${idx + 1}`,
+        installment_number: Number(installment.installment_number || idx + 1),
+        sequence_no: Number(installment.sequence_no || idx + 1),
+        start_date: installment.start_date,
+        due_date: installment.due_date,
+        percentage: Number(installment.percentage || 0),
+        allow_partial_payment: installment.allow_partial_payment !== false,
+        late_fine_type: installment.late_fine_type || "none",
+        late_fine_value: Number(installment.late_fine_value || 0),
+        grace_period_days: Number(installment.grace_period_days || 0),
+      })),
     };
+
+    if (editMode) {
+      payload.is_active = Boolean(form.is_active);
+    }
+
+    setSubmitLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
       if (editMode && currentFeeStructure) {
-        const structureId = currentFeeStructure.id || currentFeeStructure._id;
-        const response = await updateFeeStructure(structureId, payload);
-        const successMessage = response?.message || "Fee structure updated successfully!";
-        setSuccess(successMessage);
-        toast.success(successMessage);
+        const response = await updateFeeStructure(currentFeeStructure.id || currentFeeStructure._id, payload);
+        const message = response?.message || "Fee structure updated successfully";
+        setSuccess(message);
+        toast.success(message);
       } else {
         const response = await createFeeStructure(payload);
-        const successMessage = response?.message || "Fee structure created successfully!";
-        setSuccess(successMessage);
-        toast.success(successMessage);
+        const message = response?.message || "Fee structure created successfully";
+        setSuccess(message);
+        toast.success(message);
       }
-      setForm({
-        name: "",
-        class_section_id: "",
-        academic_start_year: "",
-        academic_end_year: "",
-        due_date: "",
-        late_fee_amount: "",
-        late_fee_type: "flat",
-        fee_details: []
-      });
+
       setIsModalOpen(false);
-      setEditMode(false);
-      setCurrentFeeStructure(null);
+      resetFormState();
       fetchFeeStructures();
     } catch (err) {
-      const errorMessage = err?.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} fee structure`;
+      const errorMessage = err?.response?.data?.message || `Failed to ${editMode ? "update" : "create"} fee structure`;
       setError(errorMessage);
       toast.error(errorMessage);
+    } finally {
+      setSubmitLoading(false);
     }
-    setLoading(false);
+  };
+
+  const loadFeeStructureById = async (id) => {
+    const response = await getFeeStructureById(id);
+    return response?.feeStructure || response?.data?.feeStructure || response?.data || null;
   };
 
   const handleView = async (feeStructure) => {
-    setLoading(true);
+    const feeStructureId = feeStructure?.id || feeStructure?._id;
+    if (!feeStructureId) return;
+
+    setDetailsLoading(true);
     setError("");
     try {
-      const feeStructureId = feeStructure.id || feeStructure._id;
-      const response = await getFeeStructureById(feeStructureId);
-      
-      // Handle different response structures
-      let structureData = null;
-      let usageStats = null;
-      
-      if (response?.data?.feeStructure) {
-        structureData = response.data.feeStructure;
-        usageStats = response.data.usage_statistics;
-      } else if (response?.feeStructure) {
-        structureData = response.feeStructure;
-        usageStats = response.usage_statistics;
-      } else if (response?.data) {
-        structureData = response.data;
-      } else {
-        structureData = response;
-      }
-      
-      // Attach usage statistics to the structure data
-      if (usageStats) {
-        structureData.usage_statistics = usageStats;
-      }
-      
-      setViewFeeStructure(structureData);
+      const details = await loadFeeStructureById(feeStructureId);
+      if (!details) throw new Error("Fee structure details are unavailable");
+      setViewFeeStructure(details);
       setIsViewModalOpen(true);
     } catch (err) {
-      const errorMessage = err?.response?.data?.message || "Failed to fetch fee structure details";
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to fetch fee structure details";
       setError(errorMessage);
       toast.error(errorMessage);
+    } finally {
+      setDetailsLoading(false);
     }
-    setLoading(false);
   };
 
-  const handleEdit = (feeStructure) => {
-    setCurrentFeeStructure(feeStructure);
-    
-    // Handle fee details - check both feeDetails and fee_details
-    const feeDetails = feeStructure.feeDetails || feeStructure.fee_details || [];
-    const mappedFeeDetails = feeDetails.map(detail => ({
-      fee_head_id: detail.fee_head_id || "",
-      amount: detail.amount || "",
-      is_mandatory: detail.is_mandatory !== undefined ? detail.is_mandatory : true,
-      sequence_order: detail.sequence_order || 1
-    }));
-    
-    setForm({
-      name: feeStructure.name || "",
-      class_section_id: feeStructure.class_section_id || "",
-      academic_start_year: feeStructure.academic_start_year || "",
-      academic_end_year: feeStructure.academic_end_year || "",
-      due_date: feeStructure.due_date ? feeStructure.due_date.split('T')[0] : "",
-      late_fee_amount: feeStructure.late_fee_amount || "",
-      late_fee_type: feeStructure.late_fee_type || "flat",
-      fee_details: mappedFeeDetails
-    });
-    setEditMode(true);
-    setIsModalOpen(true);
+  const handleEdit = async (feeStructure) => {
+    const feeStructureId = feeStructure?.id || feeStructure?._id;
+    if (!feeStructureId) return;
+
+    setDetailsLoading(true);
+    setError("");
+    try {
+      const details = await loadFeeStructureById(feeStructureId);
+      if (!details) throw new Error("Fee structure details are unavailable");
+
+      setCurrentFeeStructure(details);
+      setForm({
+        name: details.name || "",
+        academic_year_id: details.academic_year_id ? String(details.academic_year_id) : "",
+        class_id: details.class_id ? String(details.class_id) : details.class_section_id ? String(details.class_section_id) : "",
+        description: details.description || "",
+        structure_type: details.structure_type || "recurring",
+        is_active: details.is_active !== false,
+        items: (details.items || details.fee_details || details.feeDetails || []).map((item, idx) => ({
+          fee_head_id: item.fee_head_id ? String(item.fee_head_id) : "",
+          amount: item.amount || "",
+          is_mandatory: item.is_mandatory !== false,
+          sort_order: item.sort_order || item.sequence_order || idx + 1,
+        })),
+        installments: (details.installments || []).length
+          ? details.installments.map((installment, idx) => ({
+              name: installment.name || `Term ${idx + 1}`,
+              installment_number: installment.installment_number || idx + 1,
+              sequence_no: installment.sequence_no || installment.installment_number || idx + 1,
+              start_date: installment.start_date || "",
+              due_date: installment.due_date || "",
+              percentage: installment.percentage || 0,
+              allow_partial_payment: installment.allow_partial_payment !== false,
+              late_fine_type: installment.late_fine_type || "none",
+              late_fine_value: installment.late_fine_value || 0,
+              grace_period_days: installment.grace_period_days || 0,
+            }))
+          : [createDefaultInstallment(1)],
+      });
+
+      setEditMode(true);
+      setIsModalOpen(true);
+    } catch (err) {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to fetch fee structure details";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setDetailsLoading(false);
+    }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (feeStructure) => {
+    const feeStructureId = feeStructure?.id || feeStructure?._id;
+    if (!feeStructureId) return;
+
     if (!window.confirm("Are you sure you want to delete this fee structure?")) return;
-    
+
     setError("");
     setSuccess("");
     try {
-      const response = await deleteFeeStructure(id);
-      const successMessage = response?.message || "Fee structure deleted successfully!";
-      setSuccess(successMessage);
-      toast.success(successMessage);
+      const response = await deleteFeeStructure(feeStructureId);
+      const message = response?.message || "Fee structure deleted successfully";
+      setSuccess(message);
+      toast.success(message);
       fetchFeeStructures();
     } catch (err) {
       const errorMessage = err?.response?.data?.message || "Failed to delete fee structure";
@@ -302,23 +430,94 @@ const FeeStructureManagement = () => {
   };
 
   const openAddModal = () => {
-    setForm({
-      name: "",
-      class_section_id: "",
-      academic_start_year: "",
-      academic_end_year: "",
-      due_date: "",
-      late_fee_amount: "",
-      late_fee_type: "flat",
-      fee_details: []
-    });
+    setForm((prev) => ({
+      ...getInitialForm(),
+      academic_year_id: selectedAcademicYearId || prev.academic_year_id || "",
+    }));
     setEditMode(false);
     setCurrentFeeStructure(null);
     setIsModalOpen(true);
   };
 
-  const filteredFeeStructures = feeStructures.filter(fs => 
-    (fs.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const tableData = useMemo(() => {
+    return feeStructures.map((structure, index) => ({
+      id: structure.id || structure._id || index + 1,
+      name: structure.name || "-",
+      class_label:
+        structure.classSection?.class_name && structure.classSection?.section_name
+          ? `${structure.classSection.class_name}-${structure.classSection.section_name}`
+          : classLabelMap.get(String(structure.class_id || structure.class_section_id || "")) || "-",
+      academic_year:
+        academicYearLabelMap.get(String(structure.academic_year_id || "")) ||
+        (structure.academic_start_year && structure.academic_end_year
+          ? `${structure.academic_start_year}-${structure.academic_end_year}`
+          : "-"),
+      structure_type: structure.structure_type || "recurring",
+      total_amount: Number(structure.total_amount || 0),
+      updated_at: structure.updatedAt || structure.updated_at || "",
+      status: structure.is_active !== false ? "Active" : "Inactive",
+      raw: structure,
+    }));
+  }, [academicYearLabelMap, classLabelMap, feeStructures]);
+
+  const tableColumns = useMemo(
+    () => [
+      { key: "name", header: "Structure Name" },
+      { key: "class_label", header: "Class/Section" },
+      { key: "academic_year", header: "Academic Year" },
+      {
+        key: "total_amount",
+        header: "Total Amount",
+        render: (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`,
+      },
+      {
+        key: "status",
+        header: "Status",
+        render: (value) => (
+          <span
+            className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+              String(value).toLowerCase() === "active"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {value}
+          </span>
+        ),
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        render: (_, row) => (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleView(row.raw)}
+              disabled={detailsLoading}
+              className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
+              title="View"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleEdit(row.raw)}
+              disabled={detailsLoading}
+              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+              title="Edit"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleDelete(row.raw)}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [detailsLoading]
   );
 
   return (
@@ -347,7 +546,7 @@ const FeeStructureManagement = () => {
                 <span>{error}</span>
               </div>
             )}
-            
+
             {success && (
               <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-700">
                 <CheckCircle className="w-5 h-5 shrink-0" />
@@ -356,16 +555,21 @@ const FeeStructureManagement = () => {
             )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search fee structures..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                  />
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="w-full md:w-80">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Academic Year Filter</label>
+                  <select
+                    value={selectedAcademicYearId}
+                    onChange={(e) => setSelectedAcademicYearId(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  >
+                    <option value="">All Academic Years</option>
+                    {academicYears.map((year) => (
+                      <option key={year.id} value={year.id}>
+                        {year.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <button
@@ -378,149 +582,35 @@ const FeeStructureManagement = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                {loading ? (
-                  <div className="flex items-center justify-center py-16">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
-                  </div>
-                ) : filteredFeeStructures.length === 0 ? (
-                  <div className="text-center py-16 px-4">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                      <AlertCircle className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No fee structures found</h3>
-                    <p className="text-gray-500 mb-6">
-                      {searchTerm ? "Try adjusting your search" : "Get started by creating your first fee structure"}
-                    </p>
-                    {!searchTerm && (
-                      <button
-                        onClick={openAddModal}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
-                      >
-                        <Plus className="w-5 h-5" />
-                        Add Fee Structure
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          S.No
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Structure Name
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Class
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Academic Year
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Due Date
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Total Amount
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Late Fee
-                        </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filteredFeeStructures.map((fs, idx) => (
-                        <tr key={fs.id || fs._id || idx} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {idx + 1}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            {fs.name || "-"}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {fs.classSection ? 
-                              `${fs.classSection.class_name} - ${fs.classSection.section_name}` : 
-                              "-"}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {fs.academic_start_year && fs.academic_end_year ? 
-                              `${fs.academic_start_year} - ${fs.academic_end_year}` : 
-                              "-"}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {fs.due_date ? new Date(fs.due_date).toLocaleDateString('en-IN') : "-"}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                            ₹{fs.total_amount || "0.00"}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            ₹{fs.late_fee_amount || "0.00"} ({fs.late_fee_type || "flat"})
-                          </td>
-                          <td className="px-6 py-4 text-sm text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleView(fs)}
-                                className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
-                                title="View Details"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleEdit(fs)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                title="Edit"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(fs.id || fs._id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+            <ReusableTable
+              title="Fee Structures"
+              columns={tableColumns}
+              displayColumns={tableColumns}
+              initialData={tableData}
+              searchPlaceholder="Search fee structures..."
+              exportFileName="fee_structures"
+              showActions={{ add: false, edit: false, delete: false, view: false }}
+            />
 
-              {filteredFeeStructures.length > 0 && (
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    Showing <span className="font-medium">{filteredFeeStructures.length}</span> of{" "}
-                    <span className="font-medium">{feeStructures.length}</span> fee structures
-                  </p>
-                </div>
-              )}
-            </div>
+            {loading && (
+              <div className="mt-4 text-sm text-gray-600">Loading fee structures...</div>
+            )}
 
-            {/* Add/Edit Modal */}
             <Modal
               isOpen={isModalOpen}
               onClose={() => {
                 setIsModalOpen(false);
-                setEditMode(false);
-                setCurrentFeeStructure(null);
+                resetFormState();
               }}
-              title={editMode ? "Edit Fee Structure" : "Add New Fee Structure"}
-              subtitle={editMode ? "Update the fee structure information" : "Create a new fee structure"}
+              title={editMode ? "Edit Fee Structure" : "Add Fee Structure"}
+              subtitle={editMode ? "Update recurring fee structure" : "Create recurring fee structure"}
               size="xl"
             >
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Information */}
                 <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Structure Name <span className="text-red-500">*</span>
                       </label>
@@ -529,10 +619,30 @@ const FeeStructureManagement = () => {
                         name="name"
                         value={form.name}
                         onChange={handleChange}
-                        placeholder="e.g., Annual Fee 2025"
+                        placeholder="e.g. Class 10 Annual Fee"
                         required
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Academic Year <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="academic_year_id"
+                        value={form.academic_year_id}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      >
+                        <option value="">Select Academic Year</option>
+                        {academicYears.map((year) => (
+                          <option key={year.id} value={year.id}>
+                            {year.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>
@@ -540,217 +650,127 @@ const FeeStructureManagement = () => {
                         Class/Section <span className="text-red-500">*</span>
                       </label>
                       <select
-                        name="class_section_id"
-                        value={form.class_section_id}
+                        name="class_id"
+                        value={form.class_id}
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                       >
                         <option value="">Select Class/Section</option>
-                        {classSections.map((cs) => (
-                          <option key={cs.id || cs._id} value={cs.id || cs._id}>
-                            {cs.class_name} - {cs.section_name}
+                        {classSections.map((section) => (
+                          <option key={section.id || section._id} value={section.id || section._id}>
+                            {section.label || `${section.class_name}-${section.section_name}`}
                           </option>
                         ))}
                       </select>
                     </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                      <textarea
+                        name="description"
+                        value={form.description}
+                        onChange={handleChange}
+                        rows={3}
+                        placeholder="Add fee structure description"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+                      />
+                    </div>
+
+                    {editMode && (
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          checked={form.is_active}
+                          onChange={handleChange}
+                          className="w-4 h-4"
+                        />
+                        Active
+                      </label>
+                    )}
                   </div>
                 </div>
 
-                {/* Academic Year */}
                 <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Academic Year</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Start Year <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        name="academic_start_year"
-                        value={form.academic_start_year}
-                        onChange={handleChange}
-                        placeholder="2025"
-                        required
-                        min="2000"
-                        max="2100"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        End Year <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        name="academic_end_year"
-                        value={form.academic_end_year}
-                        onChange={handleChange}
-                        placeholder="2026"
-                        required
-                        min="2000"
-                        max="2100"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Due Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        name="due_date"
-                        value={form.due_date}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Late Fee Configuration */}
-                <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Late Fee Configuration</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Late Fee Amount <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        name="late_fee_amount"
-                        value={form.late_fee_amount}
-                        onChange={handleChange}
-                        placeholder="100"
-                        required
-                        min="0"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Late Fee Type <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="late_fee_type"
-                        value={form.late_fee_type}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                      >
-                        <option value="flat">Flat</option>
-                        <option value="percentage">Percentage</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fee Details */}
-                <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Fee Details</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Fee Items</h3>
                     <button
                       type="button"
-                      onClick={handleAddFeeDetail}
+                      onClick={handleAddItem}
                       className="flex items-center gap-2 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition-colors text-sm font-medium"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Fee
+                      Add Item
                     </button>
                   </div>
 
-                  {form.fee_details.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 mb-3">No fee details added yet</p>
-                      <button
-                        type="button"
-                        onClick={handleAddFeeDetail}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add First Fee Detail
-                      </button>
-                    </div>
+                  {form.items.length === 0 ? (
+                    <p className="text-sm text-gray-500">No items added yet.</p>
                   ) : (
                     <div className="space-y-3">
-                      {form.fee_details.map((detail, index) => (
-                        <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 grid grid-cols-4 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Fee Head <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                  value={detail.fee_head_id}
-                                  onChange={(e) => handleFeeDetailChange(index, 'fee_head_id', e.target.value)}
-                                  required
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                >
-                                  <option value="">Select</option>
-                                  {feeHeads.map((fh) => (
-                                    <option key={fh.id || fh._id} value={fh.id || fh._id}>
-                                      {fh.name}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Amount <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="number"
-                                  value={detail.amount}
-                                  onChange={(e) => handleFeeDetailChange(index, 'amount', e.target.value)}
-                                  placeholder="5000"
-                                  required
-                                  min="0"
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                  Order <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="number"
-                                  value={detail.sequence_order}
-                                  onChange={(e) => handleFeeDetailChange(index, 'sequence_order', e.target.value)}
-                                  placeholder="1"
-                                  required
-                                  min="1"
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                />
-                              </div>
-
-                              <div className="flex items-end">
-                                <label className="flex items-center gap-2 text-sm">
-                                  <input
-                                    type="checkbox"
-                                    checked={detail.is_mandatory}
-                                    onChange={(e) => handleFeeDetailChange(index, 'is_mandatory', e.target.checked)}
-                                    className="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
-                                  />
-                                  <span className="text-gray-700">Mandatory</span>
-                                </label>
-                              </div>
+                      {form.items.map((item, index) => (
+                        <div key={`item-${index}`} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Fee Head</label>
+                              <select
+                                value={item.fee_head_id}
+                                onChange={(e) => handleItemChange(index, "fee_head_id", e.target.value)}
+                                required
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                              >
+                                <option value="">Select</option>
+                                {feeHeads.map((head) => (
+                                  <option key={head.id} value={head.id}>
+                                    {head.name}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFeeDetail(index)}
-                              className="mt-6 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Remove"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Amount</label>
+                              <input
+                                type="number"
+                                value={item.amount}
+                                onChange={(e) => handleItemChange(index, "amount", e.target.value)}
+                                required
+                                min="0"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Sort Order</label>
+                              <input
+                                type="number"
+                                value={item.sort_order}
+                                onChange={(e) => handleItemChange(index, "sort_order", e.target.value)}
+                                required
+                                min="1"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                              />
+                            </div>
+
+                            <div className="flex items-end justify-between gap-2">
+                              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  checked={item.is_mandatory}
+                                  onChange={(e) => handleItemChange(index, "is_mandatory", e.target.checked)}
+                                  className="w-4 h-4"
+                                />
+                                Mandatory
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(index)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -758,14 +778,165 @@ const FeeStructureManagement = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Installments</h3>
+                    <button
+                      type="button"
+                      onClick={handleAddInstallment}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition-colors text-sm font-medium"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Installment
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {form.installments.map((installment, index) => (
+                      <div key={`installment-${index}`} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                            <input
+                              type="text"
+                              value={installment.name}
+                              onChange={(e) => handleInstallmentChange(index, "name", e.target.value)}
+                              required
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Installment No.</label>
+                            <input
+                              type="number"
+                              value={installment.installment_number}
+                              onChange={(e) => handleInstallmentChange(index, "installment_number", e.target.value)}
+                              required
+                              min="1"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Sequence</label>
+                            <input
+                              type="number"
+                              value={installment.sequence_no}
+                              onChange={(e) => handleInstallmentChange(index, "sequence_no", e.target.value)}
+                              required
+                              min="1"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Percentage</label>
+                            <input
+                              type="number"
+                              value={installment.percentage}
+                              onChange={(e) => handleInstallmentChange(index, "percentage", e.target.value)}
+                              required
+                              min="0"
+                              max="100"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                            <input
+                              type="date"
+                              value={installment.start_date}
+                              onChange={(e) => handleInstallmentChange(index, "start_date", e.target.value)}
+                              required
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Due Date</label>
+                            <input
+                              type="date"
+                              value={installment.due_date}
+                              onChange={(e) => handleInstallmentChange(index, "due_date", e.target.value)}
+                              required
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Late Fine Type</label>
+                            <select
+                              value={installment.late_fine_type}
+                              onChange={(e) => handleInstallmentChange(index, "late_fine_type", e.target.value)}
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            >
+                              <option value="none">None</option>
+                              <option value="flat">Flat</option>
+                              <option value="percentage">Percentage</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Late Fine Value</label>
+                            <input
+                              type="number"
+                              value={installment.late_fine_value}
+                              onChange={(e) => handleInstallmentChange(index, "late_fine_value", e.target.value)}
+                              min="0"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="inline-flex items-center gap-2 text-sm text-gray-700 mt-6">
+                              <input
+                                type="checkbox"
+                                checked={installment.allow_partial_payment}
+                                onChange={(e) =>
+                                  handleInstallmentChange(index, "allow_partial_payment", e.target.checked)
+                                }
+                                className="w-4 h-4"
+                              />
+                              Allow Partial Payment
+                            </label>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Grace Period (days)</label>
+                            <input
+                              type="number"
+                              value={installment.grace_period_days}
+                              onChange={(e) =>
+                                handleInstallmentChange(index, "grace_period_days", e.target.value)
+                              }
+                              min="0"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                          </div>
+
+                          <div className="flex items-end justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInstallment(index)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={() => {
                       setIsModalOpen(false);
-                      setEditMode(false);
-                      setCurrentFeeStructure(null);
+                      resetFormState();
                     }}
                     className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
                   >
@@ -773,23 +944,15 @@ const FeeStructureManagement = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={submitLoading}
                     className="flex-1 px-4 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium cursor-pointer"
                   >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        {editMode ? "Updating..." : "Creating..."}
-                      </span>
-                    ) : (
-                      editMode ? "Update Fee Structure" : "Create Fee Structure"
-                    )}
+                    {submitLoading ? (editMode ? "Updating..." : "Creating...") : editMode ? "Update" : "Create"}
                   </button>
                 </div>
               </form>
             </Modal>
 
-            {/* View Modal */}
             <Modal
               isOpen={isViewModalOpen}
               onClose={() => {
@@ -797,121 +960,95 @@ const FeeStructureManagement = () => {
                 setViewFeeStructure(null);
               }}
               title="Fee Structure Details"
-              subtitle="View complete information about this fee structure"
+              subtitle="Complete details of selected fee structure"
               size="lg"
             >
               {viewFeeStructure && (
-                <div className="space-y-6">
-                  {/* Structure Name and Class Section */}
-                  <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Structure Name</label>
-                      <p className="text-base font-semibold text-gray-900">{viewFeeStructure.name || '-'}</p>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Name</label>
+                      <p className="text-base font-semibold text-gray-900">{viewFeeStructure.name || "-"}</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Class & Section</label>
-                      <p className="text-base font-semibold text-gray-900">
-                        {viewFeeStructure.classSection ? 
-                          `${viewFeeStructure.classSection.class_name} - ${viewFeeStructure.classSection.section_name}` : 
-                          '-'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Academic Year, Due Date, Total Amount */}
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Academic Year</label>
-                      <p className="text-sm text-gray-700">
-                        {viewFeeStructure.academic_start_year && viewFeeStructure.academic_end_year ? 
-                          `${viewFeeStructure.academic_start_year} - ${viewFeeStructure.academic_end_year}` : 
-                          '-'}
+                      <p className="text-base font-semibold text-gray-900">
+                        {academicYearLabelMap.get(String(viewFeeStructure.academic_year_id || "")) || "-"}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Due Date</label>
-                      <p className="text-sm text-gray-700">
-                        {viewFeeStructure.due_date ? new Date(viewFeeStructure.due_date).toLocaleDateString('en-IN') : '-'}
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Class/Section</label>
+                      <p className="text-base text-gray-700">
+                        {classLabelMap.get(String(viewFeeStructure.class_id || viewFeeStructure.class_section_id || "")) || "-"}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Total Amount</label>
-                      <p className="text-sm font-bold text-gray-900">
-                        ₹{viewFeeStructure.total_amount || '0.00'}
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+                      <p className="text-base text-gray-700">
+                        {viewFeeStructure.is_active === false ? "Inactive" : "Active"}
                       </p>
                     </div>
                   </div>
 
-                  {/* Late Fee Information */}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Late Fee Amount</label>
-                      <p className="text-sm text-gray-700">
-                        ₹{viewFeeStructure.late_fee_amount || '0.00'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Late Fee Type</label>
-                      <p className="text-sm text-gray-700 capitalize">
-                        {viewFeeStructure.late_fee_type || 'flat'}
-                      </p>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Description</label>
+                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                      {viewFeeStructure.description || "No description available"}
+                    </p>
                   </div>
 
-                  {/* Fee Details */}
-                  {viewFeeStructure.feeDetails && viewFeeStructure.feeDetails.length > 0 && (
-                    <div className="pt-4 border-t">
-                      <label className="block text-sm font-medium text-gray-700 mb-3">Fee Details</label>
-                      <div className="space-y-2">
-                        {viewFeeStructure.feeDetails.map((detail, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {detail.feeHead?.name || `Fee Head #${detail.fee_head_id}`}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Order: {detail.sequence_order} {detail.is_mandatory && ' • Mandatory'}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-lg text-gray-900">₹{detail.amount}</p>
-                            </div>
+                  <div className="border-t border-gray-200 pt-4">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-3">Fee Items</h4>
+                    <div className="space-y-2">
+                      {(viewFeeStructure.items || viewFeeStructure.feeDetails || []).map((item, index) => (
+                        <div key={`view-item-${index}`} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-gray-900">
+                              {item.feeHead?.name || feeHeads.find((head) => head.id === item.fee_head_id)?.name || "Fee Head"}
+                            </p>
+                            <p className="text-sm font-semibold text-gray-900">
+                              Rs. {Number(item.amount || 0).toLocaleString("en-IN")}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-indigo-900">Total Fee Structure Amount</p>
-                          <p className="font-bold text-xl text-indigo-900">₹{viewFeeStructure.total_amount || '0.00'}</p>
                         </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Timestamps */}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Created At</label>
-                      <p className="text-xs text-gray-600">
-                        {viewFeeStructure.created_at ? new Date(viewFeeStructure.created_at).toLocaleString('en-IN') : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Last Updated</label>
-                      <p className="text-xs text-gray-600">
-                        {viewFeeStructure.updated_at ? new Date(viewFeeStructure.updated_at).toLocaleString('en-IN') : '-'}
-                      </p>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
+                  <div className="border-t border-gray-200 pt-4">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-3">Installments</h4>
+                    <div className="space-y-2">
+                      {(viewFeeStructure.installments || []).map((installment, index) => (
+                        <div
+                          key={`view-installment-${index}`}
+                          className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                        >
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-700">
+                            <p>
+                              <span className="font-semibold">Name:</span> {installment.name}
+                            </p>
+                            <p>
+                              <span className="font-semibold">Due:</span> {installment.due_date || "-"}
+                            </p>
+                            <p>
+                              <span className="font-semibold">Percent:</span> {installment.percentage || 0}%
+                            </p>
+                            <p>
+                              <span className="font-semibold">Late Fine:</span> {installment.late_fine_type} ({installment.late_fine_value || 0})
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => {
                         setIsViewModalOpen(false);
                         handleEdit(viewFeeStructure);
                       }}
-                      className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium cursor-pointer"
                     >
                       Edit Structure
                     </button>
