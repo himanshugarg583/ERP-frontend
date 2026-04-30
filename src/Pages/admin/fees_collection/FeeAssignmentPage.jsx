@@ -4,7 +4,8 @@ import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import Modal from "../../../components/comman_components/Modal";
-import { AlertCircle, CheckCircle, Eye, Trash2 } from "lucide-react";
+import ReusableTable from "../../../components/comman_components/ReusableTable";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import {
   assignFeeWithInstallments,
   deleteClassFeeAssignment,
@@ -272,6 +273,51 @@ const FeeAssignment = () => {
       : num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  const assignmentTableRows = useMemo(
+    () =>
+      assignments.map((assignment, index) => ({
+        id: assignment.id || assignment.assignment_id || `${assignment.fee_structure_id || "fs"}-${assignment.class_section_id || "cs"}-${index}`,
+        fee_structure_name:
+          assignment.fee_structure_name || assignment.fee_structure?.name || "-",
+        class_section_name:
+          assignment.class_section_name ||
+          assignment.class_section?.name ||
+          assignment.class_section?.class_name ||
+          "-",
+        academic_year_name:
+          assignment.academic_year_name ||
+          academicYearMap.get(String(assignment.academic_year_id || "")) ||
+          "-",
+        fee_type: assignment.fee_type || assignment.assignment_type || "recurring",
+        total_amount:
+          assignment.total_amount !== undefined
+            ? assignment.total_amount
+            : assignment.fee_structure?.total_amount || 0,
+        total_assigned_students: assignment.total_assigned_students ?? "-",
+      })),
+    [academicYearMap, assignments]
+  );
+
+  const assignmentTableColumns = useMemo(
+    () => [
+      { key: "fee_structure_name", header: "Structure Name" },
+      { key: "class_section_name", header: "Class/Section" },
+      { key: "academic_year_name", header: "Academic Year" },
+      {
+        key: "fee_type",
+        header: "Fee Type",
+        render: (value) => String(value || "-").replace(/_/g, " "),
+      },
+      {
+        key: "total_amount",
+        header: "Total Amount",
+        render: (value) => `Rs. ${formatCurrency(value)}`,
+      },
+      { key: "total_assigned_students", header: "Assigned Students" },
+    ],
+    []
+  );
+
   return (
     <div className="bg-gray-100 flex">
       <Sidebar />
@@ -289,7 +335,7 @@ const FeeAssignment = () => {
         <main className="flex-1 overflow-auto bg-gray-50 p-6">
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
-              <PageHeader pageheading="Fee Management" Subheading="Fee Assignment" />
+              <PageHeader pageheading="Fee Management" Subheading="Assign Fee to Student" />
             </div>
 
             {error && (
@@ -309,8 +355,8 @@ const FeeAssignment = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Assign Fee to Class</h2>
-                  <p className="text-sm text-gray-600 mt-1">Create recurring fee assignments using structure and class</p>
+                  <h2 className="text-xl font-semibold text-gray-900">Assign Fee to Student</h2>
+                  <p className="text-sm text-gray-600 mt-1">Create recurring fee assignments using structure and students</p>
                 </div>
               </div>
 
@@ -389,94 +435,22 @@ const FeeAssignment = () => {
               </form>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-6">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Assigned Fees</h2>
-                <p className="text-sm text-gray-600 mt-1">Assignments created from this screen</p>
-              </div>
-
-              {loadingAssignments ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
-                </div>
-              ) : assignments.length === 0 ? (
-                <div className="text-center py-16 px-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                    <AlertCircle className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
-                  <p className="text-gray-500">Create an assignment using the form above</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Class/Section</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Fee Structure</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Academic Year</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Assignment Type</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Assigned At</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Amount</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {assignments.map((assignment, index) => {
-                        const academicYearDisplay = academicYearMap.get(String(assignment.academic_year_id || ""));
-
-                        return (
-                          <tr key={assignment.id || index} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                    {assignment.raw?.feeStructure?.class_id || assignment.class_section?.id || "-"}
-                                  </td>
-                            <td className="px-6 py-4 text-sm text-gray-900">{assignment.fee_structure?.name || "-"}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{academicYearDisplay || "-"}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600 capitalize">{assignment.assignment_type || "recurring"}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {assignment.assigned_at ? new Date(assignment.assigned_at).toLocaleString("en-IN") : "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              Rs. {formatCurrency(assignment.fee_structure?.total_amount)}
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <span
-                                className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                                  (assignment.status || "active") === "active"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}
-                              >
-                                {assignment.status || "active"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => handleViewAssignment(assignment)}
-                                  className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
-                                  title="View"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteAssignment(assignment)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <div className="mt-6">
+              <ReusableTable
+                title="Assigned Fees"
+                columns={assignmentTableColumns}
+                displayColumns={assignmentTableColumns}
+                apiFunction={async () => ({ success: true })}
+                initialData={assignmentTableRows}
+                searchPlaceholder="Search by structure, class or academic year..."
+                exportFileName="assigned-fees"
+                showActions={{ add: false, edit: false, delete: false, view: false }}
+              />
             </div>
+
+            {loadingAssignments && (
+              <div className="text-center text-gray-600 py-2">Loading assignments...</div>
+            )}
           </div>
         </main>
 
@@ -492,7 +466,7 @@ const FeeAssignment = () => {
           {viewAssignment && (
             <div className="p-6">
               <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Fee Assignment - Student Details</h2>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Assign Fee to Student - Details</h2>
                 <p className="text-gray-600">
                   Assignment ID: {viewAssignment.assignment_id || viewAssignment.id}
                 </p>

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DollarSign, TrendingDown, Package, AlertCircle, ShoppingBag } from 'lucide-react';
 import StandardStatCard from '../../../components/comman_components/StandardStatCard';
 import ReusableTable from '../../../components/comman_components/ReusableTable';
@@ -10,8 +9,11 @@ import {
     getAllExpense,
     addExpense,
     updateExpense,
-    deleteExpense
+    deleteExpense,
+    getExpenseSummary,
+    getExpenseById
 } from '../../../helper/requests-method/apiMethods';
+import { getAcademicYearsDropdown } from '../../../helper/requests-method/feeV1Api';
 
 const AddExpensePage = () => {
     const [stats, setStats] = useState({
@@ -23,9 +25,46 @@ const AddExpensePage = () => {
 
     const [expenseData, setExpenseData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [summaryLoaded, setSummaryLoaded] = useState(false);
+    const [academicYears, setAcademicYears] = useState([]);
+    const [defaultAcademicYearId, setDefaultAcademicYearId] = useState('');
+
+    const formatAcademicYearLabel = (year) => {
+        if (year?.name) return year.name;
+        const start = year?.start_date || year?.start_year || '';
+        const end = year?.end_date || year?.end_year || '';
+        if (start && end) return `${start}-${end}`;
+        if (start) return String(start);
+        return String(year?.id ?? 'N/A');
+    };
+
+    const academicYearOptions = useMemo(
+        () => (academicYears || []).map((year) => ({
+            value: String(year.id),
+            label: formatAcademicYearLabel(year),
+        })),
+        [academicYears]
+    );
+
+    const academicYearMap = useMemo(() => {
+        const map = new Map();
+        (academicYears || []).forEach((year) => {
+            map.set(String(year.id), formatAcademicYearLabel(year));
+        });
+        return map;
+    }, [academicYears]);
 
     // Define columns for expense management
     const expenseColumns = [
+        {
+            key: 'academic_year_id',
+            header: 'Academic Year',
+            required: true,
+            type: 'select',
+            options: academicYearOptions,
+            defaultValue: defaultAcademicYearId,
+            render: (value, row) => academicYearMap.get(String(value || row?.academic_year_id || row?.academic_year)) || row?.academic_year || value || 'N/A'
+        },
         {
             key: 'category',
             header: 'Category',
@@ -34,21 +73,11 @@ const AddExpensePage = () => {
             placeholder: 'Enter category'
         },
         {
-            key: 'sub_category',
-            header: 'Sub Category',
+            key: 'vendor_name',
+            header: 'Vendor Name',
             required: true,
             type: 'text',
-            placeholder: 'Enter sub category'
-        },
-        {
-            key: 'amount',
-            header: 'Amount',
-            required: true,
-            type: 'number',
-            placeholder: 'Enter amount',
-            render: (value) => {
-                return `₹${parseFloat(value || 0).toFixed(2)}`;
-            }
+            placeholder: 'Enter vendor name'
         },
         {
             key: 'payment_mode',
@@ -67,12 +96,12 @@ const AddExpensePage = () => {
             }
         },
         {
-            key: 'transaction_ref',
-            header: 'Transaction Reference',
-            required: false,
-            type: 'text',
-            placeholder: 'Enter transaction reference',
-            hideInTable: true
+            key: 'amount',
+            header: 'Amount',
+            required: true,
+            type: 'number',
+            placeholder: 'Enter amount',
+            render: (value) => `₹${parseFloat(value || 0).toFixed(2)}`
         },
         {
             key: 'entry_date',
@@ -95,30 +124,71 @@ const AddExpensePage = () => {
             }
         },
         {
-            key: 'recorded_by',
-            header: 'Recorded By',
-            required: true,
-            type: 'text',
-            placeholder: 'Enter recorded by'
-        },
-        {
-            key: 'description',
-            header: 'Description',
+            key: 'notes',
+            header: 'Notes',
             required: false,
             type: 'textarea',
-            placeholder: 'Enter description',
+            placeholder: 'Enter notes',
             hideInTable: true
         }
     ];
 
-    const displayColumns = expenseColumns.filter(col => !col.hideInTable);
+    const displayColumns = [
+        {
+            key: 's_no',
+            header: 'S No',
+            render: (value) => value,
+        },
+        ...expenseColumns.filter(col => !col.hideInTable),
+    ];
+
+    const normalizeAmount = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : value;
+    };
+
+    const normalizeId = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : value;
+    };
+
+    const normalizeExpensePayload = (payload) => ({
+        academic_year_id: normalizeId(payload.academic_year_id),
+        category: payload.category,
+        vendor_name: payload.vendor_name,
+        payment_mode: payload.payment_mode,
+        amount: normalizeAmount(payload.amount),
+        entry_date: payload.entry_date,
+        notes: payload.notes,
+    });
+
+    const parseSummaryAmount = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const applyExpenseSummary = useCallback((summary) => {
+        if (!summary) return;
+        setStats({
+            totalExpense: Number(summary.total_count) || 0,
+            totalAmount: parseSummaryAmount(summary.total_amount),
+            thisMonth: parseSummaryAmount(summary.this_month),
+            lastMonth: parseSummaryAmount(summary.last_month),
+        });
+    }, []);
+
+    const decorateExpenseRows = (rows = []) => rows.map((row, index) => ({
+        ...row,
+        s_no: index + 1,
+    }));
 
     const handleCreateExpense = async (expenseData) => {
         try {
             setLoading(true);
-            const response = await addExpense(expenseData);
+            const response = await addExpense(normalizeExpensePayload(expenseData));
             if (response.success) {
                 await fetchExpenses();
+                await fetchExpenseSummary();
                 return { success: true, message: response.message || 'Expense added successfully!' };
             }
             return { success: false, message: response.message || 'Failed to create expense' };
@@ -132,9 +202,10 @@ const AddExpensePage = () => {
     const handleUpdateExpense = async (id, expenseData) => {
         try {
             setLoading(true);
-            const response = await updateExpense(id, expenseData);
+            const response = await updateExpense(id, normalizeExpensePayload(expenseData));
             if (response.success) {
                 await fetchExpenses();
+                await fetchExpenseSummary();
                 return { success: true, message: response.message || 'Expense updated successfully!' };
             }
             return { success: false, message: response.message || 'Failed to update expense' };
@@ -151,6 +222,7 @@ const AddExpensePage = () => {
             const response = await deleteExpense(id);
             if (response.success) {
                 await fetchExpenses();
+                await fetchExpenseSummary();
                 return { success: true, message: response.message || 'Expense deleted successfully!' };
             }
             return { success: false, message: response.message || 'Failed to delete expense' };
@@ -161,16 +233,29 @@ const AddExpensePage = () => {
         }
     };
 
-    const fetchExpenses = async () => {
+    const handleViewExpense = async (expenseId) => {
+        try {
+            const response = await getExpenseById(expenseId);
+            return response?.data?.data || response?.data || { id: expenseId };
+        } catch (error) {
+            console.error('Failed to fetch expense details', error);
+            return { id: expenseId };
+        }
+    };
+
+    const fetchExpenses = useCallback(async () => {
         try {
             setLoading(true);
             const response = await getAllExpense();
 
             if (response.success && response.data && response.data.expenses) {
-                setExpenseData(response.data.expenses);
+                setExpenseData(decorateExpenseRows(response.data.expenses));
 
                 const expenses = response.data.expenses;
-                const totalAmount = expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+                const apiTotalAmount = Number(response.data.total_expense);
+                const totalAmount = Number.isFinite(apiTotalAmount)
+                    ? apiTotalAmount
+                    : expenses.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
                 const now = new Date();
                 const thisMonth = expenses.filter(item => {
                     const itemDate = new Date(item.entry_date);
@@ -183,28 +268,60 @@ const AddExpensePage = () => {
                     return itemDate.getMonth() === prevMonth && itemDate.getFullYear() === prevYear;
                 }).reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
 
-                setStats({
-                    totalExpense: expenses.length,
-                    totalAmount: totalAmount,
-                    thisMonth: thisMonth,
-                    lastMonth: lastMonth,
-                });
+                if (!summaryLoaded) {
+                    setStats({
+                        totalExpense: Number.isFinite(Number(response.data.total_records))
+                            ? Number(response.data.total_records)
+                            : expenses.length,
+                        totalAmount: totalAmount,
+                        thisMonth: thisMonth,
+                        lastMonth: lastMonth,
+                    });
+                }
             } else {
                 setExpenseData([]);
             }
-        } catch (error) {
+        } catch {
             setExpenseData([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [summaryLoaded]);
+
+    const fetchExpenseSummary = useCallback(async () => {
+        try {
+            const response = await getExpenseSummary();
+            if (response.success && response.data) {
+                applyExpenseSummary(response.data);
+                setSummaryLoaded(true);
+            }
+        } catch (error) {
+            console.error('Failed to fetch expense summary', error);
+        }
+    }, [applyExpenseSummary]);
+
+    const fetchAcademicYears = useCallback(async () => {
+        try {
+            const response = await getAcademicYearsDropdown();
+            const years = response?.data || [];
+            setAcademicYears(years);
+            const currentYear = years.find((year) => year.is_current);
+            if (currentYear?.id !== undefined && currentYear?.id !== null) {
+                setDefaultAcademicYearId(String(currentYear.id));
+            }
+        } catch (error) {
+            console.error('Failed to fetch academic years', error);
+        }
+    }, []);
 
     useEffect(() => {
         fetchExpenses();
-    }, []);
+        fetchExpenseSummary();
+        fetchAcademicYears();
+    }, [fetchAcademicYears, fetchExpenseSummary, fetchExpenses]);
 
     return (
-        <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-red-50 flex h-screen overflow-hidden">
+        <div className="bg-linear-to-br from-rose-50 via-orange-50 to-red-50 flex h-screen overflow-hidden">
             <Sidebar />
 
             <div
@@ -220,17 +337,13 @@ const AddExpensePage = () => {
 
                 <main className="flex-1 overflow-auto w-full py-6 px-4 md:px-6">
                     {/* Page Header */}
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mb-6"
-                    >
+                    <div className="mb-6">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <div className="w-10 h-10 bg-linear-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
                                 <ShoppingBag className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-rose-600 to-red-600 bg-clip-text text-transparent">
+                                <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-rose-600 to-red-600 bg-clip-text text-transparent">
                                     Expense Management
                                 </h1>
                                 <p className="text-sm text-slate-600 mt-1">
@@ -238,15 +351,10 @@ const AddExpensePage = () => {
                                 </p>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Stats Cards */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-                    >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <StandardStatCard
                             name="Total Expense"
                             icon={ShoppingBag}
@@ -271,23 +379,20 @@ const AddExpensePage = () => {
                             value={`₹${stats.lastMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
                             color="#dc2626"
                         />
-                    </motion.div>
+                    </div>
 
                     {/* Table Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
+                    <div>
                         <ReusableTable
                             title="Expense Records"
                             initialData={expenseData}
                             columns={expenseColumns}
                             displayColumns={displayColumns}
                             apiFunction={handleCreateExpense}
+                            viewApiFunction={handleViewExpense}
                             updateApiFunction={handleUpdateExpense}
                             deleteApiFunction={handleDeleteExpense}
-                            searchPlaceholder="Search by category, sub category..."
+                            searchPlaceholder="Search by category, vendor, notes..."
                             addButtonText="Add New Expense"
                             exportFileName="expense_records"
                             loading={loading}
@@ -298,7 +403,7 @@ const AddExpensePage = () => {
                                 view: true
                             }}
                         />
-                    </motion.div>
+                    </div>
                 </main>
 
                 <Footer />

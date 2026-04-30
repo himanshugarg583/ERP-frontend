@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DollarSign, TrendingUp, Package, AlertCircle, PlusCircle, CreditCard } from 'lucide-react';
 import StandardStatCard from '../../../components/comman_components/StandardStatCard';
 import ReusableTable from '../../../components/comman_components/ReusableTable';
@@ -10,8 +9,11 @@ import {
     getAllIncome,
     addIncome,
     updateIncome,
-    deleteIncome
+    deleteIncome,
+    getIncomeSummary,
+    getIncomeById
 } from '../../../helper/requests-method/apiMethods';
+import { getAcademicYearsDropdown } from '../../../helper/requests-method/feeV1Api';
 
 const AddIncomePage = () => {
     const [stats, setStats] = useState({
@@ -23,9 +25,46 @@ const AddIncomePage = () => {
 
     const [incomeData, setIncomeData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [summaryLoaded, setSummaryLoaded] = useState(false);
+    const [academicYears, setAcademicYears] = useState([]);
+    const [defaultAcademicYearId, setDefaultAcademicYearId] = useState('');
+
+    const formatAcademicYearLabel = (year) => {
+        if (year?.name) return year.name;
+        const start = year?.start_date || year?.start_year || '';
+        const end = year?.end_date || year?.end_year || '';
+        if (start && end) return `${start}-${end}`;
+        if (start) return String(start);
+        return String(year?.id ?? 'N/A');
+    };
+
+    const academicYearOptions = useMemo(
+        () => (academicYears || []).map((year) => ({
+            value: String(year.id),
+            label: formatAcademicYearLabel(year),
+        })),
+        [academicYears]
+    );
+
+    const academicYearMap = useMemo(() => {
+        const map = new Map();
+        (academicYears || []).forEach((year) => {
+            map.set(String(year.id), formatAcademicYearLabel(year));
+        });
+        return map;
+    }, [academicYears]);
 
     // Define columns for income management
     const incomeColumns = [
+        {
+            key: 'academic_year_id',
+            header: 'Academic Year',
+            required: true,
+            type: 'select',
+            options: academicYearOptions,
+            defaultValue: defaultAcademicYearId,
+            render: (value, row) => academicYearMap.get(String(value || row?.academic_year_id || row?.academic_year)) || row?.academic_year || value || 'N/A'
+        },
         {
             key: 'category',
             header: 'Category',
@@ -34,11 +73,11 @@ const AddIncomePage = () => {
             placeholder: 'Enter category'
         },
         {
-            key: 'sub_category',
-            header: 'Sub Category',
+            key: 'source',
+            header: 'Source',
             required: true,
             type: 'text',
-            placeholder: 'Enter sub category'
+            placeholder: 'manual / system'
         },
         {
             key: 'amount',
@@ -46,33 +85,7 @@ const AddIncomePage = () => {
             required: true,
             type: 'number',
             placeholder: 'Enter amount',
-            render: (value) => {
-                return `₹${parseFloat(value || 0).toFixed(2)}`;
-            }
-        },
-        {
-            key: 'payment_mode',
-            header: 'Payment Mode',
-            required: true,
-            type: 'select',
-            options: [
-                { value: 'cash', label: 'Cash' },
-                { value: 'online', label: 'Online' },
-                { value: 'cheque', label: 'Cheque' },
-                { value: 'bank_transfer', label: 'Bank Transfer' }
-            ],
-            render: (value) => {
-                if (!value) return 'N/A';
-                return value.charAt(0).toUpperCase() + value.slice(1).replace('_', ' ');
-            }
-        },
-        {
-            key: 'transaction_ref',
-            header: 'Transaction Reference',
-            required: false,
-            type: 'text',
-            placeholder: 'Enter transaction reference',
-            hideInTable: true
+            render: (value) => `₹${parseFloat(value || 0).toFixed(2)}`
         },
         {
             key: 'entry_date',
@@ -95,30 +108,70 @@ const AddIncomePage = () => {
             }
         },
         {
-            key: 'recorded_by',
-            header: 'Recorded By',
-            required: true,
-            type: 'text',
-            placeholder: 'Enter recorded by'
-        },
-        {
-            key: 'description',
-            header: 'Description',
+            key: 'notes',
+            header: 'Notes',
             required: false,
             type: 'textarea',
-            placeholder: 'Enter description',
+            placeholder: 'Enter notes',
             hideInTable: true
         }
     ];
 
-    const displayColumns = incomeColumns.filter(col => !col.hideInTable);
+    const displayColumns = [
+        {
+            key: 's_no',
+            header: 'S No',
+            render: (value) => value,
+        },
+        ...incomeColumns.filter(col => !col.hideInTable),
+    ];
+
+    const normalizeAmount = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : value;
+    };
+
+    const normalizeId = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : value;
+    };
+
+    const normalizeIncomePayload = (payload) => ({
+        academic_year_id: normalizeId(payload.academic_year_id),
+        category: payload.category,
+        source: payload.source,
+        amount: normalizeAmount(payload.amount),
+        entry_date: payload.entry_date,
+        notes: payload.notes,
+    });
+
+    const parseSummaryAmount = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const applyIncomeSummary = useCallback((summary) => {
+        if (!summary) return;
+        setStats({
+            totalIncome: Number(summary.total_count) || 0,
+            totalAmount: parseSummaryAmount(summary.total_amount),
+            thisMonth: parseSummaryAmount(summary.this_month),
+            lastMonth: parseSummaryAmount(summary.last_month),
+        });
+    }, []);
+
+    const decorateIncomeRows = (rows = []) => rows.map((row, index) => ({
+        ...row,
+        s_no: index + 1,
+    }));
 
     const handleCreateIncome = async (incomeData) => {
         try {
             setLoading(true);
-            const response = await addIncome(incomeData);
+            const response = await addIncome(normalizeIncomePayload(incomeData));
             if (response.success) {
                 await fetchIncomes();
+                await fetchIncomeSummary();
                 return { success: true, message: response.message || 'Income added successfully!' };
             }
             return { success: false, message: response.message || 'Failed to create income' };
@@ -132,9 +185,10 @@ const AddIncomePage = () => {
     const handleUpdateIncome = async (id, incomeData) => {
         try {
             setLoading(true);
-            const response = await updateIncome(id, incomeData);
+            const response = await updateIncome(id, normalizeIncomePayload(incomeData));
             if (response.success) {
                 await fetchIncomes();
+                await fetchIncomeSummary();
                 return { success: true, message: response.message || 'Income updated successfully!' };
             }
             return { success: false, message: response.message || 'Failed to update income' };
@@ -151,6 +205,7 @@ const AddIncomePage = () => {
             const response = await deleteIncome(id);
             if (response.success) {
                 await fetchIncomes();
+                await fetchIncomeSummary();
                 return { success: true, message: response.message || 'Income deleted successfully!' };
             }
             return { success: false, message: response.message || 'Failed to delete income' };
@@ -161,16 +216,29 @@ const AddIncomePage = () => {
         }
     };
 
-    const fetchIncomes = async () => {
+    const handleViewIncome = async (incomeId) => {
+        try {
+            const response = await getIncomeById(incomeId);
+            return response?.data?.data || response?.data || { id: incomeId };
+        } catch (error) {
+            console.error('Failed to fetch income details', error);
+            return { id: incomeId };
+        }
+    };
+
+    const fetchIncomes = useCallback(async () => {
         try {
             setLoading(true);
             const response = await getAllIncome();
 
             if (response.success && response.data && response.data.incomes) {
-                setIncomeData(response.data.incomes);
+                setIncomeData(decorateIncomeRows(response.data.incomes));
 
                 const incomes = response.data.incomes;
-                const totalAmount = incomes.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+                const apiTotalAmount = Number(response.data.total_income);
+                const totalAmount = Number.isFinite(apiTotalAmount)
+                    ? apiTotalAmount
+                    : incomes.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
                 const now = new Date();
                 const thisMonth = incomes.filter(item => {
                     const itemDate = new Date(item.entry_date);
@@ -183,28 +251,60 @@ const AddIncomePage = () => {
                     return itemDate.getMonth() === prevMonth && itemDate.getFullYear() === prevYear;
                 }).reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
 
-                setStats({
-                    totalIncome: incomes.length,
-                    totalAmount: totalAmount,
-                    thisMonth: thisMonth,
-                    lastMonth: lastMonth,
-                });
+                if (!summaryLoaded) {
+                    setStats({
+                        totalIncome: Number.isFinite(Number(response.data.total_records))
+                            ? Number(response.data.total_records)
+                            : incomes.length,
+                        totalAmount: totalAmount,
+                        thisMonth: thisMonth,
+                        lastMonth: lastMonth,
+                    });
+                }
             } else {
                 setIncomeData([]);
             }
-        } catch (error) {
+        } catch {
             setIncomeData([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [summaryLoaded]);
+
+    const fetchIncomeSummary = useCallback(async () => {
+        try {
+            const response = await getIncomeSummary();
+            if (response.success && response.data) {
+                applyIncomeSummary(response.data);
+                setSummaryLoaded(true);
+            }
+        } catch (error) {
+            console.error('Failed to fetch income summary', error);
+        }
+    }, [applyIncomeSummary]);
+
+    const fetchAcademicYears = useCallback(async () => {
+        try {
+            const response = await getAcademicYearsDropdown();
+            const years = response?.data || [];
+            setAcademicYears(years);
+            const currentYear = years.find((year) => year.is_current);
+            if (currentYear?.id !== undefined && currentYear?.id !== null) {
+                setDefaultAcademicYearId(String(currentYear.id));
+            }
+        } catch (error) {
+            console.error('Failed to fetch academic years', error);
+        }
+    }, []);
 
     useEffect(() => {
         fetchIncomes();
-    }, []);
+        fetchIncomeSummary();
+        fetchAcademicYears();
+    }, [fetchAcademicYears, fetchIncomeSummary, fetchIncomes]);
 
     return (
-        <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex h-screen overflow-hidden">
+        <div className="bg-linear-to-br from-emerald-50 via-teal-50 to-green-50 flex h-screen overflow-hidden">
             <Sidebar />
 
             <div
@@ -220,17 +320,13 @@ const AddIncomePage = () => {
 
                 <main className="flex-1 overflow-auto w-full py-6 px-4 md:px-6">
                     {/* Page Header */}
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mb-6"
-                    >
+                    <div className="mb-6">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <div className="w-10 h-10 bg-linear-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
                                 <DollarSign className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                                <h1 className="text-2xl md:text-3xl font-bold bg-linear-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                                     Income Management
                                 </h1>
                                 <p className="text-sm text-slate-600 mt-1">
@@ -238,15 +334,10 @@ const AddIncomePage = () => {
                                 </p>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Stats Cards */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-                    >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <StandardStatCard
                             name="Total Income"
                             icon={DollarSign}
@@ -271,23 +362,20 @@ const AddIncomePage = () => {
                             value={`₹${stats.lastMonth.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
                             color="#6ee7b7"
                         />
-                    </motion.div>
+                    </div>
 
                     {/* Table Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
+                    <div>
                         <ReusableTable
                             title="Income Records"
                             initialData={incomeData}
                             columns={incomeColumns}
                             displayColumns={displayColumns}
                             apiFunction={handleCreateIncome}
+                            viewApiFunction={handleViewIncome}
                             updateApiFunction={handleUpdateIncome}
                             deleteApiFunction={handleDeleteIncome}
-                            searchPlaceholder="Search by category, sub category..."
+                            searchPlaceholder="Search by category, source, notes..."
                             addButtonText="Add New Income"
                             exportFileName="income_records"
                             loading={loading}
@@ -298,7 +386,7 @@ const AddIncomePage = () => {
                                 view: true
                             }}
                         />
-                    </motion.div>
+                    </div>
                 </main>
 
                 <Footer />

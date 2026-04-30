@@ -11,7 +11,12 @@ const FEES_BASE = "/api/v1/fees";
 const ADMIN_FEE_HEADS_BASE = "/api/admin/fees/fee-heads";
 const ADMIN_FEE_STRUCTURES_BASE = "/api/admin/fees/fee-structures";
 const ADMIN_FEES_DROPDOWN_BASE = "/api/admin/fees/dropdown";
+const ADMIN_FEES_BASE = "/api/admin/fees";
 const ADMIN_FEE_ASSIGNMENTS_BASE = "/api/admin/fees/assignments";
+const ADMIN_STUDENT_FEE_ASSIGNMENT_BASE = "/api/admin/fees/students/assignment";
+const ADMIN_FEE_PAYMENTS_BASE = "/api/admin/fees/payments";
+const ADMIN_FEE_PAYMENTS_COLLECT_BASE = "/api/admin/fees/payments/collect";
+const STUDENT_FEES_BASE = "/api/student/fees";
 const ASSIGNMENT_CACHE_KEY = "fee-v1:assignments";
 const DEFAULT_ACADEMIC_YEAR_ID = "00000000-0000-0000-0000-000000000008";
 
@@ -24,10 +29,42 @@ const safeParseJson = (value, fallback = null) => {
 };
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
+const extractArray = (...values) => {
+  for (const value of values) {
+    if (Array.isArray(value)) return value;
+  }
+  return [];
+};
 const toNumber = (value, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
+
+const normalizeStudentInvoice = (invoice = {}, index = 0) => ({
+  invoice_id: invoice.invoice_id || invoice.id || index + 1,
+  invoice_number: invoice.invoice_number || invoice.invoice_no || `INV-${index + 1}`,
+  invoice_no: invoice.invoice_no || invoice.invoice_number || String(index + 1),
+  installment_plan_id: invoice.installment_plan_id || invoice.installment_id || null,
+  installment_name: invoice.installment_name || invoice.installment?.name || "",
+  installment_number: invoice.installment_number || invoice.installment?.installment_number || null,
+  due_date: invoice.due_date || invoice.installment?.due_date || null,
+  start_date: invoice.start_date || invoice.installment?.start_date || null,
+  status: String(invoice.status || "pending").toLowerCase(),
+  gross_amount: toNumber(invoice.gross_amount),
+  concession_amount: toNumber(invoice.concession_amount),
+  net_amount: toNumber(invoice.net_amount),
+  paid_amount: toNumber(invoice.paid_amount),
+  balance_amount: toNumber(invoice.balance_amount),
+  fine_type: invoice.fine_type || invoice.late_fine_type || null,
+  calculated_fine: toNumber(invoice.calculated_fine),
+  payable_amount: toNumber(
+    invoice.payable_amount,
+    toNumber(invoice.balance_amount) + toNumber(invoice.calculated_fine)
+  ),
+  installment: invoice.installment || null,
+  items: toArray(invoice.items),
+  payments: toArray(invoice.payments),
+});
 
 const toIsoDate = (value) => {
   if (!value) return "";
@@ -63,8 +100,6 @@ const resolveAcademicYearId = (payload = {}) => {
 
 const feeGet = (path) => authorizedGet(`${FEES_BASE}${path}`);
 const feePost = (path, data) => authorizedPost(`${FEES_BASE}${path}`, data);
-const feePut = (path, data) => authorizedPut(`${FEES_BASE}${path}`, data);
-const feeDelete = (path) => authorizedDelete(`${FEES_BASE}${path}`);
 
 const withSuccess = (response, extra = {}) => ({
   success: response?.success ?? true,
@@ -151,24 +186,46 @@ const buildFeeStructuresQuery = ({ academic_year_id, is_active, structure_type }
   return query ? `?${query}` : "";
 };
 
+const resolveStructureType = (installments = [], fallback = "recurring") => {
+  const count = toArray(installments).length;
+  if (count === 0) return fallback;
+  return count === 1 ? "onetime" : "recurring";
+};
+
 const normalizeFeeStructure = (raw = {}) => {
   const classIds = toArray(raw.class_ids || raw.classIds).map((value) => toNumber(value));
   const classId = raw.class_id || classIds[0] || raw.classSection?.id || "";
   const firstInstallment = toArray(raw.installments)[0] || {};
-  const items = toArray(raw.items || raw.fee_details || raw.feeDetails).map((item, index) => ({
+  const feeHeads = toArray(raw.fee_heads).map((head, index) => ({
+    id: head.id || `${raw.id || raw._id || "fs"}-fh-${index + 1}`,
+    name: head.name || `Fee Head ${index + 1}`,
+    amount: toNumber(head.amount),
+    sort_order: head.sort_order || index + 1,
+  }));
+
+  const sourceItems =
+    toArray(raw.items || raw.fee_details || raw.feeDetails).length > 0
+      ? toArray(raw.items || raw.fee_details || raw.feeDetails)
+      : feeHeads;
+
+  const items = sourceItems.map((item, index) => ({
     id: item.id || `${raw.id || raw._id || "fs"}-${index + 1}`,
-    fee_head_id: item.fee_head_id || item.feeHead?.id || item.feeHeadId,
+    fee_head_id: item.fee_head_id || item.feeHead?.id || item.feeHeadId || item.id,
     amount: toNumber(item.amount),
     is_mandatory: item.is_mandatory !== undefined ? Boolean(item.is_mandatory) : true,
     sequence_order: item.sequence_order || item.sort_order || index + 1,
     feeHead: item.feeHead || {
-      id: item.fee_head_id,
+      id: item.fee_head_id || item.id,
       name: item.fee_head_name || item.name || `Fee Head ${index + 1}`,
       description: item.description || "",
     },
   }));
 
-  const totalAmount = items.reduce((sum, item) => sum + toNumber(item.amount), 0);
+  const totalAmountFromItems = items.reduce((sum, item) => sum + toNumber(item.amount), 0);
+  const totalAmount =
+    raw.total_amount !== undefined && raw.total_amount !== null
+      ? toNumber(raw.total_amount)
+      : totalAmountFromItems;
 
   return {
     id: raw.id || raw._id,
@@ -185,6 +242,14 @@ const normalizeFeeStructure = (raw = {}) => {
     fee_details: items,
     feeDetails: items,
     items,
+    fee_heads: feeHeads.length
+      ? feeHeads
+      : items.map((item, index) => ({
+          id: item.fee_head_id || `${raw.id || raw._id || "fs"}-fh-${index + 1}`,
+          name: item.feeHead?.name || `Fee Head ${index + 1}`,
+          amount: toNumber(item.amount),
+          sort_order: item.sequence_order || index + 1,
+        })),
     installments: toArray(raw.installments).map((inst, index) => ({
       id: inst.id || `${raw.id || raw._id || "fs"}-inst-${index + 1}`,
       fee_structure_id: inst.fee_structure_id || raw.id || raw._id,
@@ -203,12 +268,18 @@ const normalizeFeeStructure = (raw = {}) => {
     })),
     classSection: raw.classSection || {
       id: classId || "",
-      class_name: raw.class_name || raw.class_section?.class_name || `Class ${classId || ""}`,
-      section_name: raw.section_name || "Section",
+      class_name:
+        raw.class_name ||
+        raw.class_section?.class_name ||
+        (classId ? `Class ${classId}` : ""),
+      section_name: raw.section_name || raw.class_section?.section_name || raw.class_section?.section || "",
     },
+    class_name: raw.class_name || raw.class_section?.class_name || "",
     description: raw.description || "",
     structure_type: raw.structure_type || "recurring",
     total_amount: totalAmount,
+    created_at: raw.created_at || raw.createdAt || "",
+    updated_at: raw.updated_at || raw.updatedAt || "",
     usage_statistics: raw.usage_statistics || null,
     is_active: raw.is_active !== undefined ? Boolean(raw.is_active) : true,
   };
@@ -250,7 +321,6 @@ const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
     ? toArray(payload.installments).map((inst, index) => ({
         name: inst.name || `Installment ${inst.installment_number || index + 1}`,
         installment_number: inst.installment_number || index + 1,
-        sequence_no: inst.sequence_no || inst.installment_number || index + 1,
         start_date: toIsoDate(inst.start_date || inst.due_date),
         due_date: toIsoDate(inst.due_date),
         percentage: inst.percentage || 100,
@@ -270,7 +340,6 @@ const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
         {
           name: "Term 1",
           installment_number: 1,
-          sequence_no: 1,
           start_date: toIsoDate(payload.start_date || payload.due_date),
           due_date: toIsoDate(payload.due_date),
           percentage: 100,
@@ -282,6 +351,8 @@ const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
         },
       ]
     : [];
+
+  const structureType = resolveStructureType(installments, payload.structure_type || "recurring");
 
   const base = {};
 
@@ -308,7 +379,7 @@ const toFeeStructurePayload = (payload = {}, isUpdate = false) => {
   }
 
   if (!isUpdate || payload.structure_type !== undefined) {
-    base.structure_type = payload.structure_type || "recurring";
+    base.structure_type = structureType;
   }
 
   if ((!isUpdate && feeItems.length > 0) || payload.items || payload.fee_details) {
@@ -345,46 +416,6 @@ const mergeAssignment = (existing = [], incoming) => {
   return [incoming, ...withoutCurrent];
 };
 
-const buildAssignmentViewModel = async (payload, assignmentId) => {
-  const classSectionsResponse = await getAllClassesDropdown();
-  const classSections = toArray(classSectionsResponse?.data || classSectionsResponse);
-  const classSection = classSections.find((item) => item.id === toNumber(payload.class_section_id));
-
-  const structuresResponse = await feeGet("/fee-structures");
-  const structures = normalizeFeeStructureList(structuresResponse);
-  const structure = structures.find((item) => toNumber(item.id) === toNumber(payload.fee_structure_id));
-
-  return {
-    id: assignmentId || `${payload.class_section_id}-${payload.fee_structure_id}-${Date.now()}`,
-    assignment_id: assignmentId || null,
-    class_section: {
-      id: toNumber(payload.class_section_id),
-      class_name: classSection?.class_name || `Class ${payload.class_section_id}`,
-      section_name: classSection?.section_name || "Section",
-    },
-    fee_structure: {
-      id: toNumber(payload.fee_structure_id),
-      name: structure?.name || `Structure ${payload.fee_structure_id}`,
-      academic_year:
-        structure?.academic_start_year && structure?.academic_end_year
-          ? `${structure.academic_start_year}-${structure.academic_end_year}`
-          : "N/A",
-      total_amount: structure?.total_amount || 0,
-    },
-    installment_structure: toArray(payload.installments).map((inst, index) => ({
-      installment_number: inst.installment_number || index + 1,
-      amount: toNumber(inst.amount),
-      due_date: toIsoDate(inst.due_date),
-    })),
-    statistics: {
-      students_assigned: 0,
-      discount_amount_per_student: toNumber(payload.discount_amount),
-    },
-    raw_payload: payload,
-    created_at: nowIso(),
-  };
-};
-
 const inferPaymentStatus = (invoice = {}) => {
   const raw = String(invoice.status || "").toLowerCase();
   if (["paid", "success"].includes(raw)) return "paid";
@@ -395,6 +426,283 @@ const inferPaymentStatus = (invoice = {}) => {
   if (paidAmount >= total && total > 0) return "paid";
   if (paidAmount > 0) return "partial";
   return "pending";
+};
+
+const normalizeStudentFeeAssignmentItem = (item = {}, index = 0) => ({
+  id: item.id || item.fee_head_id || `${index + 1}`,
+  fee_head_id: item.fee_head_id || item.feeHead?.id || null,
+  amount: toNumber(item.amount),
+  is_mandatory:
+    item.is_mandatory !== undefined ? Boolean(item.is_mandatory) : !item.feeHead?.is_optional,
+  sort_order: item.sort_order || item.sequence_order || item.feeHead?.display_order || index + 1,
+  feeHead: item.feeHead
+    ? {
+        ...item.feeHead,
+        display_order: item.feeHead.display_order || item.sort_order || index + 1,
+      }
+    : {
+        id: item.fee_head_id || null,
+        name: item.fee_head_name || item.name || `Fee Head ${index + 1}`,
+        category: item.category || "general",
+        description: item.description || "",
+        is_optional: item.is_optional !== undefined ? Boolean(item.is_optional) : false,
+        display_order: item.display_order || item.sort_order || index + 1,
+      },
+});
+
+const normalizeStudentFeeInvoiceItem = (invoice = {}, index = 0) => ({
+  id: invoice.id || invoice.invoice_id || `inv-${index + 1}`,
+  invoice_number: invoice.invoice_number || invoice.invoice_no || `INV-${index + 1}`,
+  invoice_no: invoice.invoice_no || invoice.invoice_number || `INV${index + 1}`,
+  installment_plan_id: invoice.installment_plan_id || invoice.installment?.id || null,
+  installment: invoice.installment
+    ? {
+        ...invoice.installment,
+        id: invoice.installment.id || invoice.installment_plan_id || null,
+      }
+    : null,
+  gross_amount: toNumber(invoice.gross_amount || invoice.original_amount || invoice.total_amount),
+  concession_amount: toNumber(invoice.concession_amount),
+  net_amount: toNumber(invoice.net_amount || invoice.final_amount || invoice.total_amount),
+  fine_amount: toNumber(invoice.fine_amount || invoice.late_fee),
+  paid_amount: toNumber(invoice.paid_amount || invoice.amount_paid),
+  balance_amount: toNumber(invoice.balance_amount),
+  status: String(invoice.status || inferPaymentStatus(invoice) || "pending").toLowerCase(),
+  due_date: invoice.due_date || invoice.installment?.due_date || null,
+  start_date: invoice.start_date || invoice.installment?.start_date || null,
+  generated_at: invoice.generated_at || invoice.created_at || null,
+  items: toArray(invoice.items).map((item, itemIndex) => ({
+    id: item.id || `inv-item-${index + 1}-${itemIndex + 1}`,
+    fee_head_id: item.fee_head_id || item.feeHead?.id || null,
+    gross_amount: toNumber(item.gross_amount),
+    concession_amount: toNumber(item.concession_amount),
+    net_amount: toNumber(item.net_amount),
+    feeHead: item.feeHead || {
+      id: item.fee_head_id || null,
+      name: item.fee_head_name || item.name || `Fee Head ${itemIndex + 1}`,
+      category: item.category || "general",
+      display_order: item.sort_order || item.display_order || itemIndex + 1,
+    },
+  })),
+});
+
+const normalizeStudentFeeAssignmentResponse = (response = {}, fallbackStudent = {}) => {
+  const data = response?.data?.data || response?.data || response || {};
+  const assignment = data.assignment || {};
+  const feeStructure = data.feeStructure || data.fee_structure || {};
+  const studentPayload = data.student || {};
+  const studentClass = studentPayload.class || {};
+  const installmentSource = toArray(data.installments);
+  const installments = installmentSource.map((installment, index) => ({
+    id: installment.id || `inst-${index + 1}`,
+    name: installment.name || `Installment ${index + 1}`,
+    installment_number: installment.installment_number || installment.sequence_no || index + 1,
+    due_date: installment.due_date || null,
+    start_date: installment.start_date || null,
+    sequence_no: installment.sequence_no || installment.installment_number || index + 1,
+    percentage: toNumber(installment.percentage),
+    allow_partial_payment:
+      installment.allow_partial_payment !== undefined ? Boolean(installment.allow_partial_payment) : true,
+    fixed_amount:
+      installment.fixed_amount !== undefined && installment.fixed_amount !== null
+        ? toNumber(installment.fixed_amount)
+        : null,
+    late_fine_type: installment.late_fine_type || "none",
+    late_fine_value: toNumber(installment.late_fine_value),
+    invoice: installment.invoice || null,
+    payment_status: installment.payment_status || null,
+  }));
+
+  const feeStructureItems = toArray(feeStructure.items || feeStructure.fee_heads).map(
+    normalizeStudentFeeAssignmentItem
+  );
+  const paidInvoices = toArray(data.invoices?.paid).map(normalizeStudentFeeInvoiceItem);
+  const unpaidInvoices = toArray(data.invoices?.unpaid).map(normalizeStudentFeeInvoiceItem);
+  const invoicesFromInstallments = installments
+    .map((installment, index) => {
+      if (!installment.invoice) return null;
+      const installmentId = installment.id || `inst-${index + 1}`;
+      return normalizeStudentFeeInvoiceItem(
+        {
+          ...installment.invoice,
+          installment_plan_id: installment.invoice?.installment_plan_id || installmentId,
+          installment: {
+            id: installmentId,
+            name: installment.name || `Installment ${index + 1}`,
+            due_date: installment.due_date || null,
+            start_date: installment.start_date || null,
+          },
+        },
+        index
+      );
+    })
+    .filter(Boolean);
+  const allInvoiceRows = new Map();
+  [...paidInvoices, ...unpaidInvoices, ...invoicesFromInstallments].forEach((invoice) => {
+    if (!invoice) return;
+    const key = String(invoice.id || invoice.invoice_number || invoice.invoice_no);
+    if (!allInvoiceRows.has(key)) {
+      allInvoiceRows.set(key, invoice);
+    }
+  });
+  const allInvoices = Array.from(allInvoiceRows.values());
+  const paidInvoiceRows = allInvoices.filter((invoice) => invoice.status === "paid");
+  const unpaidInvoiceRows = allInvoices.filter((invoice) => invoice.status !== "paid");
+
+  const invoiceByInstallmentId = new Map(
+    allInvoices.map((invoice) => [String(invoice.installment_plan_id || invoice.installment?.id || invoice.id), invoice])
+  );
+
+  const installmentRows = installments.map((installment) => {
+    const matchedInvoice =
+      invoiceByInstallmentId.get(String(installment.id)) ||
+      invoiceByInstallmentId.get(String(installment.installment_number)) ||
+      invoiceByInstallmentId.get(String(installment.sequence_no)) ||
+      null;
+    const rawStatus = String(
+      installment.payment_status ||
+        matchedInvoice?.status ||
+        (matchedInvoice ? inferPaymentStatus(matchedInvoice) : "") ||
+        ""
+    ).toLowerCase();
+    const status = rawStatus === "paid" ? "paid" : "unpaid";
+
+    return {
+      ...installment,
+      status,
+      invoice: matchedInvoice || null,
+      paid_amount: toNumber(matchedInvoice?.paid_amount),
+      balance_amount: toNumber(matchedInvoice?.balance_amount),
+      fine_amount: toNumber(matchedInvoice?.fine_amount),
+      payment_date: matchedInvoice?.payment_date || matchedInvoice?.generated_at || null,
+      invoice_number: matchedInvoice?.invoice_number || matchedInvoice?.invoice_no || null,
+      invoice_no: matchedInvoice?.invoice_no || matchedInvoice?.invoice_number || null,
+      invoice_id: matchedInvoice?.id || null,
+    };
+  });
+
+  const totalAssigned =
+    feeStructureItems.reduce((sum, item) => sum + toNumber(item.amount), 0) ||
+    allInvoices.reduce((sum, invoice) => sum + toNumber(invoice.net_amount || invoice.gross_amount), 0);
+  const totalPaid = allInvoices.reduce((sum, invoice) => sum + toNumber(invoice.paid_amount), 0);
+  const totalDue = unpaidInvoiceRows.reduce(
+    (sum, invoice) => sum + toNumber(invoice.balance_amount || invoice.net_amount - invoice.paid_amount + invoice.fine_amount),
+    0
+  );
+  const totalDiscount = allInvoices.reduce((sum, invoice) => sum + toNumber(invoice.concession_amount), 0);
+  const totalInstallments = installments.length || installmentRows.length || 0;
+  const paidInstallments = installmentRows.filter((installment) => installment.status === "paid").length;
+  const overdueInstallments = installmentRows.filter((installment) => installment.status === "overdue").length;
+  const pendingInstallments = Math.max(totalInstallments - paidInstallments - overdueInstallments, 0);
+
+  const studentName =
+    studentPayload?.name ||
+    fallbackStudent?.name ||
+    fallbackStudent?.User?.name ||
+    data.student_name ||
+    assignment?.student_name ||
+    `Student ${assignment?.student_id || fallbackStudent?.id || ""}`.trim();
+  const rollNumber =
+    studentPayload?.roll_number ||
+    fallbackStudent?.roll_number ||
+    fallbackStudent?.rollNo ||
+    data.roll_number ||
+    assignment?.roll_number ||
+    assignment?.student_id ||
+    fallbackStudent?.id ||
+    "N/A";
+
+  const normalizedFeeStructure = {
+    id: feeStructure.id || assignment?.fee_structure_id || null,
+    name: feeStructure.name || "Fee Structure",
+    description: feeStructure.description || "",
+    structure_type: feeStructure.structure_type || assignment?.assignment_type || "recurring",
+    is_active: feeStructure.is_active !== undefined ? Boolean(feeStructure.is_active) : true,
+    items: feeStructureItems,
+    total_amount: totalAssigned,
+  };
+
+  const academicYearLabel =
+    data.academic_year ||
+    data.academicYear ||
+    assignment?.academic_year_name ||
+    assignment?.academic_year_id ||
+    "N/A";
+
+  return {
+    success: true,
+    data: {
+      assignment: {
+        ...assignment,
+        id: assignment.id || null,
+        student_id: assignment.student_id || fallbackStudent?.id || null,
+        fee_structure_id: assignment.fee_structure_id || normalizedFeeStructure.id || null,
+        academic_year_id: assignment.academic_year_id || null,
+      },
+      feeStructure: normalizedFeeStructure,
+      installments: installmentRows,
+      invoices: {
+        paid: paidInvoiceRows,
+        unpaid: unpaidInvoiceRows,
+        all: allInvoices,
+      },
+      student_info: {
+        name: studentName,
+        admission_number: rollNumber,
+        class:
+          [
+            studentClass.name || studentPayload.class_name || fallbackStudent?.class_name || fallbackStudent?.class || data.class_name,
+            studentClass.section || studentPayload.section,
+          ]
+            .filter(Boolean)
+            .join(" - ") || "N/A",
+        email: studentPayload.email || fallbackStudent?.email || data.email || "",
+        phone: studentPayload.phone || fallbackStudent?.phone_no || fallbackStudent?.phone || data.phone || "",
+      },
+      summary: {
+        total_assigned_fee: totalAssigned,
+        total_paid_fee: totalPaid,
+        total_due_fee: totalDue,
+        total_discount: totalDiscount,
+        installments_summary: {
+          total_installments: totalInstallments,
+          paid_installments: paidInstallments,
+          pending_installments: pendingInstallments,
+          overdue_installments: overdueInstallments,
+        },
+      },
+      fees_by_academic_year: [
+        {
+          academic_year: academicYearLabel,
+          total_assigned: totalAssigned,
+          total_paid: totalPaid,
+          total_due: totalDue,
+          fee_structures: [
+            {
+              status: totalDue <= 0 ? "paid" : overdueInstallments > 0 ? "overdue" : "pending",
+              original_amount: totalAssigned,
+              discount_amount: totalDiscount,
+              discount_reason: "",
+              final_amount: Math.max(totalAssigned - totalDiscount, 0),
+              fee_structure: {
+                ...normalizedFeeStructure,
+                due_date: installments[0]?.due_date || feeStructure.due_date || null,
+              },
+              installments: installmentRows.map((installment) => ({
+                installment_number: installment.installment_number,
+                amount: installment.fixed_amount !== null ? installment.fixed_amount : Math.max(totalAssigned * (installment.percentage / 100 || 0), 0),
+                due_date: installment.due_date,
+                paid_amount: installment.paid_amount,
+                payment_date: installment.payment_date,
+                late_fee_applied: installment.fine_amount,
+                status: installment.status,
+              })),
+            },
+          ],
+        },
+      ],
+    },
+  };
 };
 
 const toStudentInvoiceRows = (invoices, assignment) =>
@@ -558,9 +866,19 @@ const normalizeStudentRecord = (raw = {}, index = 0) => {
 
 const normalizePaymentRecord = (raw = {}, index = 0) => {
   const studentRaw = raw.student || raw.Student || raw.student_info || {};
-  const normalizedStudent = normalizeStudentRecord(studentRaw, index);
+  const resolvedStudentRaw = Object.keys(studentRaw || {}).length
+    ? studentRaw
+    : {
+        id: raw.student_id || raw.studentId || raw.studentID || "",
+        student_name: raw.student_name || raw.studentName || raw.name || "",
+        class_name: raw.class_name || raw.className || raw.class || "",
+        section_name: raw.section_name || raw.sectionName || "",
+      };
+  const normalizedStudent = normalizeStudentRecord(resolvedStudentRaw, index);
 
-  const amountPaid = toNumber(raw.amount_paid || raw.amount || raw.paid_amount || raw.credit);
+  const amountPaid = toNumber(
+    raw.amount_paid || raw.amount || raw.paid_amount || raw.credit || raw.total_amount
+  );
   const lateFeePaid = toNumber(raw.late_fee_paid || raw.late_fee || raw.late_fee_applied);
   const totalPaid = toNumber(raw.total_paid || raw.total_amount || amountPaid + lateFeePaid);
 
@@ -572,19 +890,25 @@ const normalizePaymentRecord = (raw = {}, index = 0) => {
     amount_paid: amountPaid,
     late_fee_paid: lateFeePaid,
     total_paid: totalPaid,
-    payment_method: String(raw.payment_method || raw.mode || "cash").toLowerCase(),
+    payment_method: String(
+      raw.payment_method || raw.payment_mode || raw.mode || raw.method || "cash"
+    ).toLowerCase(),
     payment_status: String(raw.payment_status || raw.status || "success").toLowerCase(),
     payment_type: raw.payment_type || "fee",
     payment_for: raw.payment_for || raw.description || "Fee Payment",
-    transaction_id: raw.transaction_id || "",
+    transaction_id: raw.transaction_id || raw.transaction_ref || raw.reference || "",
     cheque_number: raw.cheque_number || "",
-    bank_name: raw.bank_name || "",
+    bank_name: raw.bank_name || raw.cheque_bank || "",
     is_refund: Boolean(raw.is_refund),
     refund_reason: raw.refund_reason || "",
     remarks: raw.remarks || "",
     created_at: raw.created_at || raw.createdAt || nowIso(),
     updated_at: raw.updated_at || raw.updatedAt || nowIso(),
     student: normalizedStudent,
+    student_name:
+      normalizedStudent?.User?.name || normalizedStudent?.name || raw.student_name || "N/A",
+    class_name:
+      normalizedStudent?.ClassSection?.class_name || raw.class_name || raw.class || "N/A",
   };
 };
 
@@ -648,11 +972,26 @@ const getPaymentSummary = (response, payments = []) => {
 export const getClassSectionDropdown = async () => {
   try {
     const response = await authorizedGet(`${ADMIN_FEES_DROPDOWN_BASE}/class-sections`);
-    const data = toArray(response?.data?.data || response?.data || response);
+    const data = extractArray(
+      response?.data?.data,
+      response?.data?.classSections,
+      response?.data?.class_sections,
+      response?.data?.classes,
+      response?.data?.items,
+      response?.data
+    );
     return withSuccess(response, { data });
   } catch {
     const response = await getAllClassesDropdownBase();
-    const data = toArray(response?.data || response);
+    const data = extractArray(
+      response?.data?.data,
+      response?.data?.classSections,
+      response?.data?.class_sections,
+      response?.data?.classes,
+      response?.data?.items,
+      response?.data,
+      response
+    );
     return withSuccess(response, { data });
   }
 };
@@ -695,7 +1034,13 @@ export const getClassDropdown = getClassSectionDropdown;
 
 export const getStudentsByClass = async (classId) => {
   const response = await getStudentsByClassBase(classId);
-  const students = toArray(response?.data || response).map(normalizeStudentRecord);
+  const students = extractArray(
+    response?.data?.data,
+    response?.data?.students,
+    response?.data?.items,
+    response?.data,
+    response
+  ).map(normalizeStudentRecord);
   return withSuccess(response, {
     data: students,
     students,
@@ -769,8 +1114,6 @@ export const getAllFeeStructures = async (filters = {}) => {
   const response = await authorizedGet(
     `${ADMIN_FEE_STRUCTURES_BASE}${buildFeeStructuresQuery({
       academic_year_id: filters.academic_year_id ?? getStoredAcademicYearId(),
-      is_active: filters.is_active ?? true,
-      structure_type: filters.structure_type || "recurring",
     })}`
   );
   const feeStructures = normalizeFeeStructureList(response);
@@ -783,11 +1126,12 @@ export const getAllFeeStructures = async (filters = {}) => {
 
 export const createFeeStructure = async (feeStructureData) => {
   const payload = toFeeStructurePayload(feeStructureData);
+  const structureType = resolveStructureType(payload.installments, payload.structure_type || "recurring");
   const response = await authorizedPost(
     `${ADMIN_FEE_STRUCTURES_BASE}${buildFeeStructuresQuery({
       academic_year_id: payload.academic_year_id,
       is_active: true,
-      structure_type: payload.structure_type || "recurring",
+      structure_type: structureType,
     })}`,
     payload
   );
@@ -796,7 +1140,11 @@ export const createFeeStructure = async (feeStructureData) => {
 
 export const getFeeStructureById = async (id) => {
   const response = await authorizedGet(`${ADMIN_FEE_STRUCTURES_BASE}/${id}`);
-  const feeStructure = normalizeFeeStructure(response?.data?.data || response?.data || response);
+  const rawDetailData = response?.data?.data ?? response?.data;
+  const rawFeeStructure = Array.isArray(rawDetailData)
+    ? rawDetailData[0] || {}
+    : rawDetailData?.feeStructure || rawDetailData?.fee_structure || rawDetailData || response;
+  const feeStructure = normalizeFeeStructure(rawFeeStructure);
   return withSuccess(response, {
     data: {
       feeStructure,
@@ -911,13 +1259,20 @@ export const getClassFeeAssignment = async (assignmentId) => {
 
   const response = await authorizedGet(`${ADMIN_FEE_ASSIGNMENTS_BASE}`);
   const assignments = toArray(response?.data?.data || response?.data || response).map((item) => ({
-    id: item.id,
-    assignment_id: item.id,
+    id: item.id || `${item.fee_structure_id || "fs"}-${item.class_section_id || "cs"}-${item.academic_year_id || "ay"}`,
+    assignment_id: item.id || null,
     student_id: item.student_id || null,
-    fee_structure_id: item.fee_structure_id,
+    fee_structure_id: item.fee_structure_id || item.feeStructure?.id,
+    fee_structure_name: item.fee_structure_name || item.feeStructure?.name || "",
+    class_section_id: item.class_section_id || item.class_section?.id || null,
+    class_section_name: item.class_section_name || item.class_section?.name || "",
     academic_year_id: item.academic_year_id,
-    assignment_type: item.assignment_type || "recurring",
+    academic_year_name: item.academic_year_name || "",
+    assignment_type: item.assignment_type || item.fee_type || "recurring",
+    fee_type: item.fee_type || item.assignment_type || "recurring",
     status: item.status || "active",
+    total_amount: toNumber(item.total_amount ?? item.feeStructure?.total_amount),
+    total_assigned_students: toNumber(item.total_assigned_students, 0),
     assigned_at: item.assigned_at || item.created_at || null,
     fee_structure: item.feeStructure
       ? {
@@ -925,12 +1280,25 @@ export const getClassFeeAssignment = async (assignmentId) => {
           name: item.feeStructure.name || "",
           structure_type: item.feeStructure.structure_type || "recurring",
           is_active: item.feeStructure.is_active !== undefined ? Boolean(item.feeStructure.is_active) : true,
+          total_amount: toNumber(item.total_amount ?? item.feeStructure.total_amount),
         }
       : {
           id: item.fee_structure_id,
-          name: `Structure ${item.fee_structure_id}`,
-          structure_type: item.assignment_type || "recurring",
+          name: item.fee_structure_name || `Structure ${item.fee_structure_id || ""}`,
+          structure_type: item.assignment_type || item.fee_type || "recurring",
           is_active: true,
+          total_amount: toNumber(item.total_amount),
+        },
+    class_section: item.class_section
+      ? {
+          id: item.class_section.id,
+          name: item.class_section.name || item.class_section_name || "",
+          class_name: item.class_section.class_name || item.class_section_name || "",
+        }
+      : {
+          id: item.class_section_id || null,
+          name: item.class_section_name || "",
+          class_name: item.class_section_name || "",
         },
     raw: item,
   }));
@@ -1005,6 +1373,58 @@ export const getOverdueInstallments = async () => {
   });
 };
 
+export const getClassWiseDues = async (classSectionId) => {
+  const response = await authorizedGet(`${ADMIN_FEES_BASE}/class-dues/${classSectionId}`);
+  const payload = response?.data?.data ?? response?.data ?? {};
+  const studentRows = Array.isArray(payload)
+    ? payload
+    : toArray(payload.students || payload.items || payload.records);
+
+  const students = studentRows.map((student, studentIndex) => {
+    const invoices = toArray(student.invoices).map((invoice, invoiceIndex) => ({
+      id: invoice.id || `invoice-${studentIndex + 1}-${invoiceIndex + 1}`,
+      invoice_number: invoice.invoice_number || invoice.invoice_no || `INV-${invoiceIndex + 1}`,
+      invoice_no: invoice.invoice_no || invoice.invoice_number || `INV${invoiceIndex + 1}`,
+      assignment_id: invoice.assignment_id || null,
+      status: String(invoice.status || "pending").toLowerCase(),
+      due_date: invoice.due_date || null,
+      generated_at: invoice.generated_at || null,
+      gross_amount: toNumber(invoice.gross_amount),
+      concession_amount: toNumber(invoice.concession_amount),
+      net_amount: toNumber(invoice.net_amount),
+      fine_amount: toNumber(invoice.fine_amount),
+      paid_amount: toNumber(invoice.paid_amount),
+      balance_amount: toNumber(invoice.balance_amount),
+      installment: invoice.installment || null,
+      items: toArray(invoice.items),
+    }));
+
+    return {
+      id: student.id || student.user_id || `student-${studentIndex + 1}`,
+      user_id: student.user_id || null,
+      name: student.name || "N/A",
+      email: student.email || "",
+      roll_number: student.roll_number || "N/A",
+      phone_no: student.phone_no || "",
+      total_dues: toNumber(student.total_dues),
+      invoice_count: toNumber(student.invoice_count, invoices.length),
+      invoices,
+    };
+  });
+
+  return withSuccess(response, {
+    data: {
+      class_id: payload.class_id || classSectionId,
+      total_students: toNumber(payload.total_students),
+      students_with_dues: toNumber(payload.students_with_dues),
+      total_dues_amount: toNumber(payload.total_dues_amount),
+      total_invoices: toNumber(payload.total_invoices),
+      students,
+      pagination: response?.data?.meta || null,
+    },
+  });
+};
+
 export const getStudentFeesDetails = async (studentId) => {
   const resolvedStudentId = resolveStudentId(studentId);
   const [assignmentResponse, invoicesResponse] = await Promise.all([
@@ -1034,6 +1454,66 @@ export const getStudentFeesDetails = async (studentId) => {
       assignment,
     },
   };
+};
+
+export const getStudentInvoicesList = async (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.status) query.set("status", params.status);
+  if (params.academic_year_id) query.set("academic_year_id", params.academic_year_id);
+
+  const endpoint = query.toString()
+    ? `${STUDENT_FEES_BASE}/invoices?${query.toString()}`
+    : `${STUDENT_FEES_BASE}/invoices`;
+
+  const response = await authorizedGet(endpoint);
+  const rawList = response?.data?.data || response?.data?.invoices || response?.data || [];
+  const invoices = toArray(rawList).map((invoice, index) => normalizeStudentInvoice(invoice, index));
+
+  return withSuccess(response, {
+    data: invoices,
+    invoices,
+    meta: {
+      total: toNumber(response?.data?.meta?.total, invoices.length),
+    },
+  });
+};
+
+export const getStudentInvoiceById = async (invoiceId) => {
+  const response = await authorizedGet(`${STUDENT_FEES_BASE}/invoices/${invoiceId}`);
+  const invoice = normalizeStudentInvoice(response?.data || response?.data?.data || {}, 0);
+
+  return withSuccess(response, {
+    data: invoice,
+    invoice,
+  });
+};
+
+export const getStudentSelfUnpaidInvoices = async () => {
+  const response = await authorizedGet(`${STUDENT_FEES_BASE}/invoices/unpaid`);
+  const rawList = response?.data?.data || response?.data || [];
+  const invoices = toArray(rawList).map((invoice, index) => normalizeStudentInvoice(invoice, index));
+
+  return withSuccess(response, {
+    data: invoices,
+    invoices,
+    meta: {
+      total: toNumber(response?.data?.meta?.total, invoices.length),
+    },
+  });
+};
+
+export const getStudentSelfFeeAssignment = async (academicYearId = null) => {
+  const query = academicYearId ? `?academic_year_id=${academicYearId}` : "";
+  const response = await authorizedGet(`${STUDENT_FEES_BASE}/assignment${query}`);
+  const payload = response?.data?.data || response?.data || {};
+
+  return withSuccess(response, {
+    data: {
+      fee_structure: payload?.fee_structure || null,
+      installments: toArray(payload?.installments),
+      invoices: toArray(payload?.invoices),
+    },
+  });
 };
 
 export const getStudentInstallments = async (studentId) => {
@@ -1113,8 +1593,61 @@ export const getStudentInstallments = async (studentId) => {
   };
 };
 
+export const getStudentUnpaidInvoices = async (studentId) => {
+  const resolvedStudentId = resolveStudentId(studentId);
+  const response = await authorizedGet(`${"/api/admin/fees"}/students/unpaid-invoices/${resolvedStudentId}`);
+
+  const invoices =
+    response?.data?.data ||
+    response?.data?.invoices ||
+    response?.data?.items ||
+    response?.data ||
+    [];
+
+  const normalizedInvoices = toArray(invoices).map((invoice, index) => ({
+    id: invoice.id || invoice.invoice_id || `invoice-${index + 1}`,
+    invoice_number: invoice.invoice_number || invoice.invoice_no || `INV-${index + 1}`,
+    student_id: invoice.student_id || resolvedStudentId,
+    assignment_id: invoice.assignment_id || "",
+    installment_plan_id: invoice.installment_plan_id || "",
+    installment_name: invoice.installment_name || "",
+    installment_number: invoice.installment_number || "",
+    academic_year_id: invoice.academic_year_id || "",
+    start_date: invoice.start_date || "",
+    gross_amount: toNumber(invoice.gross_amount),
+    concession_amount: toNumber(invoice.concession_amount),
+    net_amount: toNumber(invoice.net_amount),
+    fine_amount: toNumber(invoice.fine_amount),
+    fine_type: invoice.fine_type || invoice.late_fine_type || "",
+    calculated_fine: toNumber(invoice.calculated_fine),
+    payable_amount: toNumber(invoice.payable_amount),
+    paid_amount: toNumber(invoice.paid_amount),
+    balance_amount: toNumber(invoice.balance_amount),
+    status: invoice.status || "due",
+    due_date: invoice.due_date || "",
+    generated_at: invoice.generated_at || invoice.created_at || "",
+    items: toArray(invoice.items).map((item) => ({
+      id: item.id || "",
+      fee_head_id: item.fee_head_id || "",
+      gross_amount: toNumber(item.gross_amount),
+      concession_amount: toNumber(item.concession_amount),
+      net_amount: toNumber(item.net_amount),
+    })),
+  }));
+
+  return withSuccess(response, {
+    data: {
+      invoices: normalizedInvoices,
+      data: normalizedInvoices,
+      total: toNumber(response?.data?.total, normalizedInvoices.length),
+    },
+    invoices: normalizedInvoices,
+    total: toNumber(response?.data?.total, normalizedInvoices.length),
+  });
+};
+
 export const getFeePayments = async () => {
-  const response = await feeGet("/payments").catch(() => ({ data: [] }));
+  const response = await authorizedGet(ADMIN_FEE_PAYMENTS_BASE).catch(() => ({ data: [] }));
   const payments = getPaymentsFromResponse(response);
   const summary = getPaymentSummary(response, payments);
   const pagination = response?.data?.pagination || response?.pagination || null;
@@ -1135,36 +1668,45 @@ export const getFeePayments = async () => {
 export const getAllPayments = getFeePayments;
 
 export const getPaymentDetails = async (id) => {
-  const response = await feeGet(`/payments/${id}`);
-  const payment = normalizePaymentRecord(response?.data || response);
+  const response = await authorizedGet(`${ADMIN_FEE_PAYMENTS_BASE}/${id}`);
+  const payload = response?.data?.data || response?.data || response || {};
+  const paymentRaw = payload?.payment || payload?.payment_details || payload;
+  const payment = normalizePaymentRecord(paymentRaw);
+  const studentRaw = payload?.student || payload?.student_info || paymentRaw?.student || payment.student || {};
+  const student = normalizeStudentRecord(studentRaw);
+  const receiptRaw =
+    payload?.receipt ||
+    payload?.payment_receipt ||
+    payload?.invoice ||
+    payload?.fee_invoice ||
+    paymentRaw?.receipt ||
+    null;
+  const receiptNumber = receiptRaw?.receipt_number || receiptRaw?.receipt_no || payment.receipt_number;
+  const details = {
+    ...payment,
+    student,
+    receipt_number: receiptNumber,
+    receipt: receiptRaw,
+  };
 
   return withSuccess(response, {
-    data: payment,
-    payment,
+    data: details,
+    payment: details,
   });
 };
 
 export const createPayment = async (paymentData = {}) => {
-  const installmentIds = toArray(paymentData.installment_ids || paymentData.invoice_ids).map((item) =>
-    String(item)
-  );
-
   const payload = {
-    student_id: String(paymentData.student_id || ""),
-    invoice_ids: installmentIds,
-    amount: toNumber(paymentData.amount ?? paymentData.amount_paid),
+    invoice_id: paymentData.invoice_id ?? paymentData.invoiceId ?? null,
     amount_paid: toNumber(paymentData.amount_paid ?? paymentData.amount),
-    late_fee_paid: toNumber(paymentData.late_fee_paid),
-    payment_method: String(paymentData.payment_method || "cash").toLowerCase(),
-    payment_for: paymentData.payment_for || "Fee Payment",
-    transaction_id: paymentData.transaction_id || null,
-    cheque_number: paymentData.cheque_number || null,
-    bank_name: paymentData.bank_name || null,
-    remarks: paymentData.remarks || "",
-    academic_year_id: resolveAcademicYearId(paymentData),
+    payment_mode: String(paymentData.payment_mode || paymentData.payment_method || "cash").toLowerCase(),
+    transaction_ref: paymentData.transaction_ref || paymentData.transaction_id || null,
+    notes: paymentData.notes || paymentData.remarks || "",
+    cheque_date: paymentData.cheque_date || null,
+    cheque_bank: paymentData.cheque_bank || paymentData.bank_name || null,
   };
 
-  const response = await feePost("/payments", payload);
+  const response = await authorizedPost(ADMIN_FEE_PAYMENTS_COLLECT_BASE, payload);
   const payment = normalizePaymentRecord(response?.data?.payment || response?.data || response);
 
   return withSuccess(response, {
@@ -1231,93 +1773,10 @@ export const verifyPayment = async () => {
   };
 };
 
-export const getStudentCompleteFeeDetails = async (studentId) => {
+export const getStudentCompleteFeeDetails = async (studentId, studentData = null) => {
   const resolvedStudentId = resolveStudentId(studentId);
-  const [assignmentResponse, concessionsResponse, invoicesResponse] = await Promise.all([
-    feeGet(`/students/${resolvedStudentId}/assignment`).catch(() => ({ data: null })),
-    feeGet(`/students/${resolvedStudentId}/concessions`).catch(() => ({ data: [] })),
-    feeGet(`/students/${resolvedStudentId}/invoices`).catch(() => ({ data: [] })),
-  ]);
-
-  const assignment = assignmentResponse?.data || null;
-  const concessions =
-    concessionsResponse?.data?.concessions ||
-    concessionsResponse?.data?.items ||
-    concessionsResponse?.data ||
-    [];
-  const invoices =
-    invoicesResponse?.data?.invoices ||
-    invoicesResponse?.data?.items ||
-    invoicesResponse?.data ||
-    [];
-
-  const invoiceRows = toStudentInvoiceRows(invoices, assignment);
-
-  const totalAssigned = invoiceRows.reduce((sum, row) => sum + toNumber(row.final_amount), 0);
-  const totalPaid = invoiceRows.reduce((sum, row) => sum + toNumber(row.paid_amount), 0);
-  const totalDue = Math.max(totalAssigned - totalPaid, 0);
-  const totalDiscount = invoiceRows.reduce((sum, row) => sum + toNumber(row.discount_amount), 0);
-
-  const feeStructureRows = invoiceRows.map((row) => {
-    const status = inferPaymentStatus(row);
-    return {
-      status,
-      original_amount: toNumber(row.original_amount),
-      discount_amount: toNumber(row.discount_amount),
-      discount_reason: row.discount_reason,
-      final_amount: toNumber(row.final_amount),
-      fee_structure: {
-        name: row.fee_structure_name,
-        due_date: row.due_date,
-      },
-      installments: [
-        {
-          installment_number: 1,
-          amount: toNumber(row.final_amount),
-          due_date: row.due_date,
-          paid_amount: toNumber(row.paid_amount),
-          payment_date: row.payment_date,
-          late_fee_applied: toNumber(row.late_fee),
-          status,
-        },
-      ],
-    };
-  });
-
-  return {
-    success: true,
-    data: {
-      student_info: {
-        name: assignment?.student_name || `Student ${resolvedStudentId}`,
-        admission_number: resolvedStudentId,
-        class: assignment?.class_name || "N/A",
-        email: assignment?.email || "",
-        phone: assignment?.phone || "",
-      },
-      summary: {
-        total_assigned_fee: totalAssigned,
-        total_paid_fee: totalPaid,
-        total_due_fee: totalDue,
-        total_discount: totalDiscount,
-        installments_summary: {
-          total_installments: feeStructureRows.length,
-          paid_installments: feeStructureRows.filter((row) => row.status === "paid").length,
-          pending_installments: feeStructureRows.filter((row) => row.status === "pending").length,
-          overdue_installments: feeStructureRows.filter((row) => row.status === "overdue").length,
-        },
-      },
-      concessions,
-      fees_by_academic_year: [
-        {
-          academic_year: assignment?.academic_year || "N/A",
-          total_assigned: totalAssigned,
-          total_paid: totalPaid,
-          total_due: totalDue,
-          fee_structures: feeStructureRows,
-        },
-      ],
-    },
-  };
+  const response = await authorizedGet(`${ADMIN_STUDENT_FEE_ASSIGNMENT_BASE}/${resolvedStudentId}`);
+  return normalizeStudentFeeAssignmentResponse(response, studentData);
 };
 
 export const getStudentFeeDetails = async (studentId) => {

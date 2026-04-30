@@ -1,12 +1,11 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, useCallback } from "react";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import Modal from "../../../components/comman_components/Modal";
+import ReusableTable from "../../../components/comman_components/ReusableTable";
 import { 
-  DollarSign, 
-  Search, 
   Eye, 
   AlertCircle, 
   CheckCircle, 
@@ -24,39 +23,37 @@ import {
   createPayment,
   getAllClassesDropdown,
   getAllStudentsByClass,
-  getStudentInstallments
+  getStudentUnpaidInvoices
 } from "../../../helper/requests-method/feeV1Api";
 import { toast } from "react-toastify";
 
 const PaymentReceived = () => {
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [classSections, setClassSections] = useState([]);
   const [students, setStudents] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [paymentForm, setPaymentForm] = useState({
+    class_id: "",
     student_id: "",
+    invoice_id: "",
     amount_paid: "",
-    payment_method: "cash",
-    installment_ids: [],
-    late_fee_paid: "",
-    transaction_id: "",
-    payment_for: "",
-    remarks: "",
-    cheque_number: "",
-    bank_name: "",
+    payment_mode: "cash",
+    transaction_ref: "",
+    notes: "",
+    cheque_date: "",
+    cheque_bank: "",
   });
-  const [installments, setInstallments] = useState([]);
-  const [selectedInstallments, setSelectedInstallments] = useState([]);
-  const [studentInfo, setStudentInfo] = useState(null);
 
   // Helper function to safely format currency
   const formatCurrency = (value) => {
@@ -64,10 +61,137 @@ const PaymentReceived = () => {
     return isNaN(num) ? "0.00" : num.toFixed(2);
   };
 
-  useEffect(() => {
-    fetchPayments();
-    fetchClassSections();
-  }, []);
+  const formatDate = (value) => {
+    if (!value) return "N/A";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "N/A";
+    return parsed.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "N/A";
+    return parsed.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatFineType = (value) => {
+    if (!value) return "N/A";
+    return String(value)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const buildReceiptHtml = (payment) => {
+    const student = payment?.student || {};
+    const user = student.User || {};
+    const classSection = student.ClassSection || {};
+    const receipt = payment?.receipt || {};
+    const receiptNumber =
+      receipt.receipt_number ||
+      receipt.receipt_no ||
+      payment?.receipt_number ||
+      payment?.id ||
+      "";
+    const invoiceNumber = receipt.invoice_number || receipt.invoice_no || "";
+    const classLabel = [classSection.class_name, classSection.section_name]
+      .filter(Boolean)
+      .join(" - ") || "N/A";
+    const studentName = user.name || student.name || payment?.student_name || "N/A";
+
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Receipt ${escapeHtml(receiptNumber)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+      h1 { font-size: 20px; margin-bottom: 4px; }
+      h2 { font-size: 16px; margin: 24px 0 8px; }
+      .muted { color: #6b7280; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 13px; }
+      th { background: #f9fafb; }
+      .row { display: flex; gap: 16px; flex-wrap: wrap; }
+      .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; flex: 1 1 260px; }
+    </style>
+  </head>
+  <body>
+    <h1>Payment Receipt</h1>
+    <div class="muted">Generated on ${escapeHtml(formatDateTime(payment?.payment_date))}</div>
+
+    <div class="row">
+      <div class="card">
+        <h2>Student Details</h2>
+        <div><strong>Name:</strong> ${escapeHtml(studentName)}</div>
+        <div><strong>Class:</strong> ${escapeHtml(classLabel)}</div>
+        <div><strong>Email:</strong> ${escapeHtml(user.email || "")}</div>
+        <div><strong>Phone:</strong> ${escapeHtml(user.phone_number || user.phone || "")}</div>
+      </div>
+      <div class="card">
+        <h2>Receipt Details</h2>
+        <div><strong>Receipt No:</strong> ${escapeHtml(receiptNumber)}</div>
+        <div><strong>Invoice No:</strong> ${escapeHtml(invoiceNumber || "N/A")}</div>
+        <div><strong>Payment Date:</strong> ${escapeHtml(formatDate(payment?.payment_date))}</div>
+        <div><strong>Method:</strong> ${escapeHtml(String(payment?.payment_method || "").toUpperCase())}</div>
+        <div><strong>Status:</strong> ${escapeHtml(String(payment?.payment_status || "").toUpperCase())}</div>
+      </div>
+    </div>
+
+    <h2>Amounts</h2>
+    <table>
+      <tbody>
+        <tr>
+          <th>Amount Paid</th>
+          <td>₹${escapeHtml(formatCurrency(payment?.amount_paid))}</td>
+        </tr>
+        <tr>
+          <th>Late Fee</th>
+          <td>₹${escapeHtml(formatCurrency(payment?.late_fee_paid))}</td>
+        </tr>
+        <tr>
+          <th>Total Paid</th>
+          <td>₹${escapeHtml(formatCurrency(payment?.total_paid))}</td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>`;
+  };
+
+  const normalizeList = (response, keys = []) => {
+    const candidates = [
+      response?.data?.data,
+      ...keys.map((key) => response?.data?.[key]),
+      response?.data,
+      response,
+    ];
+
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) return candidate;
+    }
+
+    return [];
+  };
 
   useEffect(() => {
     if (success || error) {
@@ -79,7 +203,7 @@ const PaymentReceived = () => {
     }
   }, [success, error]);
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -89,11 +213,9 @@ const PaymentReceived = () => {
       if (response?.data) {
         setPayments(response.data.payments || []);
         setSummary(response.data.summary || null);
-        setPagination(response.data.pagination || null);
       } else if (response?.payments) {
         setPayments(response.payments || []);
         setSummary(response.summary || null);
-        setPagination(response.pagination || null);
       } else if (Array.isArray(response)) {
         setPayments(response);
       }
@@ -105,7 +227,7 @@ const PaymentReceived = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleViewDetails = async (payment) => {
     setIsModalOpen(true);
@@ -136,34 +258,77 @@ const PaymentReceived = () => {
     setSelectedPayment(null);
   };
 
-  const fetchClassSections = async () => {
+  const handleDownloadReceipt = () => {
+    if (!selectedPayment) return;
+    const html = buildReceiptHtml(selectedPayment);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const fileKey = selectedPayment.receipt_number || selectedPayment.id || "payment";
+    link.href = url;
+    link.download = `receipt-${String(fileKey)}`.toLowerCase().replace(/\s+/g, "-") + ".html";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const fetchClassSections = useCallback(async () => {
     try {
       const response = await getAllClassesDropdown();
-      let sections = [];
-      if (response?.data && Array.isArray(response.data)) {
-        sections = response.data;
-      } else if (Array.isArray(response)) {
-        sections = response;
-      }
+      const sections = normalizeList(response, ["classSections", "class_sections", "classes", "items"]);
       setClassSections(sections);
     } catch (err) {
       console.error("Failed to fetch class sections:", err);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchPayments();
+    fetchClassSections();
+  }, [fetchPayments, fetchClassSections]);
+
+  const resetInvoiceState = () => {
+    setInvoices([]);
+    setSelectedInvoice(null);
+    setPaymentForm((prev) => ({
+      ...prev,
+      class_id: "",
+      student_id: "",
+      invoice_id: "",
+      amount_paid: "",
+      payment_mode: "cash",
+      transaction_ref: "",
+      notes: "",
+      cheque_date: "",
+      cheque_bank: "",
+    }));
   };
 
   const handleClassChange = async (classId) => {
     if (!classId) {
       setStudents([]);
+      setSelectedClassId("");
+      resetInvoiceState();
       return;
     }
+
+    setSelectedClassId(classId);
+    setPaymentForm((prev) => ({
+      ...prev,
+      class_id: classId,
+      student_id: "",
+      invoice_id: "",
+      amount_paid: "",
+    }));
+    setStudents([]);
+    setInvoices([]);
+    setSelectedInvoice(null);
+    setInvoiceLoading(false);
+
     try {
       const response = await getAllStudentsByClass(classId);
-      let studentsList = [];
-      if (response?.data && Array.isArray(response.data)) {
-        studentsList = response.data;
-      } else if (Array.isArray(response)) {
-        studentsList = response;
-      }
+      const studentsList = normalizeList(response, ["students", "items", "records"]);
       setStudents(studentsList);
     } catch (err) {
       console.error("Failed to fetch students:", err);
@@ -173,60 +338,48 @@ const PaymentReceived = () => {
 
   const handleStudentChange = async (studentId) => {
     if (!studentId) {
-      setInstallments([]);
-      setSelectedInstallments([]);
-      setStudentInfo(null);
+      setInvoices([]);
+      setSelectedInvoice(null);
+      setInvoiceLoading(false);
+      setPaymentForm((prev) => ({
+        ...prev,
+        student_id: "",
+        invoice_id: "",
+        amount_paid: "",
+      }));
       return;
     }
+
+    setPaymentForm((prev) => ({
+      ...prev,
+      student_id: studentId,
+      invoice_id: "",
+      amount_paid: "",
+    }));
     
     try {
-      const response = await getStudentInstallments(studentId);
-      if (response?.data) {
-        setInstallments(response.data.installments || []);
-        setStudentInfo(response.data.student_info || null);
-      } else {
-        setInstallments([]);
-        setStudentInfo(null);
-      }
+      setInvoiceLoading(true);
+      const response = await getStudentUnpaidInvoices(studentId);
+      const invoiceList = normalizeList(response, ["invoices", "items", "records"]);
+      setInvoices(invoiceList);
     } catch (err) {
-      console.error("Failed to fetch installments:", err);
-      toast.error("Failed to fetch student installments");
-      setInstallments([]);
-      setStudentInfo(null);
+      console.error("Failed to fetch unpaid invoices:", err);
+      toast.error("Failed to fetch unpaid invoices");
+      setInvoices([]);
+      setSelectedInvoice(null);
+    } finally {
+      setInvoiceLoading(false);
     }
   };
 
-  const handleInstallmentToggle = (installmentId) => {
-    setSelectedInstallments(prev => {
-      let updatedSelection;
-      if (prev.includes(installmentId)) {
-        updatedSelection = prev.filter(id => id !== installmentId);
-      } else {
-        updatedSelection = [...prev, installmentId];
-      }
-      
-      // Calculate total amount and late fee for selected installments
-      const selectedInstallmentsData = installments.filter(inst => 
-        updatedSelection.includes(inst.installment_id)
-      );
-      
-      const totalDue = selectedInstallmentsData.reduce((sum, inst) => 
-        sum + (parseFloat(inst.due_amount) || 0), 0
-      );
-      
-      const totalLateFee = selectedInstallmentsData.reduce((sum, inst) => 
-        sum + (parseFloat(inst.late_fee) || 0), 0
-      );
-      
-      // Auto-fill the amount and late fee
-      setPaymentForm(prevForm => ({
-        ...prevForm,
-        amount_paid: totalDue.toString(),
-        late_fee_paid: totalLateFee.toString()
-      }));
-      
-      return updatedSelection;
-    });
+  const handleInvoiceChange = (invoiceId) => {
+    const invoice = invoices.find((item) => String(item.id) === String(invoiceId));
+    setSelectedInvoice(invoice || null);
+    setPaymentForm((prev) => ({
+      ...prev,
+      invoice_id: invoiceId,
+      amount_paid: invoice ? String(invoice.payable_amount ?? invoice.balance_amount ?? invoice.net_amount ?? "") : "",
+    }));
   };
 
   const handlePaymentFormChange = (e) => {
@@ -237,8 +390,8 @@ const PaymentReceived = () => {
   const handleCreatePayment = async (e) => {
     e.preventDefault();
     
-    if (selectedInstallments.length === 0) {
-      toast.error("Please select at least one installment");
+    if (!paymentForm.invoice_id) {
+      toast.error("Please select an invoice");
       return;
     }
     
@@ -248,16 +401,13 @@ const PaymentReceived = () => {
 
     try {
       const payload = {
-        student_id: Number(paymentForm.student_id),
+        invoice_id: paymentForm.invoice_id,
         amount_paid: Number(paymentForm.amount_paid),
-        payment_method: paymentForm.payment_method,
-        installment_ids: selectedInstallments,
-        late_fee_paid: Number(paymentForm.late_fee_paid) || 0,
-        transaction_id: paymentForm.transaction_id || null,
-        cheque_number: paymentForm.cheque_number || null,
-        bank_name: paymentForm.bank_name || null,
-        payment_for: paymentForm.payment_for,
-        remarks: paymentForm.remarks || "",
+        payment_mode: paymentForm.payment_mode,
+        transaction_ref: paymentForm.transaction_ref || null,
+        notes: paymentForm.notes || "",
+        cheque_date: paymentForm.payment_mode === "cheque" ? paymentForm.cheque_date || null : null,
+        cheque_bank: paymentForm.payment_mode === "cheque" ? paymentForm.cheque_bank || null : null,
       };
 
       const response = await createPayment(payload);
@@ -267,21 +417,20 @@ const PaymentReceived = () => {
       
       // Reset form
       setPaymentForm({
+        class_id: "",
         student_id: "",
+        invoice_id: "",
         amount_paid: "",
-        payment_method: "cash",
-        installment_ids: [],
-        late_fee_paid: "",
-        transaction_id: "",
-        payment_for: "",
-        remarks: "",
-        cheque_number: "",
-        bank_name: "",
+        payment_mode: "cash",
+        transaction_ref: "",
+        notes: "",
+        cheque_date: "",
+        cheque_bank: "",
       });
       setStudents([]);
-      setInstallments([]);
-      setSelectedInstallments([]);
-      setStudentInfo(null);
+      setInvoices([]);
+      setSelectedInvoice(null);
+      setSelectedClassId("");
       setIsCreateModalOpen(false);
       fetchPayments();
     } catch (err) {
@@ -291,6 +440,25 @@ const PaymentReceived = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setStudents([]);
+    setInvoices([]);
+    setSelectedInvoice(null);
+    setSelectedClassId("");
+    setPaymentForm({
+      class_id: "",
+      student_id: "",
+      invoice_id: "",
+      amount_paid: "",
+      payment_mode: "cash",
+      transaction_ref: "",
+      notes: "",
+      cheque_date: "",
+      cheque_bank: "",
+    });
   };
 
   const getPaymentMethodBadge = (method) => {
@@ -329,13 +497,65 @@ const PaymentReceived = () => {
     );
   };
 
-  const filteredPayments = payments.filter((payment) => {
-    const searchLower = searchTerm.toLowerCase();
-    const studentName = payment.Student?.User?.name?.toLowerCase() || "";
-    const receiptNumber = payment.receipt_number?.toLowerCase() || "";
-    const admissionNumber = payment.Student?.admission_number?.toLowerCase() || "";
-    return studentName.includes(searchLower) || receiptNumber.includes(searchLower) || admissionNumber.includes(searchLower);
+  const paymentRows = payments.map((payment) => {
+    const student = payment.student || {};
+    const user = student.User || {};
+    const classSection = student.ClassSection || {};
+    const classLabel = [classSection.class_name, classSection.section_name].filter(Boolean).join(" - ");
+
+    return {
+      id: payment.id,
+      payment_id: payment.id,
+      receipt_number: payment.receipt_number || "N/A",
+      student_name: user.name || student.name || payment.student_name || "N/A",
+      class_name: classLabel || "N/A",
+      payment_date: payment.payment_date || "",
+      amount_paid: payment.amount_paid || 0,
+      payment_method: payment.payment_method || "cash",
+      payment_status: payment.payment_status || "success",
+    };
   });
+
+  const paymentColumns = [
+    { header: "Payment ID", key: "payment_id" },
+    { header: "Receipt No.", key: "receipt_number" },
+    { header: "Student Name", key: "student_name" },
+    { header: "Class", key: "class_name" },
+    {
+      header: "Payment Date",
+      key: "payment_date",
+      type: "date",
+      render: (value) => formatDate(value),
+    },
+    {
+      header: "Amount",
+      key: "amount_paid",
+      render: (value) => <span className="font-medium text-gray-900">₹{formatCurrency(value)}</span>,
+    },
+    {
+      header: "Method",
+      key: "payment_method",
+      render: (value) => getPaymentMethodBadge(value),
+    },
+    {
+      header: "Status",
+      key: "payment_status",
+      render: (value) => getStatusBadge(value),
+    },
+    {
+      header: "View",
+      key: "view",
+      render: (_, item) => (
+        <button
+          onClick={() => handleViewDetails({ id: item.id })}
+          className="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800 font-medium transition-colors cursor-pointer"
+        >
+          <Eye className="w-4 h-4" />
+          View
+        </button>
+      ),
+    },
+  ];
 
   return (
     <div className="bg-gray-100 flex">
@@ -394,19 +614,9 @@ const PaymentReceived = () => {
               </div>
             )}
 
-            {/* Search and Create Button */}
+            {/* Create Button */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                <div className="relative flex-1 w-full sm:w-auto">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by student name, receipt number, or admission number..."
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                  />
-                </div>
+              <div className="flex justify-end">
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
                   className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm font-medium whitespace-nowrap cursor-pointer"
@@ -418,127 +628,16 @@ const PaymentReceived = () => {
             </div>
 
             {/* Payments Table */}
-            {loading ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
-                <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mb-4"></div>
-                  <p className="text-gray-600">Loading payments...</p>
-                </div>
-              </div>
-            ) : filteredPayments.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                    <DollarSign className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Payments Found</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm ? `No payments found matching "${searchTerm}"` : "No payment records available"}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Receipt No.
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Class
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Payment Date
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Late Fee
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Total
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Method
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredPayments.map((payment) => (
-                        <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {payment.receipt_number}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div>
-                              <p className="font-medium text-gray-900">{payment.student?.User?.name}</p>
-                              <p className="text-gray-500 text-xs">Roll: {payment.student?.roll_number}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {payment.student?.ClassSection?.class_name} - {payment.student?.ClassSection?.section_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {new Date(payment.payment_date).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            ₹{formatCurrency(payment.amount_paid)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                            {payment.late_fee_paid > 0 ? `₹${formatCurrency(payment.late_fee_paid)}` : "-"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
-                            ₹{formatCurrency(payment.total_paid)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {getPaymentMethodBadge(payment.payment_method)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {getStatusBadge(payment.payment_status)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => handleViewDetails(payment)}
-                              className="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800 font-medium transition-colors cursor-pointer"
-                            >
-                              <Eye className="w-4 h-4" />
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination Info */}
-                {pagination && (
-                  <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <p>
-                        Showing page {pagination.current_page} of {pagination.total_pages} 
-                        ({pagination.total_records} total records)
-                      </p>
-                      <p>
-                        {pagination.per_page} records per page
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <ReusableTable
+              title="Payments"
+              columns={paymentColumns}
+              displayColumns={paymentColumns}
+              initialData={paymentRows}
+              searchPlaceholder="Search payments..."
+              exportFileName="payments"
+              showActions={{ view: false, edit: false, delete: false, add: false }}
+              loading={loading}
+            />
           </div>
         </main>
 
@@ -566,6 +665,15 @@ const PaymentReceived = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleDownloadReceipt}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Download Receipt
+                    </button>
+                  </div>
                   {/* Student Info */}
                   {selectedPayment.student && (
                     <div className="bg-gray-50 rounded-lg p-4">
@@ -617,6 +725,14 @@ const PaymentReceived = () => {
                         <p className="text-gray-500">Receipt Number</p>
                         <p className="font-medium text-gray-900">{selectedPayment.receipt_number}</p>
                       </div>
+                      {(selectedPayment.receipt?.invoice_number || selectedPayment.receipt?.invoice_no) && (
+                        <div>
+                          <p className="text-gray-500">Invoice Number</p>
+                          <p className="font-medium text-gray-900">
+                            {selectedPayment.receipt?.invoice_number || selectedPayment.receipt?.invoice_no}
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-gray-500">Academic Year</p>
                         <p className="font-medium text-gray-900">{selectedPayment.academic_year}</p>
@@ -625,7 +741,7 @@ const PaymentReceived = () => {
                         <p className="text-gray-500">Payment Date</p>
                         <p className="font-medium text-gray-900 flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {new Date(selectedPayment.payment_date).toLocaleDateString()}
+                          {formatDate(selectedPayment.payment_date)}
                         </p>
                       </div>
                       <div>
@@ -739,7 +855,7 @@ const PaymentReceived = () => {
       {/* Create Payment Modal */}
       <Modal 
         isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={handleCloseCreateModal}
         title="Create Payment"
         size="xl"
       >
@@ -751,6 +867,8 @@ const PaymentReceived = () => {
                     Select Class <span className="text-red-500">*</span>
                   </label>
                   <select
+                    name="class_id"
+                    value={paymentForm.class_id}
                     onChange={(e) => handleClassChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                     required
@@ -778,7 +896,7 @@ const PaymentReceived = () => {
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                     required
-                    disabled={students.length === 0}
+                    disabled={!selectedClassId || students.length === 0}
                   >
                     <option value="">Select Student</option>
                     {students.map((student) => (
@@ -789,74 +907,77 @@ const PaymentReceived = () => {
                   </select>
                 </div>
 
-                {/* Student Info */}
-                {studentInfo && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm font-medium text-blue-900">{studentInfo.name}</p>
-                    <p className="text-xs text-blue-700">{studentInfo.email}</p>
-                  </div>
-                )}
+                {/* Invoice Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Invoice <span className="text-red-500">*</span>
+                  </label>
 
-                {/* Installment Selection */}
-                {installments.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Installments <span className="text-red-500">*</span>
-                    </label>
-                    <div className="border border-gray-300 rounded-lg max-h-60 overflow-y-auto">
-                      {installments.map((installment) => (
-                        <div 
-                          key={installment.installment_id}
-                          className={`p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer ${
-                            selectedInstallments.includes(installment.installment_id) ? 'bg-violet-50' : ''
-                          }`}
-                          onClick={() => handleInstallmentToggle(installment.installment_id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedInstallments.includes(installment.installment_id)}
-                              onChange={() => handleInstallmentToggle(installment.installment_id)}
-                              className="mt-1 h-4 w-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {installment.installment_name}
-                                </p>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  installment.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                  installment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-red-100 text-red-800'
-                                }`}>
-                                  {installment.status}
-                                </span>
-                              </div>
-                              <div className="mt-1 text-xs text-gray-600">
-                                <span>{installment.fee_structure_name}</span>
-                                <span className="mx-2">•</span>
-                                <span>Due: {new Date(installment.due_date).toLocaleDateString()}</span>
-                              </div>
-                              <div className="mt-1 flex items-center gap-3 text-xs">
-                                <span className="text-gray-700">Amount: ₹{installment.amount}</span>
-                                <span className="text-green-600">Paid: ₹{installment.paid_amount}</span>
-                                <span className="text-red-600">Due: ₹{installment.due_amount}</span>
-                                {installment.late_fee && installment.late_fee !== '0.00' && (
-                                  <span className="text-orange-600">Late Fee: ₹{installment.late_fee}</span>
-                                )}
-                              </div>
+                  {!paymentForm.student_id ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                      First select a student to load unpaid invoices.
+                    </div>
+                  ) : invoiceLoading ? (
+                    <div className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-600">
+                      Loading unpaid invoices...
+                    </div>
+                  ) : invoices.length > 0 ? (
+                    <>
+                      <select
+                        name="invoice_id"
+                        value={paymentForm.invoice_id}
+                        onChange={(e) => handleInvoiceChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        required
+                      >
+                        <option value="">Select Invoice</option>
+                        {invoices.map((invoice) => (
+                          <option key={invoice.id} value={invoice.id}>
+                            {invoice.invoice_number} - Balance ₹{Number(invoice.balance_amount || 0).toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedInvoice && (
+                        <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold">{selectedInvoice.invoice_number}</p>
+                              <p className="text-xs text-violet-700 mt-1">
+                                Status: {selectedInvoice.status || "N/A"}
+                              </p>
+                            </div>
+                            <div className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800">
+                              {formatDate(selectedInvoice.due_date)}
+                            </div>
+                          </div>
+
+                          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="rounded-md bg-white/70 p-3 border border-violet-100">
+                              <p className="text-xs text-violet-700">Balance Amount</p>
+                              <p className="font-semibold text-violet-950">₹{formatCurrency(selectedInvoice.balance_amount)}</p>
+                            </div>
+                            <div className="rounded-md bg-white/70 p-3 border border-violet-100">
+                              <p className="text-xs text-violet-700">Fine Type</p>
+                              <p className="font-semibold text-violet-950">{formatFineType(selectedInvoice.fine_type)}</p>
+                            </div>
+                            <div className="rounded-md bg-white/70 p-3 border border-violet-100">
+                              <p className="text-xs text-violet-700">Calculated Fine</p>
+                              <p className="font-semibold text-violet-950">₹{formatCurrency(selectedInvoice.calculated_fine)}</p>
+                            </div>
+                            <div className="rounded-md bg-white/70 p-3 border border-violet-100">
+                              <p className="text-xs text-violet-700">Payable Amount</p>
+                              <p className="font-semibold text-violet-950">₹{formatCurrency(selectedInvoice.payable_amount)}</p>
                             </div>
                           </div>
                         </div>
-                      ))}
+                      )}
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                      No unpaid invoices found for this student.
                     </div>
-                    {selectedInstallments.length > 0 && (
-                      <p className="mt-2 text-sm text-violet-600">
-                        {selectedInstallments.length} installment(s) selected
-                      </p>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Amount Paid */}
                 <div>
@@ -877,30 +998,14 @@ const PaymentReceived = () => {
                 </div>
 
                 {/* Late Fee */}
+                {/* Payment Mode */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Late Fee (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    name="late_fee_paid"
-                    value={paymentForm.late_fee_paid}
-                    onChange={handlePaymentFormChange}
-                    placeholder="Enter late fee"
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  />
-                </div>
-
-                {/* Payment Method */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Method <span className="text-red-500">*</span>
+                    Payment Mode <span className="text-red-500">*</span>
                   </label>
                   <select
-                    name="payment_method"
-                    value={paymentForm.payment_method}
+                    name="payment_mode"
+                    value={paymentForm.payment_mode}
                     onChange={handlePaymentFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                     required
@@ -914,96 +1019,64 @@ const PaymentReceived = () => {
                   </select>
                 </div>
 
-                {/* Transaction ID */}
-                {(paymentForm.payment_method === 'online' || paymentForm.payment_method === 'upi' || paymentForm.payment_method === 'card') && (
+                {/* Transaction Reference */}
+                {(paymentForm.payment_mode === 'online' || paymentForm.payment_mode === 'upi' || paymentForm.payment_mode === 'card' || paymentForm.payment_mode === 'bank_transfer') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Transaction ID
+                      Transaction Reference
                     </label>
                     <input
                       type="text"
-                      name="transaction_id"
-                      value={paymentForm.transaction_id}
+                      name="transaction_ref"
+                      value={paymentForm.transaction_ref}
                       onChange={handlePaymentFormChange}
-                      placeholder="Enter transaction ID"
+                      placeholder="Enter transaction reference"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                     />
                   </div>
                 )}
 
-                {paymentForm.payment_method === 'cheque' && (
+                {paymentForm.payment_mode === 'cheque' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cheque Number
+                        Cheque Date
                       </label>
                       <input
-                        type="text"
-                        name="cheque_number"
-                        value={paymentForm.cheque_number}
+                        type="date"
+                        name="cheque_date"
+                        value={paymentForm.cheque_date}
                         onChange={handlePaymentFormChange}
-                        placeholder="Enter cheque number"
+                        placeholder="Select cheque date"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bank Name
+                        Cheque Bank
                       </label>
                       <input
                         type="text"
-                        name="bank_name"
-                        value={paymentForm.bank_name}
+                        name="cheque_bank"
+                        value={paymentForm.cheque_bank}
                         onChange={handlePaymentFormChange}
-                        placeholder="Enter bank name"
+                        placeholder="Enter cheque bank"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                       />
                     </div>
                   </div>
                 )}
 
-                {paymentForm.payment_method === 'bank_transfer' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Bank Name
-                    </label>
-                    <input
-                      type="text"
-                      name="bank_name"
-                      value={paymentForm.bank_name}
-                      onChange={handlePaymentFormChange}
-                      placeholder="Enter bank name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                  </div>
-                )}
-
-                {/* Payment For */}
+                {/* Notes */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment For <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="payment_for"
-                    value={paymentForm.payment_for}
-                    onChange={handlePaymentFormChange}
-                    placeholder="e.g., Tuition Fee Q1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    required
-                  />
-                </div>
-
-                {/* Remarks */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Remarks (Optional)
+                    Notes
                   </label>
                   <textarea
-                    name="remarks"
-                    value={paymentForm.remarks}
+                    name="notes"
+                    value={paymentForm.notes}
                     onChange={handlePaymentFormChange}
-                    placeholder="Enter any remarks"
+                    placeholder="Collected at school counter"
                     rows="3"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
@@ -1013,7 +1086,7 @@ const PaymentReceived = () => {
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
+                  onClick={handleCloseCreateModal}
                   className="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
                   disabled={loading}
                 >

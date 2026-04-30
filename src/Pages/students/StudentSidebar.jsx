@@ -75,7 +75,10 @@ const SIDEBAR_ITEMS = [
   {
     name: "Fees",
     icon: Wallet,
-    subItems: [{ name: "Fees", href: "/student/fees" }],
+    subItems: [
+      { name: "Installment", href: "/student/fees/installment" },
+      { name: "Fee Assign", href: "/student/fees/assign" },
+    ],
   },
   {
     name: "Leave",

@@ -7,16 +7,17 @@ const ReusableTable = ({
   columns, 
   displayColumns,
   apiFunction, 
+  viewApiFunction = null,
   updateApiFunction,
   deleteApiFunction,
   initialData = [],
   searchPlaceholder = "Search...",
   addButtonText = "Add New",
   exportFileName = "data",
-  showActions = { view: true, edit: true, delete: true }
+  showActions = { view: true, edit: true, delete: true },
+  loading = false
 }) => {
   const [data, setData] = useState([]);
-  const [loading] = useState(false);
   const [formData, setFormData] = useState({});
   const [formLoading, setFormLoading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -30,7 +31,7 @@ const ReusableTable = ({
   // Initialize form data
   useEffect(() => {
     const initialFormData = columns.reduce((acc, col) => {
-      acc[col.key] = '';
+      acc[col.key] = col.defaultValue !== undefined ? col.defaultValue : '';
       return acc;
     }, {});
     setFormData(initialFormData);
@@ -87,16 +88,17 @@ const ReusableTable = ({
         [name]: files 
       });
     } else {
+      const numericValue = value === '' ? '' : parseFloat(value);
       setFormData({ 
         ...formData, 
-        [name]: type === 'number' ? parseInt(value) || '' : value 
+        [name]: type === 'number' ? numericValue : value 
       });
     }
   };
 
   const resetForm = () => {
     const initialFormData = columns.reduce((acc, col) => {
-      acc[col.key] = '';
+      acc[col.key] = col.defaultValue !== undefined ? col.defaultValue : '';
       return acc;
     }, {});
     setFormData(initialFormData);
@@ -386,7 +388,8 @@ const ReusableTable = ({
     try {
       // Call the delete API function if provided
       if (deleteApiFunction) {
-        const response = await deleteApiFunction(item.id);
+        const itemId = item?.id ?? item?.income_id ?? item?.expense_id ?? item?.record_id ?? item?.entry_id ?? item?._id;
+        const response = await deleteApiFunction(itemId);
         
         if (response && response.success) {
           showToast(response, `${title} deleted successfully!`);
@@ -407,10 +410,18 @@ const ReusableTable = ({
   };
 
   // Handle view item
-  const handleView = (item) => {
-    // For now, this will be handled by the DataTable component's built-in view modal
-    // You can customize this to call a parent component's view handler if needed
-    console.log('Viewing item:', item);
+  const handleView = async (item) => {
+    if (viewApiFunction) {
+      const itemId = item?.id;
+      if (itemId === undefined || itemId === null || itemId === '') {
+        throw new Error('Missing item id');
+      }
+      const response = await viewApiFunction(itemId);
+      const viewData = response?.data?.data || response?.data || response?.data?.income || response?.data?.expense || response?.data?.item || response;
+      return viewData ? { ...item, ...viewData } : item;
+    }
+
+    return item;
   };
 
   return (
@@ -423,6 +434,7 @@ const ReusableTable = ({
       onEdit={showActions.edit !== false ? handleEdit : null}
       onDelete={showActions.delete !== false ? handleDelete : null}
       onView={showActions.view !== false ? handleView : null}
+      viewApiFunction={viewApiFunction}
       loading={loading}
       searchPlaceholder={searchPlaceholder}
       addButtonText={addButtonText}

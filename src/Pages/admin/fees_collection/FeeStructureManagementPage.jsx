@@ -21,7 +21,6 @@ import { toast } from "react-toastify";
 const createDefaultInstallment = (index = 1) => ({
   name: `Term ${index}`,
   installment_number: index,
-  sequence_no: index,
   start_date: "",
   due_date: "",
   percentage: 100,
@@ -31,12 +30,14 @@ const createDefaultInstallment = (index = 1) => ({
   grace_period_days: 0,
 });
 
+const resolveStructureType = (installments = []) =>
+  installments.length <= 1 ? "onetime" : "recurring";
+
 const getInitialForm = () => ({
   name: "",
   academic_year_id: "",
   class_id: "",
   description: "",
-  structure_type: "recurring",
   is_active: true,
   items: [],
   installments: [createDefaultInstallment(1)],
@@ -129,8 +130,6 @@ const FeeStructureManagement = () => {
     try {
       const response = await getAllFeeStructures({
         academic_year_id: academicYearId,
-        is_active: true,
-        structure_type: "recurring",
       });
 
       let structures = [];
@@ -273,12 +272,13 @@ const FeeStructureManagement = () => {
       return;
     }
 
+    const structureType = resolveStructureType(form.installments);
     const payload = {
       name: form.name.trim(),
       academic_year_id: Number(form.academic_year_id),
       class_id: Number(form.class_id),
       description: form.description?.trim() || "",
-      structure_type: "recurring",
+      structure_type: structureType,
       items: form.items.map((item, idx) => ({
         fee_head_id: Number(item.fee_head_id),
         amount: Number(item.amount),
@@ -288,7 +288,6 @@ const FeeStructureManagement = () => {
       installments: form.installments.map((installment, idx) => ({
         name: installment.name || `Term ${idx + 1}`,
         installment_number: Number(installment.installment_number || idx + 1),
-        sequence_no: Number(installment.sequence_no || idx + 1),
         start_date: installment.start_date,
         due_date: installment.due_date,
         percentage: Number(installment.percentage || 0),
@@ -373,7 +372,6 @@ const FeeStructureManagement = () => {
         academic_year_id: details.academic_year_id ? String(details.academic_year_id) : "",
         class_id: details.class_id ? String(details.class_id) : details.class_section_id ? String(details.class_section_id) : "",
         description: details.description || "",
-        structure_type: details.structure_type || "recurring",
         is_active: details.is_active !== false,
         items: (details.items || details.fee_details || details.feeDetails || []).map((item, idx) => ({
           fee_head_id: item.fee_head_id ? String(item.fee_head_id) : "",
@@ -385,7 +383,6 @@ const FeeStructureManagement = () => {
           ? details.installments.map((installment, idx) => ({
               name: installment.name || `Term ${idx + 1}`,
               installment_number: installment.installment_number || idx + 1,
-              sequence_no: installment.sequence_no || installment.installment_number || idx + 1,
               start_date: installment.start_date || "",
               due_date: installment.due_date || "",
               percentage: installment.percentage || 0,
@@ -443,33 +440,32 @@ const FeeStructureManagement = () => {
     return feeStructures.map((structure, index) => ({
       id: structure.id || structure._id || index + 1,
       name: structure.name || "-",
-      class_label:
-        structure.classSection?.class_name && structure.classSection?.section_name
+      class_section_name:
+        structure.class_name ||
+        (structure.classSection?.class_name && structure.classSection?.section_name
           ? `${structure.classSection.class_name}-${structure.classSection.section_name}`
-          : classLabelMap.get(String(structure.class_id || structure.class_section_id || "")) || "-",
-      academic_year:
-        academicYearLabelMap.get(String(structure.academic_year_id || "")) ||
-        (structure.academic_start_year && structure.academic_end_year
-          ? `${structure.academic_start_year}-${structure.academic_end_year}`
-          : "-"),
-      structure_type: structure.structure_type || "recurring",
+          : classLabelMap.get(String(structure.class_id || structure.class_section_id || "")) || "-"),
       total_amount: Number(structure.total_amount || 0),
-      updated_at: structure.updatedAt || structure.updated_at || "",
+      fee_head_count: Array.isArray(structure.fee_heads)
+        ? structure.fee_heads.length
+        : Array.isArray(structure.items)
+        ? structure.items.length
+        : 0,
       status: structure.is_active !== false ? "Active" : "Inactive",
       raw: structure,
     }));
-  }, [academicYearLabelMap, classLabelMap, feeStructures]);
+  }, [classLabelMap, feeStructures]);
 
   const tableColumns = useMemo(
     () => [
       { key: "name", header: "Structure Name" },
-      { key: "class_label", header: "Class/Section" },
-      { key: "academic_year", header: "Academic Year" },
       {
         key: "total_amount",
-        header: "Total Amount",
+        header: "Amount",
         render: (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`,
       },
+      { key: "class_section_name", header: "Class/Section Name" },
+      { key: "fee_head_count", header: "Fee Heads Included" },
       {
         key: "status",
         header: "Status",
@@ -819,18 +815,6 @@ const FeeStructureManagement = () => {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Sequence</label>
-                            <input
-                              type="number"
-                              value={installment.sequence_no}
-                              onChange={(e) => handleInstallmentChange(index, "sequence_no", e.target.value)}
-                              required
-                              min="1"
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-                            />
-                          </div>
-
-                          <div>
                             <label className="block text-xs font-medium text-gray-600 mb-1">Percentage</label>
                             <input
                               type="number"
@@ -965,7 +949,11 @@ const FeeStructureManagement = () => {
             >
               {viewFeeStructure && (
                 <div className="space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Structure ID</label>
+                      <p className="text-base font-semibold text-gray-900">{viewFeeStructure.id || "-"}</p>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Name</label>
                       <p className="text-base font-semibold text-gray-900">{viewFeeStructure.name || "-"}</p>
@@ -973,13 +961,32 @@ const FeeStructureManagement = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Academic Year</label>
                       <p className="text-base font-semibold text-gray-900">
-                        {academicYearLabelMap.get(String(viewFeeStructure.academic_year_id || "")) || "-"}
+                        {academicYearLabelMap.get(String(viewFeeStructure.academic_year_id || "")) ||
+                          (viewFeeStructure.academic_year_id ? String(viewFeeStructure.academic_year_id) : "-")}
                       </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Class/Section</label>
                       <p className="text-base text-gray-700">
-                        {classLabelMap.get(String(viewFeeStructure.class_id || viewFeeStructure.class_section_id || "")) || "-"}
+                        {classLabelMap.get(String(viewFeeStructure.class_id || viewFeeStructure.class_section_id || "")) ||
+                          viewFeeStructure.class_name ||
+                          (viewFeeStructure.classSection?.class_name && viewFeeStructure.classSection?.section_name
+                            ? `${viewFeeStructure.classSection.class_name}-${viewFeeStructure.classSection.section_name}`
+                            : "-")}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Class ID</label>
+                      <p className="text-base text-gray-700">{viewFeeStructure.class_id || "-"}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Structure Type</label>
+                      <p className="text-base text-gray-700">{viewFeeStructure.structure_type || "-"}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Total Amount</label>
+                      <p className="text-base font-semibold text-gray-900">
+                        Rs. {Number(viewFeeStructure.total_amount || 0).toLocaleString("en-IN")}
                       </p>
                     </div>
                     <div>
@@ -987,6 +994,14 @@ const FeeStructureManagement = () => {
                       <p className="text-base text-gray-700">
                         {viewFeeStructure.is_active === false ? "Inactive" : "Active"}
                       </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Created At</label>
+                      <p className="text-base text-gray-700">{viewFeeStructure.created_at || "-"}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Updated At</label>
+                      <p className="text-base text-gray-700">{viewFeeStructure.updated_at || "-"}</p>
                     </div>
                   </div>
 
@@ -998,48 +1013,94 @@ const FeeStructureManagement = () => {
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-3">Fee Items</h4>
-                    <div className="space-y-2">
-                      {(viewFeeStructure.items || viewFeeStructure.feeDetails || []).map((item, index) => (
-                        <div key={`view-item-${index}`} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-gray-900">
-                              {item.feeHead?.name || feeHeads.find((head) => head.id === item.fee_head_id)?.name || "Fee Head"}
-                            </p>
-                            <p className="text-sm font-semibold text-gray-900">
-                              Rs. {Number(item.amount || 0).toLocaleString("en-IN")}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <h4 className="text-sm font-semibold text-gray-800 mb-3">Fee Heads</h4>
+                    {((viewFeeStructure.fee_heads && viewFeeStructure.fee_heads.length > 0)
+                      ? viewFeeStructure.fee_heads
+                      : viewFeeStructure.items || viewFeeStructure.feeDetails || []).length === 0 ? (
+                      <p className="text-sm text-gray-500">No fee heads available</p>
+                    ) : (
+                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table className="min-w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Head Name</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Amount</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Sort Order</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-100">
+                            {((viewFeeStructure.fee_heads && viewFeeStructure.fee_heads.length > 0)
+                              ? viewFeeStructure.fee_heads
+                              : viewFeeStructure.items || viewFeeStructure.feeDetails || []).map((item, index) => (
+                              <tr key={`view-fee-head-${index}`}>
+                                <td className="px-4 py-3 text-gray-700">{item.id || item.fee_head_id || "-"}</td>
+                                <td className="px-4 py-3 text-gray-900 font-medium">
+                                  {item.name ||
+                                    item.feeHead?.name ||
+                                    feeHeads.find((head) => head.id === item.fee_head_id)?.name ||
+                                    "Fee Head"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-900">
+                                  Rs. {Number(item.amount || 0).toLocaleString("en-IN")}
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">
+                                  {item.sort_order || item.sequence_order || index + 1}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
                     <h4 className="text-sm font-semibold text-gray-800 mb-3">Installments</h4>
-                    <div className="space-y-2">
-                      {(viewFeeStructure.installments || []).map((installment, index) => (
-                        <div
-                          key={`view-installment-${index}`}
-                          className="p-3 bg-gray-50 rounded-lg border border-gray-200"
-                        >
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-700">
-                            <p>
-                              <span className="font-semibold">Name:</span> {installment.name}
-                            </p>
-                            <p>
-                              <span className="font-semibold">Due:</span> {installment.due_date || "-"}
-                            </p>
-                            <p>
-                              <span className="font-semibold">Percent:</span> {installment.percentage || 0}%
-                            </p>
-                            <p>
-                              <span className="font-semibold">Late Fine:</span> {installment.late_fine_type} ({installment.late_fine_value || 0})
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {(viewFeeStructure.installments || []).length === 0 ? (
+                      <p className="text-sm text-gray-500">No installments available</p>
+                    ) : (
+                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table className="min-w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Installment #</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Start Date</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">End Date</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Percentage</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Allow Partial</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Fixed Amount</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Late Fine</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-100">
+                            {(viewFeeStructure.installments || []).map((installment, index) => (
+                              <tr key={`view-installment-${index}`}>
+                                <td className="px-4 py-3 text-gray-700">{installment.id || "-"}</td>
+                                <td className="px-4 py-3 text-gray-900 font-medium">{installment.name || "-"}</td>
+                                <td className="px-4 py-3 text-gray-700">{installment.installment_number || "-"}</td>
+                                <td className="px-4 py-3 text-gray-700">{installment.start_date || "-"}</td>
+                                <td className="px-4 py-3 text-gray-700">{installment.due_date || "-"}</td>
+                                <td className="px-4 py-3 text-gray-700">{installment.percentage || 0}%</td>
+                                <td className="px-4 py-3 text-gray-700">
+                                  {installment.allow_partial_payment ? "Yes" : "No"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">
+                                  {installment.fixed_amount !== null && installment.fixed_amount !== undefined
+                                    ? `Rs. ${Number(installment.fixed_amount).toLocaleString("en-IN")}`
+                                    : "-"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">
+                                  {`${installment.late_fine_type || "none"} (${installment.late_fine_value || 0})`}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-3 pt-4 border-t border-gray-200">

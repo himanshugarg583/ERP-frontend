@@ -28,8 +28,104 @@ export const getOverdueInstallments = async () => {
 };
 
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const API_BASE_URL = 'http://localhost:5001'; // Backend base URL
+const ADMIN_TOAST_SUPPRESS_WINDOW_MS = 800;
+
+const getAdminToastState = () => {
+  if (typeof globalThis === 'undefined') {
+    return { suppressUntil: 0, lastType: null };
+  }
+
+  if (!globalThis.__erpAdminToastState) {
+    globalThis.__erpAdminToastState = {
+      suppressUntil: 0,
+      lastType: null,
+    };
+  }
+
+  return globalThis.__erpAdminToastState;
+};
+
+const installAdminToastDedup = () => {
+  if (typeof globalThis === 'undefined') return;
+  if (globalThis.__erpToastOriginalMethods) return;
+
+  const originalMethods = {
+    success: typeof toast.success === 'function' ? toast.success.bind(toast) : null,
+    error: typeof toast.error === 'function' ? toast.error.bind(toast) : null,
+    info: typeof toast.info === 'function' ? toast.info.bind(toast) : null,
+    warn: typeof toast.warn === 'function' ? toast.warn.bind(toast) : null,
+    warning: typeof toast.warning === 'function' ? toast.warning.bind(toast) : null,
+  };
+
+  const wrap = (type, originalFn) => {
+    if (typeof originalFn !== 'function') return originalFn;
+
+    return (...args) => {
+      const state = getAdminToastState();
+      const isSuppressed = Date.now() <= state.suppressUntil && state.lastType === type;
+      if (isSuppressed) return null;
+      return originalFn(...args);
+    };
+  };
+
+  toast.success = wrap('success', originalMethods.success);
+  toast.error = wrap('error', originalMethods.error);
+  toast.info = wrap('info', originalMethods.info);
+  toast.warn = wrap('warn', originalMethods.warn);
+  if (typeof toast.warning === 'function') {
+    toast.warning = wrap('warning', originalMethods.warning);
+  }
+
+  globalThis.__erpToastOriginalMethods = originalMethods;
+};
+
+const emitCentralizedToast = (type, message) => {
+  const state = getAdminToastState();
+  state.lastType = type;
+  state.suppressUntil = Date.now() + ADMIN_TOAST_SUPPRESS_WINDOW_MS;
+
+  const originals =
+    typeof globalThis !== 'undefined' && globalThis.__erpToastOriginalMethods
+      ? globalThis.__erpToastOriginalMethods
+      : null;
+
+  const emitters = {
+    success: originals?.success || toast.success,
+    error: originals?.error || toast.error,
+    info: originals?.info || toast.info,
+    warn: originals?.warn || toast.warn,
+    warning: originals?.warning || toast.warning,
+  };
+
+  const emitter = emitters[type] || toast[type];
+  if (typeof emitter === 'function') {
+    emitter(message);
+  }
+};
+
+installAdminToastDedup();
+
+const isAdminEndpoint = (endpoint = '') => {
+  const normalizedEndpoint = String(endpoint).toLowerCase();
+  return normalizedEndpoint.includes('/admin') || normalizedEndpoint.includes('/api/admin');
+};
+
+const showAdminApiToast = (endpoint, response) => {
+  if (!isAdminEndpoint(endpoint)) return response;
+
+  if (response?.success === true) {
+    emitCentralizedToast('success', response?.message || 'Success');
+  }
+
+  if (response?.success === false) {
+    emitCentralizedToast('error', response?.message || 'Request failed');
+  }
+
+  return response;
+};
 
 // Centralized endpoints
 export const API_ENDPOINTS = {
@@ -93,11 +189,12 @@ export const API_ENDPOINTS = {
   GET_TEACHER_CREDENTIALS: '/api/teachers/credentials',
   UPDATE_TEACHER_CREDENTIALS: (id) => `/api/teachers/credentials/${id}`,
   // Income endpoints
-  GET_ALL_INCOME: '/admin/income/getAllIncome',
-  ADD_INCOME: '/admin/income/createIncome',
-  GET_INCOME_BY_ID: (id) => `/admin/income/getSingleIncome/${id}`,  
-  UPDATE_INCOME: (id) => `/admin/income/updateIncome/${id}`,
-  DELETE_INCOME: (id) => `/admin/income/deleteIncome/${id}`,
+  GET_ALL_INCOME: '/api/admin/getAllIncome',
+  ADD_INCOME: '/api/admin/createIncome',
+  GET_INCOME_BY_ID: (id) => `/api/admin/getSingleIncome/${id}`,
+  UPDATE_INCOME: (id) => `/api/admin/updateIncome/${id}`,
+  DELETE_INCOME: (id) => `/api/admin/deleteIncome/${id}`,
+  GET_INCOME_SUMMARY: '/api/admin/income-summary',
   
   // Accountant Income endpoints
   ADD_ACCOUNTANT_INCOME: '/api/accountant/income',
@@ -132,11 +229,12 @@ export const API_ENDPOINTS = {
   GET_ASSIGNED_FEES_BY_CLASS: (class_section_id) => `/api/accountant/assigned-fees/${class_section_id}`,
 
   // Expense endpoints
-  GET_ALL_EXPENSE: '/admin/expense/getAllExpense',
-  ADD_EXPENSE: '/admin/expense/createExpense',
-  GET_EXPENSE_BY_ID: (id) => `/admin/expense/getSingleExpense/${id}`,  
-  UPDATE_EXPENSE: (id) => `/admin/expense/updateExpense/${id}`,
-  DELETE_EXPENSE: (id) => `/admin/expense/deleteExpense/${id}`,
+  GET_ALL_EXPENSE: '/api/admin/getAllExpense',
+  ADD_EXPENSE: '/api/admin/createExpense',
+  GET_EXPENSE_BY_ID: (id) => `/api/admin/getSingleExpense/${id}`,
+  UPDATE_EXPENSE: (id) => `/api/admin/updateExpense/${id}`,
+  DELETE_EXPENSE: (id) => `/api/admin/deleteExpense/${id}`,
+  GET_EXPENSE_SUMMARY: '/api/admin/expense-summary',
   // Subject endpoints
   GET_ALL_SUBJECTS: '/admin/Subject/getAllSubjects',
   CREATE_SUBJECT: '/admin/Subject/createSubject',
@@ -401,7 +499,7 @@ export const authorizedPostFormData = async (endpoint, formData) => {
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data;
+  return showAdminApiToast(endpoint, response.data);
 };
 
 // Upload class resource
@@ -438,7 +536,7 @@ export const authorizedPost = async (endpoint, data) => {
       'Content-Type': 'application/json',
     },
   });
-  return response.data;
+  return showAdminApiToast(endpoint, response.data);
 };
 
 // Reusable authorized PUT request
@@ -450,7 +548,7 @@ export const authorizedPut = async (endpoint, data) => {
       'Content-Type': 'application/json',
     },
   });
-  return response.data;
+  return showAdminApiToast(endpoint, response.data);
 };
 
 // Reusable authorized PATCH request
@@ -462,7 +560,7 @@ export const authorizedPatch = async (endpoint, data) => {
       'Content-Type': 'application/json',
     },
   });
-  return response.data;
+  return showAdminApiToast(endpoint, response.data);
 };
 
 // Reusable authorized PUT request with FormData (for file uploads)
@@ -474,7 +572,7 @@ export const authorizedPutFormData = async (endpoint, formData) => {
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data;
+  return showAdminApiToast(endpoint, response.data);
 };
 
 // Reusable authorized DELETE request
@@ -486,7 +584,7 @@ export const authorizedDelete = async (endpoint) => {
       'Content-Type': 'application/json',
     },
   });
-  return response.data;
+  return showAdminApiToast(endpoint, response.data);
 };
 
 // Login function
@@ -701,6 +799,16 @@ export const getAllIncome = async () => {
   return authorizedGet(API_ENDPOINTS.GET_ALL_INCOME);
 };
 
+// get income by id
+export const getIncomeById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_INCOME_BY_ID(id));
+};
+
+// get income summary
+export const getIncomeSummary = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_INCOME_SUMMARY);
+};
+
 // update income
 export const updateIncome = async (id, data) => {
   return authorizedPut(API_ENDPOINTS.UPDATE_INCOME(id), data);
@@ -849,6 +957,16 @@ export const deleteIncome = async (id) => {
 //get all expense
 export const getAllExpense = async () => {
   return authorizedGet(API_ENDPOINTS.GET_ALL_EXPENSE);
+};
+
+// get expense by id
+export const getExpenseById = async (id) => {
+  return authorizedGet(API_ENDPOINTS.GET_EXPENSE_BY_ID(id));
+};
+
+// get expense summary
+export const getExpenseSummary = async () => {
+  return authorizedGet(API_ENDPOINTS.GET_EXPENSE_SUMMARY);
 };
 // update expense
 export const updateExpense = async (id, data) => {

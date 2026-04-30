@@ -107,10 +107,21 @@ const DataTable = ({
     return filteredData.slice(start, start + itemsPerPage);
   };
 
-  const handleViewClick = (item) => {
-    setSelectedItem(item);
-    setViewModalOpen(true);
-    if (onView) onView(item);
+  const handleViewClick = async (item) => {
+    try {
+      if (onView) {
+        const viewedItem = await onView(item);
+        setSelectedItem(viewedItem || item);
+      } else {
+        setSelectedItem(item);
+      }
+    } catch (error) {
+      console.error('View error:', error);
+      setSelectedItem(item);
+      toast.error('Failed to load details');
+    } finally {
+      setViewModalOpen(true);
+    }
   };
 
   const handleEditClick = (item) => {
@@ -329,7 +340,7 @@ const DataTable = ({
               </button>
 
               {isExportDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] min-w-[150px]">
+                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-9999 min-w-37.5">
                   <button
                     onClick={() => handleExport('pdf')}
                     className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100 first:rounded-t-lg"
@@ -500,10 +511,10 @@ const DataTable = ({
       {/* Full Page Modals */}
       {/* Add Modal */}
       {isAddModalOpen && onAdd && createPortal(
-        <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-9998 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
-            <div className="flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
+            <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
                   <UserPlus className="w-5 h-5 text-violet-600" />
@@ -528,10 +539,10 @@ const DataTable = ({
 
       {/* Edit Modal */}
       {isEditModalOpen && editItem && onEdit && createPortal(
-        <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-9998 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
-            <div className="flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
+            <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
                   <Edit className="w-5 h-5 text-violet-600" />
@@ -556,10 +567,10 @@ const DataTable = ({
 
       {/* View Modal */}
       {isViewModalOpen && selectedItem && createPortal(
-        <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-9998 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" ref={printRef}>
             {/* Modal Header */}
-            <div className="flex-shrink-0 bg-gradient-to-r from-violet-600 to-violet-700 px-6 py-4 flex items-center justify-between">
+            <div className="shrink-0 bg-linear-to-r from-violet-600 to-violet-700 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                   <Eye className="w-5 h-5 text-white" />
@@ -605,14 +616,10 @@ const DataTable = ({
                       </div>
                       <div className="md:col-span-2">
                         <div className="text-sm text-gray-900">
-                          {column.render && selectedItem[column.key] ?
-                            (typeof column.render(selectedItem[column.key], selectedItem) === 'string' ?
-                              column.render(selectedItem[column.key], selectedItem) :
-                              String(selectedItem[column.key])
-                            ) :
-                            (selectedItem[column.key] || 'N/A')
-                          }
-                        </div>
+                                {column.render
+                                  ? column.render(selectedItem[column.key], selectedItem)
+                                  : (selectedItem[column.key] || 'N/A')}
+                              </div>
                       </div>
                     </div>
                   </div>
@@ -626,7 +633,7 @@ const DataTable = ({
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && deleteItem && createPortal(
-        <div className="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-9998 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-md p-6 sm:p-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">

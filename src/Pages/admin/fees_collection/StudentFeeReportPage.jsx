@@ -1,10 +1,10 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useEffect, useState } from "react";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import Modal from "../../../components/comman_components/Modal";
-import { FileText, Search, Users, AlertCircle, X, Eye, IndianRupee, Calendar, CheckCircle, Clock, XCircle } from "lucide-react";
+import { FileText, Search, Users, AlertCircle, Eye, CheckCircle, XCircle } from "lucide-react";
 import {
   getAllClassesDropdown,
   getStudentsByClass,
@@ -25,10 +25,164 @@ const StudentFeeReport = () => {
   const [feeDetails, setFeeDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // Helper function to safely format currency
   const formatCurrency = (value) => {
     const num = Number(value);
-    return isNaN(num) ? "0.00" : num.toFixed(2);
+    return Number.isFinite(num) ? num.toFixed(2) : "0.00";
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "N/A";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "N/A";
+    return parsed.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const getInstallmentAmount = (installment, totalAmount) => {
+    if (installment?.fixed_amount !== null && installment?.fixed_amount !== undefined) {
+      return Number(installment.fixed_amount) || 0;
+    }
+    if (installment?.invoice?.net_amount) {
+      return Number(installment.invoice.net_amount) || 0;
+    }
+    const base = Number(totalAmount) || 0;
+    const pct = Number(installment?.percentage) || 0;
+    return base && pct ? (base * pct) / 100 : 0;
+  };
+
+  const buildInvoiceHtml = ({ student, feeStructure, installment, invoice, totalAmount }) => {
+    const invoiceNumber =
+      invoice?.invoice_number ||
+      invoice?.invoice_no ||
+      installment?.invoice_number ||
+      installment?.invoice_no ||
+      `INV-${installment?.installment_number || ""}`;
+    const statusLabel = String(installment?.status || "").toLowerCase() === "paid" ? "Paid" : "Unpaid";
+    const installmentAmount = getInstallmentAmount(installment, totalAmount);
+
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Invoice ${escapeHtml(invoiceNumber)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+      h1 { font-size: 20px; margin-bottom: 4px; }
+      h2 { font-size: 16px; margin: 24px 0 8px; }
+      .muted { color: #6b7280; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 13px; }
+      th { background: #f9fafb; }
+      .row { display: flex; gap: 16px; flex-wrap: wrap; }
+      .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; flex: 1 1 260px; }
+    </style>
+  </head>
+  <body>
+    <h1>Fee Invoice</h1>
+    <div class="muted">Generated on ${escapeHtml(formatDate(invoice?.generated_at))}</div>
+
+    <div class="row">
+      <div class="card">
+        <h2>Student Details</h2>
+        <div><strong>Name:</strong> ${escapeHtml(student?.name || "")}</div>
+        <div><strong>Class:</strong> ${escapeHtml(student?.class || "")}</div>
+        <div><strong>Email:</strong> ${escapeHtml(student?.email || "")}</div>
+        <div><strong>Phone:</strong> ${escapeHtml(student?.phone || "")}</div>
+      </div>
+      <div class="card">
+        <h2>Invoice Details</h2>
+        <div><strong>Invoice No:</strong> ${escapeHtml(invoiceNumber)}</div>
+        <div><strong>Status:</strong> ${escapeHtml(statusLabel)}</div>
+        <div><strong>Due Date:</strong> ${escapeHtml(formatDate(installment?.due_date || invoice?.due_date))}</div>
+        <div><strong>Structure:</strong> ${escapeHtml(feeStructure?.name || "")}</div>
+      </div>
+    </div>
+
+    <h2>Installment</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Name</th>
+          <th>Start Date</th>
+          <th>Percentage</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>${escapeHtml(installment?.installment_number || "-")}</td>
+          <td>${escapeHtml(installment?.name || "-")}</td>
+          <td>${escapeHtml(formatDate(installment?.start_date || "-"))}</td>
+          <td>${escapeHtml(String(installment?.percentage ?? 0))}%</td>
+          <td>₹${escapeHtml(formatCurrency(installmentAmount))}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Amounts</h2>
+    <table>
+      <tbody>
+        <tr>
+          <th>Gross Amount</th>
+          <td>₹${escapeHtml(formatCurrency(invoice?.gross_amount ?? installmentAmount))}</td>
+        </tr>
+        <tr>
+          <th>Concession</th>
+          <td>₹${escapeHtml(formatCurrency(invoice?.concession_amount ?? 0))}</td>
+        </tr>
+        <tr>
+          <th>Net Amount</th>
+          <td>₹${escapeHtml(formatCurrency(invoice?.net_amount ?? installmentAmount))}</td>
+        </tr>
+        <tr>
+          <th>Fine Amount</th>
+          <td>₹${escapeHtml(formatCurrency(invoice?.fine_amount ?? 0))}</td>
+        </tr>
+        <tr>
+          <th>Paid Amount</th>
+          <td>₹${escapeHtml(formatCurrency(invoice?.paid_amount ?? 0))}</td>
+        </tr>
+        <tr>
+          <th>Balance Amount</th>
+          <td>₹${escapeHtml(formatCurrency(invoice?.balance_amount ?? 0))}</td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>`;
+  };
+
+  const handleDownloadInvoice = (installment) => {
+    if (!feeDetails) return;
+    const student = feeDetails.student_info || {};
+    const feeStructure = feeDetails.feeStructure || {};
+    const totalAmount = feeStructure.total_amount || 0;
+    const invoice = installment?.invoice || {};
+    const html = buildInvoiceHtml({ student, feeStructure, installment, invoice, totalAmount });
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `invoice-${student.name || "student"}-${installment?.installment_number || ""}.html`
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
@@ -121,7 +275,7 @@ const StudentFeeReport = () => {
     setError("");
 
     try {
-      const response = await getStudentCompleteFeeDetails(student.id);
+      const response = await getStudentCompleteFeeDetails(student.id, student);
       
       if (response?.data) {
         setFeeDetails(response.data);
@@ -146,19 +300,19 @@ const StudentFeeReport = () => {
   };
 
   const getStatusBadge = (status) => {
+    const normalized = String(status || "").toLowerCase() === "paid" ? "paid" : "unpaid";
     const statusConfig = {
-      paid: { color: "bg-green-100 text-green-800", icon: CheckCircle },
-      pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
-      overdue: { color: "bg-red-100 text-red-800", icon: XCircle },
+      paid: { color: "bg-green-100 text-green-800", icon: CheckCircle, label: "Paid" },
+      unpaid: { color: "bg-yellow-100 text-yellow-800", icon: XCircle, label: "Unpaid" },
     };
-    
-    const config = statusConfig[status] || statusConfig.pending;
+
+    const config = statusConfig[normalized];
     const Icon = config.icon;
     
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
         <Icon className="w-3 h-3" />
-        {status}
+        {config.label}
       </span>
     );
   };
@@ -231,19 +385,6 @@ const StudentFeeReport = () => {
                 )}
               </div>
 
-              {classInfo && (
-                <div className="mt-4 p-4 bg-violet-50 border border-violet-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-violet-700">
-                    <Users className="w-5 h-5" />
-                    <span className="font-semibold">
-                      {classInfo.class_name} - {classInfo.section_name}
-                    </span>
-                    <span className="ml-auto text-sm">
-                      Total Students: {students.length}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Students List */}
@@ -381,203 +522,98 @@ const StudentFeeReport = () => {
                   {feeDetails.student_info && (
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">Student Information</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500">Name</p>
-                          <p className="font-medium text-gray-900">{feeDetails.student_info.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Admission Number</p>
-                          <p className="font-medium text-gray-900">{feeDetails.student_info.admission_number}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Class</p>
-                          <p className="font-medium text-gray-900">{feeDetails.student_info.class}</p>
+                          <p className="font-medium text-gray-900">{feeDetails.student_info.name || "-"}</p>
                         </div>
                         <div>
                           <p className="text-gray-500">Email</p>
-                          <p className="font-medium text-gray-900">{feeDetails.student_info.email}</p>
+                          <p className="font-medium text-gray-900">{feeDetails.student_info.email || "-"}</p>
                         </div>
                         <div>
                           <p className="text-gray-500">Phone</p>
-                          <p className="font-medium text-gray-900">{feeDetails.student_info.phone}</p>
+                          <p className="font-medium text-gray-900">{feeDetails.student_info.phone || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Class</p>
+                          <p className="font-medium text-gray-900">{feeDetails.student_info.class || "-"}</p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Summary */}
-                  {feeDetails.summary && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Fee Summary</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                          <p className="text-blue-600 text-sm mb-1">Total Assigned</p>
-                          <p className="text-2xl font-bold text-blue-900">₹{feeDetails.summary.total_assigned_fee?.toFixed(2)}</p>
+                  {/* Fee Structure Details */}
+                  {feeDetails.feeStructure && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Fee Structure Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-500">Name</p>
+                          <p className="font-medium text-gray-900">{feeDetails.feeStructure.name || "-"}</p>
                         </div>
-                        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                          <p className="text-green-600 text-sm mb-1">Total Paid</p>
-                          <p className="text-2xl font-bold text-green-900">₹{feeDetails.summary.total_paid_fee?.toFixed(2)}</p>
+                        <div>
+                          <p className="text-gray-500">Structure Type</p>
+                          <p className="font-medium text-gray-900 capitalize">{feeDetails.feeStructure.structure_type || "-"}</p>
                         </div>
-                        <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                          <p className="text-red-600 text-sm mb-1">Total Due</p>
-                          <p className="text-2xl font-bold text-red-900">₹{feeDetails.summary.total_due_fee?.toFixed(2)}</p>
-                        </div>
-                        <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                          <p className="text-purple-600 text-sm mb-1">Total Discount</p>
-                          <p className="text-2xl font-bold text-purple-900">₹{feeDetails.summary.total_discount?.toFixed(2)}</p>
+                        <div>
+                          <p className="text-gray-500">Total Amount</p>
+                          <p className="font-medium text-gray-900">₹{formatCurrency(feeDetails.feeStructure.total_amount)}</p>
                         </div>
                       </div>
-
-                      {/* Installments Summary */}
-                      {feeDetails.summary.installments_summary && (
-                        <div className="mt-4 bg-gray-50 rounded-lg p-4">
-                          <p className="font-medium text-gray-700 mb-2">Installments Status</p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            <div>
-                              <p className="text-gray-500">Total</p>
-                              <p className="font-semibold text-gray-900">{feeDetails.summary.installments_summary.total_installments}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Paid</p>
-                              <p className="font-semibold text-green-600">{feeDetails.summary.installments_summary.paid_installments}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Pending</p>
-                              <p className="font-semibold text-yellow-600">{feeDetails.summary.installments_summary.pending_installments}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Overdue</p>
-                              <p className="font-semibold text-red-600">{feeDetails.summary.installments_summary.overdue_installments}</p>
-                            </div>
-                          </div>
-                        </div>
+                      {feeDetails.feeStructure.description && (
+                        <p className="text-sm text-gray-600 mt-3">{feeDetails.feeStructure.description}</p>
                       )}
                     </div>
                   )}
 
-                  {/* Fees by Academic Year */}
-                  {feeDetails.fees_by_academic_year && feeDetails.fees_by_academic_year.length > 0 && (
+                  {/* Installment Schedule */}
+                  {feeDetails.installments && feeDetails.installments.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Academic Year Wise Details</h3>
-                      {feeDetails.fees_by_academic_year.map((yearData, yearIndex) => (
-                        <div key={yearIndex} className="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                          <div className="bg-linear-to-r from-violet-50 to-purple-50 px-4 py-3 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold text-gray-900">{yearData.academic_year}</h4>
-                              <div className="flex gap-4 text-sm">
-                                <span className="text-gray-600">Assigned: <span className="font-semibold">₹{formatCurrency(yearData.total_assigned)}</span></span>
-                                <span className="text-green-600">Paid: <span className="font-semibold">₹{formatCurrency(yearData.total_paid)}</span></span>
-                                <span className="text-red-600">Due: <span className="font-semibold">₹{formatCurrency(yearData.total_due)}</span></span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Fee Structures */}
-                          {yearData.fee_structures && yearData.fee_structures.map((feeStructure, fsIndex) => (
-                            <div key={fsIndex} className="p-4 border-b border-gray-100 last:border-b-0">
-                              <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h5 className="font-semibold text-gray-800">{feeStructure.fee_structure?.name}</h5>
-                                  {getStatusBadge(feeStructure.status)}
-                                </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                                  <div>
-                                    <p className="text-gray-500">Original Amount</p>
-                                    <p className="font-medium text-gray-900">₹{formatCurrency(feeStructure.original_amount)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-gray-500">Discount</p>
-                                    <p className="font-medium text-purple-600">₹{formatCurrency(feeStructure.discount_amount)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-gray-500">Final Amount</p>
-                                    <p className="font-medium text-blue-600">₹{formatCurrency(feeStructure.final_amount)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-gray-500">Due Date</p>
-                                    <p className="font-medium text-gray-900 flex items-center gap-1">
-                                      <Calendar className="w-3 h-3" />
-                                      {feeStructure.fee_structure?.due_date 
-                                        ? new Date(feeStructure.fee_structure.due_date).toLocaleDateString('en-IN', {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric'
-                                          })
-                                        : 'N/A'
-                                      }
-                                    </p>
-                                  </div>
-                                </div>
-                                {feeStructure.discount_reason && (
-                                  <p className="text-sm text-gray-600 mt-2">
-                                    <span className="font-medium">Discount Reason:</span> {feeStructure.discount_reason}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Installments */}
-                              {feeStructure.installments && feeStructure.installments.length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-sm font-medium text-gray-700 mb-2">Installments</p>
-                                  <div className="overflow-x-auto">
-                                    <table className="min-w-full text-sm">
-                                      <thead className="bg-gray-50">
-                                        <tr>
-                                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">No.</th>
-                                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Amount</th>
-                                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Due Date</th>
-                                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Paid Amount</th>
-                                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Payment Date</th>
-                                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Late Fee</th>
-                                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="bg-white divide-y divide-gray-100">
-                                        {feeStructure.installments.map((installment, instIndex) => (
-                                          <tr key={instIndex} className="hover:bg-gray-50">
-                                            <td className="px-3 py-2 text-gray-900">{installment.installment_number}</td>
-                                            <td className="px-3 py-2 text-gray-900">₹{formatCurrency(installment.amount)}</td>
-                                            <td className="px-3 py-2 text-gray-700">
-                                              {installment.due_date 
-                                                ? new Date(installment.due_date).toLocaleDateString('en-IN', {
-                                                    year: 'numeric',
-                                                    month: 'short',
-                                                    day: 'numeric'
-                                                  })
-                                                : 'N/A'
-                                              }
-                                            </td>
-                                            <td className="px-3 py-2 font-medium text-green-600">
-                                              ₹{formatCurrency(installment.paid_amount)}
-                                            </td>
-                                            <td className="px-3 py-2 text-gray-700">
-                                              {installment.payment_date 
-                                                ? new Date(installment.payment_date).toLocaleDateString('en-IN', {
-                                                    year: 'numeric',
-                                                    month: 'short',
-                                                    day: 'numeric'
-                                                  })
-                                                : '-'
-                                              }
-                                            </td>
-                                            <td className="px-3 py-2 text-red-600">
-                                              {installment.late_fee_applied > 0 ? `₹${formatCurrency(installment.late_fee_applied)}` : "-"}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                              {getStatusBadge(installment.status)}
-                                            </td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ))}
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Installment Schedule</h3>
+                      <div className="overflow-x-auto rounded-lg border border-gray-200">
+                        <table className="min-w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">%</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-100">
+                            {feeDetails.installments.map((installment) => (
+                              <tr key={installment.id || installment.installment_number} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-gray-900">{installment.installment_number || "-"}</td>
+                                <td className="px-4 py-3 text-gray-900">{installment.name || `Installment ${installment.installment_number || ""}`}</td>
+                                <td className="px-4 py-3 text-gray-700">{formatDate(installment.start_date)}</td>
+                                <td className="px-4 py-3 text-gray-700">{formatDate(installment.due_date)}</td>
+                                <td className="px-4 py-3 text-gray-700">{installment.percentage ?? 0}%</td>
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                  ₹{formatCurrency(
+                                    getInstallmentAmount(installment, feeDetails.feeStructure?.total_amount)
+                                  )}
+                                </td>
+                                <td className="px-4 py-3">{getStatusBadge(installment.status)}</td>
+                                <td className="px-4 py-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadInvoice(installment)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    Download
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </div>

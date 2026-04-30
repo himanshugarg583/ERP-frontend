@@ -58,7 +58,8 @@ import StudentResult from './Pages/students/StudentResult';
 import StudentExaminationSchedule from './Pages/students/StudentExaminationSchedule';
 import StudentProgress from './Pages/students/StudentProgress';
 import StudentTransport from "./Pages/students/StudentTransport";
-import StudentFees from "./Pages/students/StudentFees";
+import StudentInstallment from "./Pages/students/StudentInstallment";
+import StudentFeeAssign from "./Pages/students/StudentFeeAssign";
 import StudentLeave from "./Pages/students/StudentLeave";
 import StudentNotice from "./Pages/students/StudentNotice";
 import StudentProfile from "./Pages/students/StudentProfile";
@@ -243,7 +244,9 @@ const routes = {
     { path: "/student/examination-schedule", element: <StudentExaminationSchedule /> },
     { path: "/student/progress", element: <StudentProgress /> },
     { path: "/student/transport", element: <StudentTransport /> },
-    { path: "/student/fees", element: <StudentFees /> },
+    { path: "/student/fees", element: <StudentInstallment /> },
+    { path: "/student/fees/installment", element: <StudentInstallment /> },
+    { path: "/student/fees/assign", element: <StudentFeeAssign /> },
     { path: "/student/leave", element: <StudentLeave /> },
     { path: "/student/notice", element: <StudentNotice /> },
     { path: "/student/profile", element: <StudentProfile /> },

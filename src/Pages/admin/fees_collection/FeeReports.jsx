@@ -3,34 +3,62 @@ import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import PageHeader from "../../../components/comman_components/PageHeader";
-import { BarChart3, AlertCircle, User, Calendar, DollarSign, Clock, FileText } from "lucide-react";
-import { getOverdueInstallments } from "../../../helper/requests-method/feeV1Api";
+import ReusableTable from "../../../components/comman_components/ReusableTable";
+import { ClipboardList, Search } from "lucide-react";
+import {
+  getAllClassesDropdown,
+  getClassWiseDues,
+} from "../../../helper/requests-method/feeV1Api";
 import { toast } from "react-toastify";
 
 const FeeReportsComponent = () => {
-  const [overdueData, setOverdueData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState(null);
+  const [classSections, setClassSections] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [classDuesData, setClassDuesData] = useState(null);
+  const [classDuesLoading, setClassDuesLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("");
 
   useEffect(() => {
-    fetchOverdueInstallments();
+    fetchClassSections();
   }, []);
 
-  const fetchOverdueInstallments = async () => {
-    setLoading(true);
+  const fetchClassSections = async () => {
     try {
-      const response = await getOverdueInstallments();
-      if (response.success && response.data) {
-        setOverdueData(response.data);
-        setPagination(response.data.pagination);
+      const response = await getAllClassesDropdown();
+      const classes =
+        response?.data?.data ||
+        response?.data?.classSections ||
+        response?.data ||
+        response ||
+        [];
+      setClassSections(Array.isArray(classes) ? classes : []);
+    } catch (error) {
+      console.error("Failed to fetch class sections:", error);
+      toast.error("Failed to load class sections");
+    }
+  };
+
+  const handleSearchClassDues = async () => {
+    if (!selectedClassId) {
+      toast.error("Please select class/section");
+      return;
+    }
+
+    setClassDuesLoading(true);
+    try {
+      const response = await getClassWiseDues(selectedClassId);
+      if (response?.success && response?.data) {
+        setClassDuesData(response.data);
       } else {
-        toast.error(response.message || 'Failed to fetch overdue installments');
+        setClassDuesData(null);
+        toast.error(response?.message || "Failed to fetch class dues");
       }
     } catch (error) {
-      console.error('Failed to fetch overdue installments:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch overdue installments');
+      console.error("Failed to fetch class dues:", error);
+      toast.error(error?.response?.data?.message || "Failed to fetch class dues");
+      setClassDuesData(null);
     } finally {
-      setLoading(false);
+      setClassDuesLoading(false);
     }
   };
 
@@ -47,31 +75,58 @@ const FeeReportsComponent = () => {
     });
   };
 
-  const calculateDaysOverdue = (dueDate) => {
-    if (!dueDate) return 0;
-    const due = new Date(dueDate);
-    const today = new Date();
-    const diffTime = today - due;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
+  const studentsData = Array.isArray(classDuesData)
+    ? classDuesData
+    : classDuesData?.students || classDuesData?.data || [];
 
-  // Calculate summary statistics
-  const calculateSummary = () => {
-    if (!overdueData?.overdue_installments) return { total: 0, totalAmount: 0, totalLateFee: 0 };
-    
-    const total = overdueData.overdue_installments.length;
-    const totalAmount = overdueData.overdue_installments.reduce((sum, item) => {
-      return sum + parseFloat(item.amount || 0) - parseFloat(item.paid_amount || 0);
-    }, 0);
-    const totalLateFee = overdueData.overdue_installments.reduce((sum, item) => {
-      return sum + parseFloat(item.late_fee_applied || 0);
-    }, 0);
+  const tableRows = studentsData.map((student, index) => {
+    const invoices = Array.isArray(student?.invoices) ? student.invoices : [];
+    const invoiceLabels = invoices.map((invoice) => invoice.invoice_number || invoice.invoice_no || invoice.id);
+    const primaryInvoice = invoiceLabels[0] || "N/A";
+    const dueAmount = invoices.reduce((sum, invoice) => sum + Number(invoice.balance_amount || 0), 0);
+    const invoiceDetails = invoices.length
+      ? invoices
+          .map(
+            (invoice) =>
+              `${invoice.invoice_number || invoice.invoice_no || invoice.id} | Due: ${formatDate(
+                invoice.due_date
+              )} | Balance: ${formatCurrency(invoice.balance_amount)} | Status: ${invoice.status || "pending"}`
+          )
+          .join("\n")
+      : "N/A";
 
-    return { total, totalAmount, totalLateFee };
-  };
+    return {
+      id: student.id || `student-${index + 1}`,
+      serial_no: index + 1,
+      student_name: student.name || "N/A",
+      roll_number: student.roll_number || "N/A",
+      invoice_id: primaryInvoice,
+      due_amount: formatCurrency(dueAmount),
+      invoice_count: student.invoice_count || 0,
+      phone_no: student.phone_no || "N/A",
+      email: student.email || "N/A",
+      all_invoices: invoiceLabels.length ? invoiceLabels.join(", ") : "N/A",
+      invoice_details: invoiceDetails,
+      invoices,
+    };
+  });
 
-  const summary = calculateSummary();
+  const tableColumns = [
+    { key: "serial_no", header: "S.No" },
+    { key: "student_name", header: "Student Name" },
+    { key: "roll_number", header: "Roll Number" },
+    { key: "invoice_id", header: "Invoice ID" },
+    { key: "due_amount", header: "Due Amount" },
+    { key: "invoice_count", header: "Invoices" },
+    { key: "phone_no", header: "Phone" },
+    { key: "email", header: "Email" },
+    { key: "all_invoices", header: "All Invoice IDs" },
+    { key: "invoice_details", header: "Invoice Details" },
+  ];
+
+  const displayColumns = tableColumns.filter(
+    (column) => !["email", "all_invoices", "invoice_details"].includes(column.key)
+  );
 
   return (
     <div className="bg-gray-100 flex">
@@ -92,197 +147,82 @@ const FeeReportsComponent = () => {
             <div className="mb-6">
               <PageHeader pageheading="Fee Management" Subheading="Fee Reports" />
             </div>
-
-            {/* Summary Cards */}
-            {overdueData && overdueData.overdue_installments && overdueData.overdue_installments.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Overdue</p>
-                      <p className="text-3xl font-bold text-red-600">{summary.total}</p>
-                    </div>
-                    <div className="bg-red-100 p-3 rounded-full">
-                      <AlertCircle className="w-8 h-8 text-red-600" />
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              <button
+                type="button"
+                onClick={() => setActiveTab("due-installment")}
+                className={`flex items-center gap-4 rounded-xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  activeTab === "due-installment"
+                    ? "border-violet-300 bg-violet-50"
+                    : "border-violet-200 bg-white"
+                }`}
+              >
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+                  <ClipboardList className="h-6 w-6" />
+                </span>
+                <span>
+                  <span className="block text-lg font-semibold text-gray-900">Due Installment</span>
+                  <span className="block text-sm text-gray-500">class section wise</span>
+                </span>
+              </button>
+            </div>
+            <div className="space-y-6">
+              {activeTab !== "due-installment" && (
+                <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-500">
+                  Select a report to continue.
                 </div>
+              )}
 
-                <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Overdue Amount</p>
-                      <p className="text-3xl font-bold text-orange-600">{formatCurrency(summary.totalAmount)}</p>
-                    </div>
-                    <div className="bg-orange-100 p-3 rounded-full">
-                      <DollarSign className="w-8 h-8 text-orange-600" />
-                    </div>
+              {activeTab === "due-installment" && (
+                <>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Class/Section <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedClassId}
+                      onChange={(e) => setSelectedClassId(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    >
+                      <option value="">-- Select Class --</option>
+                      {classSections.map((cs) => (
+                        <option key={cs.id} value={cs.id}>
+                          {cs.class_name} - {cs.section_name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-yellow-200 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Late Fee</p>
-                      <p className="text-3xl font-bold text-yellow-600">{formatCurrency(summary.totalLateFee)}</p>
-                    </div>
-                    <div className="bg-yellow-100 p-3 rounded-full">
-                      <Clock className="w-8 h-8 text-yellow-600" />
-                    </div>
+                  <div>
+                    <button
+                      onClick={handleSearchClassDues}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 font-medium transition-colors cursor-pointer"
+                    >
+                      <Search className="w-4 h-4" />
+                      Search
+                    </button>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Overdue Installments Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="bg-gradient-to-r from-red-600 to-orange-600 p-6 rounded-t-xl">
-                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <AlertCircle className="w-6 h-6" />
-                  Overdue Installments
-                </h3>
-                <p className="text-red-50 mt-1">List of all pending installments that have crossed their due date</p>
-              </div>
+              <ReusableTable
+                title="Class Dues Report"
+                columns={tableColumns}
+                displayColumns={displayColumns}
+                apiFunction={async () => ({ success: true })}
+                initialData={tableRows}
+                viewApiFunction={async (item) => item}
+                searchPlaceholder="Search by student name, roll number or invoice..."
+                exportFileName="class-dues-report"
+                showActions={{ add: false, edit: false, delete: false, view: true }}
+              />
 
-              <div className="p-6">
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
-                    <p className="text-gray-600">Loading overdue installments...</p>
-                  </div>
-                ) : overdueData && overdueData.overdue_installments && overdueData.overdue_installments.length > 0 ? (
-                  <>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Student Details
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Academic Year
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Installment
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Amount Details
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Due Date
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Days Overdue
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Late Fee
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                              Status
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {overdueData.overdue_installments.map((item, index) => {
-                            const student = item.studentFee?.student;
-                            const user = student?.User;
-                            const classSection = student?.ClassSection;
-                            const daysOverdue = calculateDaysOverdue(item.due_date);
-                            const remainingAmount = parseFloat(item.amount || 0) - parseFloat(item.paid_amount || 0);
-
-                            return (
-                              <tr key={item.id || index} className="hover:bg-gray-50 transition-colors border-l-4 border-l-red-500">
-                                <td className="px-4 py-4">
-                                  <div className="flex items-start gap-2">
-                                    <div className="bg-indigo-100 p-2 rounded-full">
-                                      <User className="w-4 h-4 text-indigo-600" />
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-semibold text-gray-900">{user?.name || 'N/A'}</p>
-                                      <p className="text-xs text-gray-500">{user?.email || ''}</p>
-                                      <p className="text-xs text-indigo-600 font-medium">
-                                        {classSection?.class_name} - {classSection?.section_name}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap">
-                                  <span className="text-sm text-gray-700">{item.studentFee?.academic_year || 'N/A'}</span>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-center">
-                                  <span className="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm font-bold text-gray-900">
-                                    #{item.installment_number}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-4">
-                                  <div className="space-y-1">
-                                    <div className="flex justify-between text-xs">
-                                      <span className="text-gray-500">Total:</span>
-                                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                      <span className="text-gray-500">Paid:</span>
-                                      <span className="font-medium text-green-600">{formatCurrency(item.paid_amount)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                      <span className="text-gray-500">Remaining:</span>
-                                      <span className="font-bold text-red-600">{formatCurrency(remainingAmount)}</span>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap">
-                                  <div className="flex items-center gap-1 text-sm text-red-600 font-medium">
-                                    <Calendar className="w-4 h-4" />
-                                    {formatDate(item.due_date)}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-center">
-                                  <span className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold">
-                                    {daysOverdue} days
-                                  </span>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap text-center">
-                                  <span className="text-sm font-bold text-red-600">{formatCurrency(item.late_fee_applied)}</span>
-                                </td>
-                                <td className="px-4 py-4 whitespace-nowrap">
-                                  <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium capitalize">
-                                    {item.status}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Pagination Info */}
-                    {pagination && (
-                      <div className="mt-6 bg-gray-50 px-6 py-4 rounded-lg border border-gray-200">
-                        <div className="flex items-center justify-between text-sm text-gray-600">
-                          <p>
-                            Showing page {pagination.current_page} of {pagination.total_pages} 
-                            ({pagination.total_records} total records)
-                          </p>
-                          <p>
-                            {pagination.per_page} records per page
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                      <BarChart3 className="w-8 h-8 text-green-600" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Overdue Installments</h3>
-                    <p className="text-gray-600 max-w-md mx-auto">
-                      Great! There are no overdue installments at the moment.
-                    </p>
-                  </div>
-                )}
-              </div>
+              {classDuesLoading && (
+                <div className="text-center text-gray-600 py-2">Loading class dues...</div>
+              )}
+                </>
+              )}
             </div>
           </div>
         </main>
