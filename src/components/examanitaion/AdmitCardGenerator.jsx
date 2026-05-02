@@ -13,7 +13,7 @@ import {
 } from '../../helper/requests-method/apiMethods';
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://erp-backend-1-svup.onrender.com';
 
 const getAuthToken = () => localStorage.getItem('authToken') || localStorage.getItem('token') || '';
 

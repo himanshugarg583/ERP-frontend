@@ -30,7 +30,7 @@ export const getOverdueInstallments = async () => {
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-const API_BASE_URL = 'http://localhost:5001'; // Backend base URL
+const API_BASE_URL = 'https://erp-backend-1-svup.onrender.com'; // Backend base URL
 const ADMIN_TOAST_SUPPRESS_WINDOW_MS = 800;
 
 const getAdminToastState = () => {
