@@ -3,6 +3,7 @@ import TeacherSidebar from './TeacherSidebar';
 import Header from '../../components/comman_components/Header';
 import { FaCloudUploadAlt, FaEdit, FaTrash, FaEye, FaPlus, FaSave, FaDownload } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { getDemoFileUrl } from '../../utils/assetUrls';
 import { 
   uploadTeacherSubjectResource, 
   getTeacherSubjectResources,
@@ -287,11 +288,11 @@ const TeacherAssignment = () => {
   const [viewingAssignment, setViewingAssignment] = useState(null);
   const studentSubmissions = {
     1: [
-      { name: "Amit", submittedAt: "2023-10-20T10:00:00", dueDate: "2023-10-22", fileUrl: "https://example.com/amit_math.pdf", fileName: "amit_math.pdf" },
-      { name: "Priya", submittedAt: "2023-10-21T15:30:00", dueDate: "2023-10-22", fileUrl: "https://example.com/priya_math.pdf", fileName: "priya_math.pdf" },
+      { name: "Amit", submittedAt: "2023-10-20T10:00:00", dueDate: "2023-10-22", fileUrl: getDemoFileUrl('amit_math.pdf'), fileName: "amit_math.pdf" },
+      { name: "Priya", submittedAt: "2023-10-21T15:30:00", dueDate: "2023-10-22", fileUrl: getDemoFileUrl('priya_math.pdf'), fileName: "priya_math.pdf" },
     ],
     2: [
-      { name: "Rohan", submittedAt: "2023-10-19T09:15:00", dueDate: "2023-10-20", fileUrl: "https://example.com/rohan_algebra.pdf", fileName: "rohan_algebra.pdf" },
+      { name: "Rohan", submittedAt: "2023-10-19T09:15:00", dueDate: "2023-10-20", fileUrl: getDemoFileUrl('rohan_algebra.pdf'), fileName: "rohan_algebra.pdf" },
       { name: "Sneha", submittedAt: "2023-10-21T12:00:00", dueDate: "2023-10-20" }, 
     ],
   };

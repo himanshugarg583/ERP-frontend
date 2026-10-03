@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
+import ReportHeading from "../../../components/comman_components/ReportHeading";
 import {
   fetchAllClassesForAttendance,
   getStudentReport,
@@ -11,7 +12,7 @@ import {
   getClassWiseStudentStats
 } from "../../../helper/requests-method/apiMethods";
 import { toast, ToastContainer } from 'react-toastify';
-import { FileText, Users, Key, GraduationCap, ArrowLeft, UserCheck, UserX, BarChart3 } from 'lucide-react';
+import { Users, GraduationCap, ArrowLeft, UserCheck, UserX, BarChart3 } from 'lucide-react';
 import StandardStatCard from '../../../components/comman_components/StandardStatCard';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -24,6 +25,24 @@ const StudentReports = () => {
   const [loading, setLoading] = useState(false);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
+
+  const reportTypeCards = [
+    {
+      id: "student-report",
+      title: "STUDENT REPORT",
+      subtitle: "Student Report",
+    },
+    {
+      id: "parent-report",
+      title: "PARENT REPORT",
+      subtitle: "Parent Report",
+    },
+    {
+      id: "student-credentials",
+      title: "STUDENT CREDENTIALS",
+      subtitle: "Student Credentials",
+    },
+  ];
 
   useEffect(() => {
     if (selectedReportType) {
@@ -421,52 +440,19 @@ const StudentReports = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                <motion.button
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleReportTypeClick('student-report')}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                    <FileText className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    Student Report
-                  </h3>
-                  <p className="text-sm text-slate-600">View detailed student information</p>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleReportTypeClick('parent-report')}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    Parent Report
-                  </h3>
-                  <p className="text-sm text-slate-600">View parent information by class</p>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleReportTypeClick('student-credentials')}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                    <Key className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    Student Credentials
-                  </h3>
-                  <p className="text-sm text-slate-600">View student login credentials</p>
-                </motion.button>
+                {reportTypeCards.map((card) => (
+                  <motion.button
+                    key={card.id}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleReportTypeClick(card.id)}
+                    className="text-left"
+                  >
+                    <ReportHeading mainheading={card.title} subhading={card.subtitle} />
+                  </motion.button>
+                ))}
               </motion.div>
             ) : (
               <div className="space-y-6">

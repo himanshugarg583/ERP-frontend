@@ -1,48 +1,25 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import Sidebar from './Accountant_Sidebar';
-import Header from './Accountant_Header';
-import { FaUser, FaIdCard, FaPhone, FaBuilding, FaCheckCircle, FaSave, FaTimes, FaLock, FaFileAlt } from 'react-icons/fa';
-import Accountant_EditableInput from './Accountant_EditableInput';
-import Accountant_EditButtons from './Accountant_EditButtons';
-import Accountant_ProfileImage from './Accountant_ProfileImage';
-import Accountant_Navigation from './Accountant_Navigation';
-import Accountant_DocumentCard from './Accountant_DocumentCard';
-import { getAccountantProfile } from '../../helper/requests-method/apiMethods';
-import { toast } from 'react-toastify';
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { getAccountantProfile, changeAccountantPassword } from "../../helper/requests-method/apiMethods";
+import { getRandomUserImage } from "../../utils/assetUrls";
+import ProfileDetail from "../../components/profile/ProfileDetail";
+import AccountantSidebar from "./Accountant_Sidebar";
 
 const AccountantProfile = () => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [activeSection, setActiveSection] = useState('personal');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
+    const [profile, setProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [profileData, setProfileData] = useState({
-        personal: {
-            fullName: '',
-            userId: '',
-            email: '',
-            phone: '',
-            gender: '',
-            dob: '',
-            profileImage: '',
-            accountStatus: '',
-        },
-        professional: {
-            role: '',
-            qualification: '',
-            joiningDate: '',
-            salary: '',
-        },
-        address: {
-            currentAddress: '',
-            permanentAddress: '',
-        },
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
     });
-    const [tempData, setTempData] = useState(profileData);
-    const [isEditing, setIsEditing] = useState({
-        personal: false,
-        professional: false,
-        address: false,
-        profileImage: false,
-    });
+    const [passwordErrors, setPasswordErrors] = useState({});
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
 
     // Fetch profile data on mount
     useEffect(() => {
@@ -50,40 +27,27 @@ const AccountantProfile = () => {
             try {
                 setIsLoading(true);
                 const response = await getAccountantProfile();
-                console.log('Profile API Response:', response);
-
                 const data = response?.data || response;
-
-                // Map API response to profile state
-                const mappedData = {
-                    personal: {
-                        fullName: data.personal_info?.name || '',
-                        userId: data.personal_info?.user_id || '',
-                        email: data.personal_info?.email || '',
-                        phone: data.personal_info?.mobile_no || '',
-                        gender: data.personal_info?.gender || '',
-                        dob: data.personal_info?.dob || '',
-                        profileImage: data.personal_info?.image || '',
-                        accountStatus: data.personal_info?.account_status || '',
-                    },
-                    professional: {
-                        role: data.professional_info?.role || '',
-                        qualification: data.professional_info?.qualification || '',
-                        joiningDate: data.professional_info?.joining_date || '',
-                        salary: data.professional_info?.salary || '',
-                    },
-                    address: {
-                        currentAddress: data.address_info?.current_address || '',
-                        permanentAddress: data.address_info?.permanent_address || '',
-                    },
+                const mappedProfile = {
+                    name: data.personal_info?.name || "",
+                    email: data.personal_info?.email || "",
+                    role: data.professional_info?.role || "accountant",
+                    userId: data.personal_info?.user_id || "",
+                    mobile_no: data.personal_info?.mobile_no || "",
+                    gender: data.personal_info?.gender || "",
+                    dob: data.personal_info?.dob || "",
+                    account_status: data.personal_info?.account_status || "",
+                    qualification: data.professional_info?.qualification || "",
+                    joining_date: data.professional_info?.joining_date || "",
+                    salary: data.professional_info?.salary || "",
+                    current_address: data.address_info?.current_address || "",
+                    permanent_address: data.address_info?.permanent_address || "",
+                    image: data.personal_info?.image || "",
                 };
-                
-                console.log('Mapped Data:', mappedData);
-                setProfileData(mappedData);
-                setTempData(mappedData);
+                setProfile(mappedProfile);
             } catch (error) {
-                console.error('Error fetching profile:', error);
-                toast.error('Failed to load profile data');
+                console.error("Error fetching profile:", error);
+                toast.error("Failed to load profile data");
             } finally {
                 setIsLoading(false);
             }
@@ -92,229 +56,328 @@ const AccountantProfile = () => {
         fetchProfileData();
     }, []);
 
-    const handleNavigationClick = (section) => {
-        setActiveSection(section ?? 'personal');
-        setIsEditing({ personal: false, professional: false, address: false, profileImage: false });
-    };
+    useEffect(() => {
+        const tab = searchParams.get("tab");
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
-    const handleEdit = (section) => {
-        setIsEditing((prev) => ({ ...prev, [section]: true }));
-        setTempData(profileData);
-    };
-
-    const handleSave = (section) => {
-        setProfileData(tempData);
-        setIsEditing((prev) => ({ ...prev, [section]: false }));
-        console.log(`${section ?? 'unknown'} Updated:`, tempData[section] ?? {});
-    };
-
-    const handleCancel = (section) => {
-        setTempData(profileData);
-        setIsEditing((prev) => ({ ...prev, [section]: false }));
-        if (section === 'profileImage' && (tempData.personal?.profileImage ?? '') !== (profileData.personal?.profileImage ?? '') && (tempData.personal?.profileImage ?? '').startsWith('blob:')) {
-            URL.revokeObjectURL(tempData.personal?.profileImage ?? '');
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordForm((prev) => ({ ...prev, [name]: value }));
+        if (passwordErrors[name]) {
+            setPasswordErrors((prev) => ({ ...prev, [name]: "" }));
         }
     };
 
-    const handleInputChange = (section, e) => {
-        const { name, value } = e.target ?? {};
-        setTempData((prev) => ({
-            ...prev,
-            [section]: { ...prev[section] ?? {}, [name ?? '']: value ?? '' },
-        }));
+    const validatePasswordForm = () => {
+        const errors = {};
+        if (!passwordForm.currentPassword.trim()) {
+            errors.currentPassword = "Current password is required";
+        }
+        if (!passwordForm.newPassword.trim()) {
+            errors.newPassword = "New password is required";
+        } else if (passwordForm.newPassword.length < 6) {
+            errors.newPassword = "New password must be at least 6 characters";
+        }
+        if (!passwordForm.confirmPassword.trim()) {
+            errors.confirmPassword = "Please confirm your new password";
+        } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            errors.confirmPassword = "Passwords do not match";
+        }
+        if (passwordForm.currentPassword === passwordForm.newPassword) {
+            errors.newPassword = "New password must be different from current password";
+        }
+        setPasswordErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
-    const handleProfileImageChange = (e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const imageUrl = URL.createObjectURL(file);
-            setTempData((prev) => ({
-                ...prev,
-                personal: { ...prev.personal ?? {}, profileImage: imageUrl ?? '' },
-            }));
-            handleEdit('profileImage');
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+        if (!validatePasswordForm()) {
+            toast.error("Please fix the errors in the form");
+            return;
+        }
+        setIsChangingPassword(true);
+        try {
+            const response = await changeAccountantPassword({
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword,
+                confirmPassword: passwordForm.confirmPassword,
+            });
+            if (response && (response.success === true || response.statusCode === 200)) {
+                toast.success(response.message || "Password changed successfully");
+                setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                setPasswordErrors({});
+                setSearchParams({ tab: "profile" });
+                setActiveTab("profile");
+            } else {
+                toast.error(response?.message || "Failed to change password");
+            }
+        } catch (error) {
+            console.error("Error changing password:", error);
+            toast.error(error.response?.data?.message || "Failed to change password");
+        } finally {
+            setIsChangingPassword(false);
         }
     };
 
-    const handleFileChange = (e, docType) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setTempData((prev) => ({
-                ...prev,
-                documents: { ...prev.documents ?? {}, [docType]: file, [`${docType}Name`]: file.name ?? '' },
-            }));
-        }
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        return new Date(dateString).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
     };
 
-    const handleRemoveFile = (docType, fileName) => {
-        setTempData((prev) => ({
-            ...prev,
-            documents: { ...prev.documents ?? {}, [docType]: null, [`${fileName}`]: null },
-        }));
-    };
+    const accountantName = profile?.name || "Accountant";
+    const accountantRole = profile?.role
+        ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+        : "Accountant";
+    const accountantStatus = profile?.account_status
+        ? profile.account_status.charAt(0).toUpperCase() + profile.account_status.slice(1)
+        : "N/A";
 
-    const personalFields = useMemo(() => [
-        { label: 'Full Name', name: 'fullName', type: 'text', icon: <FaUser /> },
-        { label: 'User ID', name: 'userId', type: 'text', disabled: true, icon: <FaIdCard /> },
-        { label: 'Email', name: 'email', type: 'email', icon: <FaPhone /> },
-        { label: 'Phone', name: 'phone', type: 'tel', icon: <FaPhone /> },
-        { label: 'Gender', name: 'gender', type: 'text', icon: <FaUser /> },
-        { label: 'Date of Birth', name: 'dob', type: 'date', icon: <FaIdCard /> },
-        { label: 'Account Status', name: 'accountStatus', type: 'text', disabled: true, icon: <FaCheckCircle /> },
-    ], []);
+    const summaryFields = useMemo(
+        () => [
+            { label: "User ID", value: profile?.userId || "N/A" },
+            { label: "Role", value: accountantRole },
+            { label: "Status", value: accountantStatus },
+            { label: "Joining Date", value: formatDate(profile?.joining_date) },
+        ],
+        [accountantRole, accountantStatus, profile]
+    );
 
-    const professionalFields = useMemo(() => [
-        { label: 'Role', name: 'role', type: 'text', disabled: true, icon: <FaUser /> },
-        { label: 'Qualification', name: 'qualification', type: 'text', icon: <FaIdCard /> },
-        { label: 'Joining Date', name: 'joiningDate', type: 'date', icon: <FaBuilding /> },
-        { label: 'Salary', name: 'salary', type: 'text', icon: <FaBuilding /> },
-    ], []);
-
-    const addressFields = useMemo(() => [
-        { label: 'Current Address', name: 'currentAddress', type: 'text', icon: <FaBuilding /> },
-        { label: 'Permanent Address', name: 'permanentAddress', type: 'text', icon: <FaBuilding /> },
-    ], []);
-
-    const navigationItems = [
-        { section: 'personal', icon: <FaUser />, label: 'Personal Information' },
-        { section: 'professional', icon: <FaLock />, label: 'Professional Details' },
-        { section: 'address', icon: <FaFileAlt />, label: 'Address Information' },
+    const contactFields = [
+        { label: "Email", value: profile?.email || "N/A" },
+        { label: "Phone", value: profile?.mobile_no || "N/A" },
+        { label: "Address", value: profile?.current_address || profile?.permanent_address || "N/A" },
     ];
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col min-h-screen bg-gray-50">
-                <div className="flex w-full">
-                    <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-                    <main className="flex-1 overflow-y-auto lg:ml-64">
-                        <Header setIsSidebarOpen={setIsSidebarOpen} />
-                        <div className="flex items-center justify-center h-screen">
-                            <div className="text-center">
-                                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-                                <p className="mt-4 text-gray-600">Loading profile...</p>
-                            </div>
-                        </div>
-                    </main>
-                </div>
+    const tabs = [
+        { key: "profile", label: "Profile" },
+        { key: "payroll", label: "Payroll" },
+        { key: "leaves", label: "Leaves" },
+        { key: "attendance", label: "Attendance" },
+        { key: "library", label: "Library" },
+        { key: "documents", label: "Documents" },
+        { key: "issued", label: "Issued Item" },
+        { key: "timeline", label: "Timeline" },
+        { key: "lesson", label: "Lesson Planner" },
+        { key: "password", label: "Change Password" },
+    ];
+
+    const renderInfoSection = (title, items) => (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
+            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+                <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
             </div>
-        );
-    }
-
-    return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <div className="flex w-full">
-                <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-                <main className="flex-1 overflow-y-auto lg:ml-64">
-                    <Header setIsSidebarOpen={setIsSidebarOpen} />
-                    <div className="p-4 md:p-6">
-                        <div className="bg-white p-8 rounded-xl shadow-md mx-auto">
-                            <header className="mb-8">
-                                <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
-                                <p className="text-gray-600">Manage your financial profile and privileges</p>
-                            </header>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-1">
-                                    <div className="bg-gray-50 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                                        <Accountant_ProfileImage
-                                            imageUrl={isEditing.profileImage ? (tempData.personal?.profileImage ?? '') : (profileData.personal?.profileImage ?? '')}
-                                            isEditing={isEditing.profileImage}
-                                            onChange={handleProfileImageChange}
-                                            onSave={() => handleSave('profileImage')}
-                                            onCancel={() => handleCancel('profileImage')}
-                                        />
-                                        <h2 className="text-xl font-semibold mt-4">{profileData.personal?.fullName ?? 'N/A'}</h2>
-                                        <p className="text-gray-500 text-sm">{profileData.personal?.role ?? 'N/A'}</p>
-                                        <Accountant_Navigation
-                                            activeSection={activeSection}
-                                            onClick={handleNavigationClick}
-                                            items={navigationItems}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="lg:col-span-2">
-                                    {activeSection === 'personal' && (
-                                        <div className="bg-gray-50 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                                            <div className="flex justify-between mb-6">
-                                                <h2 className="text-2xl font-bold text-gray-800">Personal Information</h2>
-                                                <Accountant_EditButtons
-                                                    isEditing={isEditing.personal ?? false}
-                                                    onEdit={() => handleEdit('personal')}
-                                                    onSave={() => handleSave('personal')}
-                                                    onCancel={() => handleCancel('personal')}
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                {(personalFields ?? []).map((field) => (
-                                                    <Accountant_EditableInput
-                                                        key={field.name ?? ''}
-                                                        {...field}
-                                                        value={isEditing.personal ? (tempData.personal?.[field.name] ?? '') : (profileData.personal?.[field.name] ?? '')}
-                                                        onChange={(e) => handleInputChange('personal', e)}
-                                                        isEditing={isEditing.personal && !field.disabled}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {activeSection === 'professional' && (
-                                        <div className="bg-gray-50 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                                            <div className="flex justify-between mb-6">
-                                                <h2 className="text-2xl font-bold text-gray-800">Professional Details</h2>
-                                                <Accountant_EditButtons
-                                                    isEditing={isEditing.professional ?? false}
-                                                    onEdit={() => handleEdit('professional')}
-                                                    onSave={() => handleSave('professional')}
-                                                    onCancel={() => handleCancel('professional')}
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-6">
-                                                {(professionalFields ?? []).map((field) => (
-                                                    <Accountant_EditableInput
-                                                        key={field.name ?? ''}
-                                                        {...field}
-                                                        value={isEditing.professional ? (tempData.professional?.[field.name] ?? '') : (profileData.professional?.[field.name] ?? '')}
-                                                        onChange={(e) => handleInputChange('professional', e)}
-                                                        isEditing={isEditing.professional && !field.disabled}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {activeSection === 'address' && (
-                                        <div className="bg-gray-50 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                                            <div className="flex justify-between mb-6">
-                                                <h2 className="text-2xl font-bold text-gray-800">Address Information</h2>
-                                                <Accountant_EditButtons
-                                                    isEditing={isEditing.address ?? false}
-                                                    onEdit={() => handleEdit('address')}
-                                                    onSave={() => handleSave('address')}
-                                                    onCancel={() => handleCancel('address')}
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-6">
-                                                {(addressFields ?? []).map((field) => (
-                                                    <Accountant_EditableInput
-                                                        key={field.name ?? ''}
-                                                        {...field}
-                                                        value={isEditing.address ? (tempData.address?.[field.name] ?? '') : (profileData.address?.[field.name] ?? '')}
-                                                        onChange={(e) => handleInputChange('address', e)}
-                                                        isEditing={isEditing.address && !field.disabled}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-4">
+                {items.map((item) => (
+                    <div key={item.label} className="flex flex-col">
+                        <span className="text-xs text-slate-500 font-medium">{item.label}</span>
+                        <span className="text-sm text-slate-900 font-semibold">{item.value || "N/A"}</span>
                     </div>
-                </main>
+                ))}
             </div>
         </div>
+    );
+
+    const renderEmptyState = (label) => (
+        <div className="bg-white rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-500 text-sm">
+            {label} data not available yet.
+        </div>
+    );
+
+    const renderProfileTab = () => {
+        if (isLoading) {
+            return (
+                <div className="bg-white rounded-xl border border-slate-100 p-6 text-sm text-slate-600">
+                    Loading profile...
+                </div>
+            );
+        }
+
+        if (!profile) {
+            return (
+                <div className="bg-white rounded-xl border border-slate-100 p-6 text-center text-slate-600">
+                    <p>Failed to load profile</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-5">
+                {renderInfoSection("Personal Information", [
+                    { label: "Full Name", value: profile?.name || "N/A" },
+                    { label: "Email", value: profile?.email || "N/A" },
+                    { label: "Phone", value: profile?.mobile_no || "N/A" },
+                    { label: "DOB", value: formatDate(profile?.dob) },
+                    { label: "Gender", value: profile?.gender || "N/A" },
+                ])}
+                {renderInfoSection("Professional Information", [
+                    { label: "Role", value: accountantRole },
+                    { label: "Qualification", value: profile?.qualification || "N/A" },
+                    { label: "Salary", value: profile?.salary || "N/A" },
+                    { label: "Status", value: accountantStatus },
+                ])}
+                {renderInfoSection("Address", [
+                    { label: "Current Address", value: profile?.current_address || "N/A" },
+                    { label: "Permanent Address", value: profile?.permanent_address || "N/A" },
+                ])}
+            </div>
+        );
+    };
+
+    const renderPasswordTab = () => (
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 max-w-2xl">
+            <h3 className="text-lg font-semibold mb-6">Change Password</h3>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <div>
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="password"
+                        id="currentPassword"
+                        name="currentPassword"
+                        value={passwordForm.currentPassword}
+                        onChange={handlePasswordChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+                            passwordErrors.currentPassword ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder="Enter current password"
+                    />
+                    {passwordErrors.currentPassword && (
+                        <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>
+                    )}
+                </div>
+
+                <div>
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        value={passwordForm.newPassword}
+                        onChange={handlePasswordChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+                            passwordErrors.newPassword ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder="Enter new password"
+                    />
+                    {passwordErrors.newPassword && (
+                        <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>
+                    )}
+                </div>
+
+                <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm New Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={passwordForm.confirmPassword}
+                        onChange={handlePasswordChange}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+                            passwordErrors.confirmPassword ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder="Confirm new password"
+                    />
+                    {passwordErrors.confirmPassword && (
+                        <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>
+                    )}
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setActiveTab("profile");
+                            setSearchParams({});
+                            setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                            setPasswordErrors({});
+                        }}
+                        className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isChangingPassword}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isChangingPassword ? "Changing..." : "Change Password"}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case "profile":
+                return renderProfileTab();
+            case "password":
+                return renderPasswordTab();
+            case "payroll":
+                return renderEmptyState("Payroll");
+            case "leaves":
+                return renderEmptyState("Leaves");
+            case "attendance":
+                return renderEmptyState("Attendance");
+            case "library":
+                return renderEmptyState("Library");
+            case "documents":
+                return renderEmptyState("Documents");
+            case "issued":
+                return renderEmptyState("Issued Item");
+            case "timeline":
+                return renderEmptyState("Timeline");
+            case "lesson":
+                return renderEmptyState("Lesson Planner");
+            default:
+                return renderProfileTab();
+        }
+    };
+
+    return (
+        <>
+            <ProfileDetail
+                breadcrumb="Accountant / My Profile"
+                title="Accountant Profile"
+                name={accountantName}
+                subtitle={accountantRole}
+                imageUrl={profile?.image || getRandomUserImage("women/44.jpg")}
+                summaryFields={summaryFields}
+                contactFields={contactFields}
+                tabs={tabs}
+                activeTab={activeTab}
+                setActiveTab={(tabKey) => {
+                    setActiveTab(tabKey);
+                    if (tabKey === "password") {
+                        setSearchParams({ tab: "password" });
+                    } else {
+                        setSearchParams({});
+                    }
+                }}
+                renderTabContent={renderTabContent}
+                SidebarComponent={AccountantSidebar}
+            />
+            <ToastContainer position="top-right" autoClose={3000} />
+        </>
     );
 };
 

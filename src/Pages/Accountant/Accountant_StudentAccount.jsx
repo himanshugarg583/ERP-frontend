@@ -101,9 +101,9 @@ const AccountantStudentAccounts = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-            <main className="flex-1 overflow-y-auto lg:ml-64">
+        <div className="flex min-h-screen bg-gray-50 overflow-x-hidden">
+            <Sidebar />
+            <main className="flex-1 min-w-0 overflow-y-auto">
                 <Header setIsSidebarOpen={setIsSidebarOpen} />
                 <div className="p-4 md:p-6">
                     <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-8 text-center text-indigo-700">

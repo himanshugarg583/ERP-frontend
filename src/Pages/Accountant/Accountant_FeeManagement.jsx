@@ -255,14 +255,28 @@ const AccountantFeeManagement = () => {
             return;
         }
 
-        setFeeRecords(prev => [...prev, { ...formData, date: new Date().toISOString().split('T')[0] }]);
+        // Minimal submit handling: add to local feeRecords and reset form
+        const newRecord = {
+            id: Date.now(),
+            studentId: formData.studentId,
+            studentName: formData.studentName,
+            classSection: formData.classSection,
+            feeType: formData.feeType,
+            amount: formData.receivedAmount || 0,
+            paymentMode: formData.paymentMode,
+            transactionRef: formData.transactionRef,
+            entryDate: new Date().toISOString(),
+        };
+        setFeeRecords(prev => [newRecord, ...prev]);
+        alert('Fee collected successfully! Receipt generated and sent.');
+
+        // Reset form to defaults
         setFormData({
             studentId: '', studentName: '', classSection: '', parentName: '', parentContact: '', email: '',
             feeType: '', feeAmount: 0, discount: 0, lateFee: 0, totalPayable: 0,
             paymentMode: '', transactionRef: '', chequeNumber: '', bankName: '', chequeDate: '', receivedAmount: 0, balanceDue: 0, paymentStatus: 'Pending',
             remarks: '', attachments: null, dueAmount: 0
         });
-        alert('Fee collected successfully! Receipt generated and sent.');
     };
 
     const sendNotification = (type, studentName) => alert({ reminder: `Reminder sent to the parent of ${studentName} for due fees.`, action: `Action notification sent to admin for ${studentName}.` }[type]);
@@ -662,9 +676,9 @@ const AccountantFeeManagement = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
             <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-            <main className="flex-1 overflow-y-auto lg:ml-64">
+            <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
                 <Header setIsSidebarOpen={setIsSidebarOpen} />
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-6 sm:mb-8">Fee Management Dashboard</h1>
 

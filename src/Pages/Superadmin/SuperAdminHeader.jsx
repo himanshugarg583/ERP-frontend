@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaBars, FaSearch, FaBell, FaEnvelope, FaUser, FaCog, FaSignOutAlt, FaBook, FaCalendarAlt, FaBullhorn, FaReply } from 'react-icons/fa'; // Added FaReply
 import { useNavigate } from 'react-router-dom';
+import { getRandomUserImage } from '../../utils/assetUrls';
 
 const SuperAdminHeader = ({ setIsSidebarOpen }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -202,7 +203,7 @@ const SuperAdminHeader = ({ setIsSidebarOpen }) => {
             className="flex items-center cursor-pointer group"
             onClick={() => setIsDropdownOpen(prev => !prev)}>
             <img
-              src="https://randomuser.me/api/portraits/men/44.jpg"
+              src={getRandomUserImage('men/44.jpg')}
               alt="Profile"
               className="h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-transparent group-hover:border-indigo-500 transition-all"/>
             <span className="ml-2 text-sm md:text-base group-hover:text-indigo-600 transition-colors">Super Admin</span>

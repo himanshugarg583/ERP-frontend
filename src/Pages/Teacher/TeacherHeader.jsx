@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FaBars, FaSearch, FaBell, FaEnvelope, FaUser, FaCog, FaSignOutAlt, FaBook, FaCalendarAlt, FaBullhorn, FaReply } from 'react-icons/fa'; 
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getRandomUserImage } from '../../utils/assetUrls';
 
 const TeacherHeader = ({ setIsSidebarOpen }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -219,7 +220,7 @@ const notifications = [
             onClick={() => setIsDropdownOpen(prev => !prev)}
           >
             <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
+              src={getRandomUserImage('women/44.jpg')}
               alt="Profile"
               className="h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-transparent group-hover:border-indigo-500 transition-all"
             />

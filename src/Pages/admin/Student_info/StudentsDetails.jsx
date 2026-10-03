@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, UserCheck, UserX, GraduationCap, Search, Filter, X } from 'lucide-react';
 import StandardStatCard from '../../../components/comman_components/StandardStatCard';
@@ -18,6 +19,7 @@ import {
 } from '../../../helper/requests-method/apiMethods';
 
 const StudentsDetails = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         totalActiveStudents: 0,
         maleStudents: 0,
@@ -68,6 +70,7 @@ const StudentsDetails = () => {
                     class_name: student.ClassSection?.class_name || 'N/A',
                     section_name: student.ClassSection?.section_name || 'N/A',
                     class_section_id: student.class_section_id || '',
+                    raw: student,
                 }));
                 setStudentsData(mappedData);
 
@@ -184,6 +187,22 @@ const StudentsDetails = () => {
         toast.error(response.message || 'Failed to delete student');
         throw new Error(response.message || 'Failed to delete student');
     };
+
+    const handleViewStudent = useCallback((student) => {
+        const studentId = student?.student_id || student?.id;
+        if (!studentId) {
+            toast.error('Unable to open student details');
+            return null;
+        }
+
+        navigate(`/admin/student-details/${studentId}`, {
+            state: {
+                student,
+            },
+        });
+
+        return null;
+    }, [navigate]);
 
     // Define columns for student management
     const studentColumns = [
@@ -388,6 +407,8 @@ const StudentsDetails = () => {
                                         apiFunction={null}
                                         updateApiFunction={handleUpdateStudent}
                                         deleteApiFunction={handleDeleteStudent}
+                                        onView={handleViewStudent}
+                                        useViewModal={false}
                                         initialData={studentsData}
                                         searchPlaceholder="Search students by name, roll number, email..."
                                         addButtonText="Add Student"

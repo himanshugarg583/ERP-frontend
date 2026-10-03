@@ -72,7 +72,7 @@ export const DASHBOARD_CATALOG = [
     allowedRoles: ["admin"],
     description: "People operations for teacher lifecycle and HR administration.",
     modules: [
-      { name: "Staff Lifecycle", submodules: ["Teacher Management", "Teacher Credentials"], links: ["/admin/teacher-management", "/admin/hr/teacher-credentials"] },
+      { name: "Staff Lifecycle", submodules: ["Staff Directory", "Staff Attendance", "Teacher Credentials"], links: ["/admin/teacher-management", "/admin/hr/staff-attendance", "/admin/hr/teacher-credentials"] },
       { name: "Compensation", submodules: ["Teacher Salary"], links: ["/admin/hr/teacher-salary"] },
       { name: "Insights", submodules: ["HR Reports"], links: ["/admin/hr-reports"] }
     ]

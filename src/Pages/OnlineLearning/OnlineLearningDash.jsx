@@ -5,6 +5,7 @@ import { MdVideocam } from 'react-icons/md';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { getRandomUserImage } from '../../utils/assetUrls';
 
 const theme = createTheme({
   palette: {
@@ -79,7 +80,7 @@ const OnlineLearningDash = () => {
                   <div className="p-4">
                     <div className="flex items-center mb-3">
                       <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden mr-3">
-                        <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Instructor" className="h-full w-full object-cover" />
+                        <img src={getRandomUserImage('women/32.jpg')} alt="Instructor" className="h-full w-full object-cover" />
                       </div>
                       <div>
                         <p className="font-medium">Dr. Elena Richards</p>
@@ -117,7 +118,7 @@ const OnlineLearningDash = () => {
                   <div className="p-4">
                     <div className="flex items-center mb-3">
                       <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden mr-3">
-                        <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Instructor" className="h-full w-full object-cover" />
+                        <img src={getRandomUserImage('men/45.jpg')} alt="Instructor" className="h-full w-full object-cover" />
                       </div>
                       <div>
                         <p className="font-medium">Prof. Michael Lee</p>
@@ -155,7 +156,7 @@ const OnlineLearningDash = () => {
                   <div className="p-4">
                     <div className="flex items-center mb-3">
                       <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden mr-3">
-                        <img src="https://randomuser.me/api/portraits/women/67.jpg" alt="Instructor" className="h-full w-full object-cover" />
+                        <img src={getRandomUserImage('women/67.jpg')} alt="Instructor" className="h-full w-full object-cover" />
                       </div>
                       <div>
                         <p className="font-medium">Sarah Johnson</p>

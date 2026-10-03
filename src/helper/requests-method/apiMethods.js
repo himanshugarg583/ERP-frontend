@@ -30,7 +30,7 @@ export const getOverdueInstallments = async () => {
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-const API_BASE_URL = 'https://erp-backend-1-svup.onrender.com'; // Backend base URL
+const API_BASE_URL = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
 const ADMIN_TOAST_SUPPRESS_WINDOW_MS = 800;
 
 const getAdminToastState = () => {
@@ -102,7 +102,7 @@ const emitCentralizedToast = (type, message) => {
 
   const emitter = emitters[type] || toast[type];
   if (typeof emitter === 'function') {
-    emitter(message);
+    emitter(message, { skipGlobalSuppress: true });
   }
 };
 
@@ -113,10 +113,15 @@ const isAdminEndpoint = (endpoint = '') => {
   return normalizedEndpoint.includes('/admin') || normalizedEndpoint.includes('/api/admin');
 };
 
+const shouldSkipAdminSuccessToast = (endpoint = "") => {
+  const normalizedEndpoint = String(endpoint).toLowerCase();
+  return normalizedEndpoint.includes("/admin/timetable/conflicts/check");
+};
+
 const showAdminApiToast = (endpoint, response) => {
   if (!isAdminEndpoint(endpoint)) return response;
 
-  if (response?.success === true) {
+  if (response?.success === true && !shouldSkipAdminSuccessToast(endpoint)) {
     emitCentralizedToast('success', response?.message || 'Success');
   }
 

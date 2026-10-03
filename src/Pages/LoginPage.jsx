@@ -11,7 +11,6 @@ const LoginPage = () => {
     e.preventDefault();
   
     try {
-      // const response = await axios.post('http://192.168.1.39:8001/user/login', { email, password }); 
       if (true){
         // response.status === 200
         // Sign-in successful, redirect to admin dashboard

@@ -7,6 +7,7 @@ import axios from 'axios';
 
 const SuperAdminSchool = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const superAdminBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
   const {
     register,
     handleSubmit,
@@ -35,7 +36,7 @@ const SuperAdminSchool = () => {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('http://192.168.1.16:3000/superAdmin/createSchool',  
+      const response = await axios.post(`${superAdminBaseUrl}/superAdmin/createSchool`,  
         data,
       );
       console.log('Form Data Submitted:', response.data);

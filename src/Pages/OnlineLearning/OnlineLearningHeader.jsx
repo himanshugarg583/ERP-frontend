@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaBars, FaSearch, FaBell, FaEnvelope, FaUser , FaCog, FaSignOutAlt } from 'react-icons/fa'; 
 import { useNavigate } from 'react-router-dom';
+import { getRandomUserImage } from '../../utils/assetUrls';
 
 const OnlineLearningHeader = ({ setIsSidebarOpen }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -89,7 +90,7 @@ const OnlineLearningHeader = ({ setIsSidebarOpen }) => {
             onClick={() => setIsDropdownOpen(prev => !prev)}
           >
             <img
-              src="https://randomuser.me/api/portraits/men/44.jpg"
+              src={getRandomUserImage('men/44.jpg')}
               alt="Profile"
               className="h-8 w-8 rounded-full border-2 border-transparent"
             />

@@ -5,6 +5,7 @@ import Header from '../../components/comman_components/Header';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getStudentFeesDetails, getStudentInstallments, getStudentPaymentHistory, createPaymentOrder, verifyPayment } from '../../helper/requests-method/feeV1Api';
+import { RAZORPAY_CHECKOUT_URL } from '../../utils/assetUrls';
 
 const StudentFees = () => {
   const [feesData, setFeesData] = useState(null);
@@ -139,7 +140,7 @@ const StudentFees = () => {
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.src = RAZORPAY_CHECKOUT_URL;
       script.onload = () => resolve(true);
       script.onerror = () => resolve(false);
       document.body.appendChild(script);

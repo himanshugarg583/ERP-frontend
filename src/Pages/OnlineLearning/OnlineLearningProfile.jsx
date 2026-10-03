@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import OnlineLearningHeader from './OnlineLearningHeader';
 import OnlineLearningSidebar from './OnlineLearningSidebar';
 import { MdEdit, MdUpload, MdSchool, MdBook, MdStar } from 'react-icons/md';
+import { getRandomUserImage } from '../../utils/assetUrls';
 
 const OnlineLearningProfile = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
-    profilePic: "https://randomuser.me/api/portraits/women/25.jpg",
+    profilePic: getRandomUserImage('women/25.jpg'),
     fullName: "Priya Sharma",studentId: "STU123456",school: "Delhi Public School",dob: "2005-05-15",
     email: "priya.sharma@example.com",phone: "+91 98765 43210",address: "123, MG Road, New Delhi",
   });

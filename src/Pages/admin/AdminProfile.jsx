@@ -1,18 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FaCamera, FaAddressCard, FaUser, FaGraduationCap, 
-  FaCalendarAlt, FaIdBadge, FaLock, FaEnvelope
-} from 'react-icons/fa';
-import Sidebar from './Sidebar';
-import Header from '../../components/comman_components/Header';
-import { getAdminProfile, changePassword } from '../../helper/requests-method/apiMethods';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from "react";
+import { getAdminProfile, changePassword } from "../../helper/requests-method/apiMethods";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useSearchParams } from "react-router-dom";
+import { getRandomUserImage } from "../../utils/assetUrls";
+import ProfileDetail from "../../components/profile/ProfileDetail";
 
 const AdminProfile = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -28,7 +24,7 @@ const AdminProfile = () => {
   }, []);
 
   useEffect(() => {
-    const tab = searchParams.get('tab');
+    const tab = searchParams.get("tab");
     if (tab) {
       setActiveTab(tab);
     }
@@ -143,7 +139,7 @@ const AdminProfile = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -151,332 +147,243 @@ const AdminProfile = () => {
     });
   };
 
-  return (
-    <div className="bg-gray-100 flex AddStudent">
-      <Sidebar />
+  const adminName = profile?.name || "Admin";
+  const adminRole = profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : "Admin";
+  const adminStatus = profile?.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : "N/A";
 
-      <div
-        className="overflow-auto relative z-1 flex-col"
-        style={{
-          height: "95vh",
-          width: "100vw",
-          gap: "10px",
-          display: "flex",
-          transition: "margin-left 0.3s ease",
-        }}
-      >
-        <Header />
+  const summaryFields = useMemo(
+    () => [
+      { label: "Admin ID", value: profile?.id || "N/A" },
+      { label: "Role", value: adminRole },
+      { label: "Status", value: adminStatus },
+      { label: "Created At", value: formatDate(profile?.created_at) },
+    ],
+    [adminRole, adminStatus, profile]
+  );
 
-        <main className="w-full px-4 md:px-6">
-          {/* Tabs */}
-          <div className="bg-white rounded-xl shadow-sm mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="flex -mb-px">
-                <button
-                  onClick={() => {
-                    setActiveTab('profile');
-                    setSearchParams({});
-                  }}
-                  className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === 'profile'
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Profile
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('password');
-                    setSearchParams({ tab: 'password' });
-                  }}
-                  className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === 'password'
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Change Password
-                </button>
-              </nav>
-            </div>
-          </div>
+  const contactFields = [
+    { label: "Email", value: profile?.email || "N/A" },
+    { label: "Updated At", value: formatDate(profile?.updated_at) },
+  ];
 
-          {activeTab === 'profile' && (
-            <>
-              {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                </div>
-              ) : profile ? (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Profile Card */}
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 hover:shadow-md transition-shadow duration-300">
-                    <div className="flex flex-col items-center">
-                      <div className="relative group">
-                        <div className="h-32 w-32 rounded-full overflow-hidden border-4 border-blue-100">
-                          <img
-                            src={profile.image || "https://randomuser.me/api/portraits/women/44.jpg"}
-                            alt="Admin Profile"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </div>
-                      <h2 className="text-xl font-bold mt-4">{profile.name || 'N/A'}</h2>
-                      <p className="text-gray-500 mb-2">Admin ID: {profile.id || 'N/A'}</p>
-                      <div className="flex space-x-2 mt-2">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                          {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Admin'}
-                        </span>
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                          {profile.status === 'active' ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-6 grid grid-cols-2 gap-4">
-                      <div className="col-span-2">
-                        <div className="flex items-center bg-gray-50 p-3 rounded-lg">
-                          <FaIdBadge className="text-gray-500 mr-3 text-xl" />
-                          <div>
-                            <p className="text-xs text-gray-500">Admin ID</p>
-                            <p className="font-medium">{profile.id || 'N/A'}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-span-1">
-                        <div className="flex items-center bg-gray-50 p-3 rounded-lg h-full">
-                          <FaCalendarAlt className="text-gray-500 mr-3 text-xl" />
-                          <div>
-                            <p className="text-xs text-gray-500">Created At</p>
-                            <p className="font-medium">{formatDate(profile.created_at)}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-span-1">
-                        <div className="flex items-center bg-gray-50 p-3 rounded-lg h-full">
-                          <FaUser className="text-gray-500 mr-3 text-xl" />
-                          <div>
-                            <p className="text-xs text-gray-500">Status</p>
-                            <p className="font-medium">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {profile.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : 'N/A'}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+  const tabs = [
+    { key: "profile", label: "Profile" },
+    { key: "payroll", label: "Payroll" },
+    { key: "leaves", label: "Leaves" },
+    { key: "attendance", label: "Attendance" },
+    { key: "library", label: "Library" },
+    { key: "documents", label: "Documents" },
+    { key: "issued", label: "Issued Item" },
+    { key: "timeline", label: "Timeline" },
+    { key: "lesson", label: "Lesson Planner" },
+    { key: "password", label: "Change Password" },
+  ];
 
-                  {/* Personal Information */}
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 lg:col-span-2 hover:shadow-md transition-shadow duration-300">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center">
-                      <FaAddressCard className="mr-2 text-blue-600 text-xl" />
-                      Personal Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
-                        <p className="bg-gray-50 p-3 rounded-lg">{profile.name || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
-                        <p className="bg-gray-50 p-3 rounded-lg flex items-center">
-                          <FaEnvelope className="mr-2 text-gray-400" />
-                          {profile.email || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-1">Role</label>
-                        <p className="bg-gray-50 p-3 rounded-lg">
-                          <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">
-                            {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Admin'}
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
-                        <p className="bg-gray-50 p-3 rounded-lg">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {profile.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : 'N/A'}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Account Information */}
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 col-span-1 lg:col-span-3 hover:shadow-md transition-shadow duration-300">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center">
-                      <FaGraduationCap className="mr-2 text-blue-600 text-xl" />
-                      Account Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-1">Created At</label>
-                        <p className="bg-gray-50 p-3 rounded-lg flex items-center">
-                          <FaCalendarAlt className="mr-2 text-gray-400" />
-                          {formatDate(profile.created_at)}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-1">Last Updated</label>
-                        <p className="bg-gray-50 p-3 rounded-lg flex items-center">
-                          <FaCalendarAlt className="mr-2 text-gray-400" />
-                          {formatDate(profile.updated_at)}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-1">Account Status</label>
-                        <p className="bg-gray-50 p-3 rounded-lg">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            profile.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {profile.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : 'N/A'}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <p>Failed to load profile</p>
-                  <button
-                    onClick={fetchProfile}
-                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === 'password' && (
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 max-w-2xl mx-auto">
-              <h3 className="text-lg font-semibold mb-6 flex items-center">
-                <FaLock className="mr-2 text-indigo-600 text-xl" />
-                Change Password
-              </h3>
-              <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="current_password"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Current Password <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    id="current_password"
-                    name="current_password"
-                    value={passwordForm.current_password}
-                    onChange={handlePasswordChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
-                      passwordErrors.current_password
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    }`}
-                    placeholder="Enter current password"
-                  />
-                  {passwordErrors.current_password && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {passwordErrors.current_password}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="new_password"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    New Password <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    id="new_password"
-                    name="new_password"
-                    value={passwordForm.new_password}
-                    onChange={handlePasswordChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
-                      passwordErrors.new_password
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    }`}
-                    placeholder="Enter new password"
-                  />
-                  {passwordErrors.new_password && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {passwordErrors.new_password}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="confirm_password"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Confirm New Password <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    id="confirm_password"
-                    name="confirm_password"
-                    value={passwordForm.confirm_password}
-                    onChange={handlePasswordChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
-                      passwordErrors.confirm_password
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    }`}
-                    placeholder="Confirm new password"
-                  />
-                  {passwordErrors.confirm_password && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {passwordErrors.confirm_password}
-                    </p>
-                  )}
-                </div>
-
-                <div className="mt-6 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('profile');
-                      setSearchParams({});
-                      setPasswordForm({
-                        current_password: "",
-                        new_password: "",
-                        confirm_password: "",
-                      });
-                      setPasswordErrors({});
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isChangingPassword}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isChangingPassword ? "Changing..." : "Change Password"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </main>
+  const renderInfoSection = (title, items) => (
+    <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
+      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+        <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-4">
+        {items.map((item) => (
+          <div key={item.label} className="flex flex-col">
+            <span className="text-xs text-slate-500 font-medium">{item.label}</span>
+            <span className="text-sm text-slate-900 font-semibold">{item.value || "N/A"}</span>
+          </div>
+        ))}
+      </div>
     </div>
+  );
+
+  const renderEmptyState = (label) => (
+    <div className="bg-white rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-500 text-sm">
+      {label} data not available yet.
+    </div>
+  );
+
+  const renderProfileTab = () => {
+    if (loading) {
+      return (
+        <div className="bg-white rounded-xl border border-slate-100 p-6 text-sm text-slate-600">
+          Loading profile...
+        </div>
+      );
+    }
+
+    if (!profile) {
+      return (
+        <div className="bg-white rounded-xl border border-slate-100 p-6 text-center text-slate-600">
+          <p>Failed to load profile</p>
+          <button
+            onClick={fetchProfile}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-5">
+        {renderInfoSection("Admin Information", [
+          { label: "Full Name", value: profile?.name || "N/A" },
+          { label: "Email", value: profile?.email || "N/A" },
+          { label: "Role", value: adminRole },
+          { label: "Status", value: adminStatus },
+        ])}
+        {renderInfoSection("Account Information", [
+          { label: "Created At", value: formatDate(profile?.created_at) },
+          { label: "Last Updated", value: formatDate(profile?.updated_at) },
+        ])}
+      </div>
+    );
+  };
+
+  const renderPasswordTab = () => (
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 max-w-2xl">
+      <h3 className="text-lg font-semibold mb-6">Change Password</h3>
+      <form onSubmit={handlePasswordSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="current_password" className="block text-sm font-medium text-gray-700 mb-2">
+            Current Password <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="password"
+            id="current_password"
+            name="current_password"
+            value={passwordForm.current_password}
+            onChange={handlePasswordChange}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+              passwordErrors.current_password ? "border-red-500" : "border-gray-300"
+            }`}
+            placeholder="Enter current password"
+          />
+          {passwordErrors.current_password && (
+            <p className="mt-1 text-sm text-red-600">{passwordErrors.current_password}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="new_password" className="block text-sm font-medium text-gray-700 mb-2">
+            New Password <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="password"
+            id="new_password"
+            name="new_password"
+            value={passwordForm.new_password}
+            onChange={handlePasswordChange}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+              passwordErrors.new_password ? "border-red-500" : "border-gray-300"
+            }`}
+            placeholder="Enter new password"
+          />
+          {passwordErrors.new_password && (
+            <p className="mt-1 text-sm text-red-600">{passwordErrors.new_password}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700 mb-2">
+            Confirm New Password <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="password"
+            id="confirm_password"
+            name="confirm_password"
+            value={passwordForm.confirm_password}
+            onChange={handlePasswordChange}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+              passwordErrors.confirm_password ? "border-red-500" : "border-gray-300"
+            }`}
+            placeholder="Confirm new password"
+          />
+          {passwordErrors.confirm_password && (
+            <p className="mt-1 text-sm text-red-600">{passwordErrors.confirm_password}</p>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("profile");
+              setSearchParams({});
+              setPasswordForm({
+                current_password: "",
+                new_password: "",
+                confirm_password: "",
+              });
+              setPasswordErrors({});
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isChangingPassword}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isChangingPassword ? "Changing..." : "Change Password"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "password":
+        return renderPasswordTab();
+      case "profile":
+        return renderProfileTab();
+      case "payroll":
+        return renderEmptyState("Payroll");
+      case "leaves":
+        return renderEmptyState("Leaves");
+      case "attendance":
+        return renderEmptyState("Attendance");
+      case "library":
+        return renderEmptyState("Library");
+      case "documents":
+        return renderEmptyState("Documents");
+      case "issued":
+        return renderEmptyState("Issued Item");
+      case "timeline":
+        return renderEmptyState("Timeline");
+      case "lesson":
+        return renderEmptyState("Lesson Planner");
+      default:
+        return renderProfileTab();
+    }
+  };
+
+  return (
+    <>
+      <ProfileDetail
+        breadcrumb="Admin / My Profile"
+        title="Admin Profile"
+        name={adminName}
+        subtitle={adminRole}
+        imageUrl={profile?.image || getRandomUserImage("women/44.jpg")}
+        summaryFields={summaryFields}
+        contactFields={contactFields}
+        tabs={tabs}
+        activeTab={activeTab}
+        setActiveTab={(tabKey) => {
+          setActiveTab(tabKey);
+          if (tabKey === "password") {
+            setSearchParams({ tab: "password" });
+          } else {
+            setSearchParams({});
+          }
+        }}
+        renderTabContent={renderTabContent}
+      />
+      <ToastContainer position="top-right" autoClose={3000} />
+    </>
   );
 };
 

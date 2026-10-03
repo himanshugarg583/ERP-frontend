@@ -18,6 +18,7 @@ const ParentLogin = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const authBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
@@ -32,7 +33,7 @@ const ParentLogin = () => {
     setErrorMessage("");
     console.log(data);
     try {
-      const response = await axios.post("http://192.168.1.39:8001/user/login", data, {
+      const response = await axios.post(`${authBaseUrl}/user/login`, data, {
         headers: { "Content-Type": "application/json" },
       });
 

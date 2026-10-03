@@ -92,6 +92,7 @@ import AdminProfile from "./Pages/admin/AdminProfile.jsx";
 import EnquiryPage from "./Pages/admin/front_office/EnquiryPage";
 import AddStudent from "./Pages/admin/Student_info/AddStudent";
 import StudentReports from "./Pages/admin/Student_info/StudentReports";
+import StudentDetailPage from "./Pages/admin/Student_info/StudentDetailPage";
 import FeeReports from "./Pages/admin/fees_collection/FeeReports";
 import FeeHeadManagementPage from "./Pages/admin/fees_collection/FeeHeadManagementPage";
 import FeeStructureManagementPage from "./Pages/admin/fees_collection/FeeStructureManagementPage";
@@ -125,9 +126,12 @@ import ExamListPage from "./Pages/admin/examination/ExamListPage.jsx";
 import ExamReportPage from "./Pages/admin/examination/ExamReportPage.jsx";
 import ReportCardGeneratorPage from "./Pages/admin/examination/ReportCardGeneratorPage.jsx";
 import TeacherManagement from "./Pages/admin/HR/TeacherManagement.jsx";
+import AddStaff from "./Pages/admin/HR/AddStaff.jsx";
+import StaffAttendanceAdmin from "./Pages/admin/HR/StaffAttendance.jsx";
 import HRReports from "./Pages/admin/HR/HRReports.jsx";
 import TeacherCredentialsPage from "./Pages/admin/HR/TeacherCredentialsPage.jsx";
 import TeacherSalaryPage from "./Pages/admin/HR/TeacherSalaryPage.jsx";
+import TeacherDetailPage from "./Pages/admin/HR/TeacherDetailPage.jsx";
 import UploadContent from "./Pages/admin/DownloadCenter/UploadContent.jsx";
 import Assignment from "./Pages/admin/DownloadCenter/Assignment.jsx";
 import TransportModulePage from "./Pages/admin/modules/TransportModulePage.jsx";
@@ -267,6 +271,8 @@ const routes = {
     { path: "/admin/add-students", element: <AddStudent /> },
     { path: "/admin/student-credential", element: <StudentsDetails /> },
     { path: "/admin/students-details", element: <StudentsDetails /> },
+    { path: "/admin/student-details/:studentId", element: <StudentDetailPage /> },
+    { path: "/admin/teacher-details/:teacherId", element: <TeacherDetailPage /> },
     { path: "/admin/student-reports", element: <StudentReports /> },
     { path: "/admin/fee-reports", element: <FeeReports /> },
     { path: "/admin/fee-head-management", element: <FeeHeadManagementPage /> },
@@ -305,6 +311,8 @@ const routes = {
     { path: "/admin/notes", element: <AdminNotes/> },
     { path: "/admin/messages", element: <AdminMessages/> },
     { path: "/admin/teacher-management", element: <TeacherManagement/> },
+    { path: "/admin/staff-directory/add", element: <AddStaff/> },
+    { path: "/admin/hr/staff-attendance", element: <StaffAttendanceAdmin/> },
     { path: "/admin/hr-reports", element: <HRReports/> },
     { path: "/admin/hr/teacher-credentials", element: <TeacherCredentialsPage/> },
     { path: "/admin/hr/teacher-salary", element: <TeacherSalaryPage/> },

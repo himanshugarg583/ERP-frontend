@@ -227,9 +227,9 @@ const OnlinePaymentPage = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-            <main className="flex-1 overflow-y-auto lg:ml-64">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
+            <Sidebar />
+            <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
                 <Header setIsSidebarOpen={setIsSidebarOpen} />
                 <div className="p-4 md:p-6">
                     <div className="flex justify-between items-center mb-8">

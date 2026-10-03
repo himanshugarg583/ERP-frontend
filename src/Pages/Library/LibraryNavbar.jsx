@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaBars, FaSearch, FaBell, FaEnvelope, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { getRandomUserImage } from '../../utils/assetUrls';
 
 const LibraryNavbar = ({ setIsSidebarOpen }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -80,7 +81,7 @@ const LibraryNavbar = ({ setIsSidebarOpen }) => {
             onClick={() => setIsDropdownOpen(prev => !prev)}
           >
             <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
+              src={getRandomUserImage('women/44.jpg')}
               alt="Profile"
               className="h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-transparent group-hover:border-indigo-500 transition-all"
             />

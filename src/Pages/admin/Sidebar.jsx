@@ -162,7 +162,8 @@ const SIDEBAR_ITEMS = [
     name: "Human Resource",
     icon: UserCog,
     subItems: [
-      { name: "Teacher Management", href: "/admin/teacher-management" },
+      { name: "Staff Directory", href: "/admin/teacher-management" },
+      { name: "Staff Attendance", href: "/admin/hr/staff-attendance" },
       { name: "HR Reports", href: "/admin/hr-reports" },
     ],
   },

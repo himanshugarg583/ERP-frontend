@@ -15,7 +15,9 @@ const ReusableTable = ({
   addButtonText = "Add New",
   exportFileName = "data",
   showActions = { view: true, edit: true, delete: true },
-  loading = false
+  loading = false,
+  onView = null,
+  useViewModal = true
 }) => {
   const [data, setData] = useState([]);
   const [formData, setFormData] = useState({});
@@ -411,6 +413,10 @@ const ReusableTable = ({
 
   // Handle view item
   const handleView = async (item) => {
+    if (onView) {
+      return onView(item);
+    }
+
     if (viewApiFunction) {
       const itemId = item?.id;
       if (itemId === undefined || itemId === null || itemId === '') {
@@ -434,6 +440,7 @@ const ReusableTable = ({
       onEdit={showActions.edit !== false ? handleEdit : null}
       onDelete={showActions.delete !== false ? handleDelete : null}
       onView={showActions.view !== false ? handleView : null}
+      useViewModal={useViewModal}
       viewApiFunction={viewApiFunction}
       loading={loading}
       searchPlaceholder={searchPlaceholder}

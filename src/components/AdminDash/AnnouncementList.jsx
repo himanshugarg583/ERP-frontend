@@ -20,6 +20,7 @@ const AnnouncementList = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const attachmentBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
 
   useEffect(() => {
     const fetchNotices = async () => {
@@ -83,9 +84,9 @@ const AnnouncementList = () => {
 
   const handleAttachmentClick = (attachmentUrl) => {
     if (attachmentUrl) {
-      // Open attachment in new tab
-      const baseUrl = 'https://xd363v4j-5001.inc1.devtunnels.ms';
-      window.open(`${baseUrl}/${attachmentUrl}`, '_blank');
+      const normalizedPath = String(attachmentUrl).replace(/^\/+/, '');
+      const targetUrl = attachmentBaseUrl ? `${attachmentBaseUrl}/${normalizedPath}` : attachmentUrl;
+      window.open(targetUrl, '_blank');
     }
   };
 

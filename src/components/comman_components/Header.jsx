@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { getAdminProfile, getTeacherProfile, getStudentProfile } from "../../helper/requests-method/apiMethods";
+import { getRandomUserImage } from "../../utils/assetUrls";
 
 const Header = ({ title }) => {
   const navigate = useNavigate();
@@ -214,7 +215,7 @@ const Header = ({ title }) => {
               >
                 <div className="relative">
                   <img
-                    src="https://randomuser.me/api/portraits/women/44.jpg"
+                    src={getRandomUserImage('women/44.jpg')}
                     alt="Profile"
                     className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm"
                   />

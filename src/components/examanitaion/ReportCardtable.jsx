@@ -347,7 +347,7 @@ const ReportCardtable = ({
                   transition={{ duration: 1.1, delay: 0.2 }}
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black flex gap-2 items-center">
-                    {/* <img src="https://images.unsplash.com/photo-1627989580309-bfaf3e58af6f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8d2lyZWxlc3MlMjBlYXJidWRzfGVufDB8fDB8fHww" alt="Product_Image"
+                    {/* <img src={ASSET_URLS.unsplashEarbuds} alt="Product_Image"
                                             className='rounded-full size-10'
                                         /> */}
                     {product.name}

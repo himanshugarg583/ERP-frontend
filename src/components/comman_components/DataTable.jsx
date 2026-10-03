@@ -22,7 +22,8 @@ const DataTable = ({
   loading = false,
   searchPlaceholder = "Search...",
   exportFileName = "data",
-  addButtonText = "Add New"
+  addButtonText = "Add New",
+  useViewModal = true
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredData, setFilteredData] = useState(data || []);
@@ -108,19 +109,26 @@ const DataTable = ({
   };
 
   const handleViewClick = async (item) => {
+    if (!onView && !useViewModal) return;
+
     try {
       if (onView) {
         const viewedItem = await onView(item);
+        if (!useViewModal) return;
         setSelectedItem(viewedItem || item);
-      } else {
+      } else if (useViewModal) {
         setSelectedItem(item);
       }
     } catch (error) {
       console.error('View error:', error);
-      setSelectedItem(item);
-      toast.error('Failed to load details');
+      if (useViewModal) {
+        setSelectedItem(item);
+        toast.error('Failed to load details');
+      }
     } finally {
-      setViewModalOpen(true);
+      if (useViewModal) {
+        setViewModalOpen(true);
+      }
     }
   };
 
@@ -566,7 +574,7 @@ const DataTable = ({
       )}
 
       {/* View Modal */}
-      {isViewModalOpen && selectedItem && createPortal(
+      {useViewModal && isViewModalOpen && selectedItem && createPortal(
         <div className="fixed inset-0 z-9998 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" ref={printRef}>
             {/* Modal Header */}

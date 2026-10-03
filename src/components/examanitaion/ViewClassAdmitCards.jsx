@@ -10,6 +10,7 @@ import {
 } from '../../helper/requests-method/apiMethods';
 
 const ViewClassAdmitCards = () => {
+  const backendBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
   // State for dropdowns
   const [terms, setTerms] = useState([]);
   const [exams, setExams] = useState([]);
@@ -355,7 +356,7 @@ const ViewClassAdmitCards = () => {
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {student.image ? (
                             <img 
-                              src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${student.image}`} 
+                              src={`${backendBaseUrl}/uploads/${student.image}`} 
                               alt={student.name}
                               className="w-full h-full object-cover"
                             />

@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import Sidebar from '../Sidebar';
 import Header from '../../../components/comman_components/Header';
+import { getDemoFileUrl } from '../../../utils/assetUrls';
 import {
   approveMarksEntryV2Thunk,
   bulkTeacherAttendanceV2Thunk,
@@ -311,7 +312,7 @@ const ExamAttendancePage = () => {
           student_id: 1,
           document_type: 'report_card',
           reference_id: '00000000-0000-0000-0000-000000000002',
-          file_url: 'https://example.com/report-card.pdf',
+          file_url: getDemoFileUrl('report-card.pdf'),
           status: 'final',
           meta_data: { source: 'postman' },
         },

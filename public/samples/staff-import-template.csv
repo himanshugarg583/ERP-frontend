@@ -1,0 +1,2 @@
+staff_id,biometric_id,role,designation,department,first_name,last_name,dob,father_name,mother_name,gender,marital_status,joining_date,phone,emergency_contact,leaving_date,email,current_address,permanent_address,qualification,work_experience,note
+STF001,BIO1001,Teacher,Math Teacher,Academics,Amit,Sharma,1990-06-15,Rajesh Sharma,Sunita Sharma,Male,Married,2024-06-01,9876543210,9876543211,,amit.sharma@example.com,12 Rose Street Delhi,12 Rose Street Delhi,MSc BEd,5 years,Example staff record

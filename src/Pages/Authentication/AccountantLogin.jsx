@@ -41,9 +41,23 @@ const AccountantLogin = () => {
       try {
         const response = await loginUser(data);
         console.log(response);
-  
-        if (response.role === "accountant") {
+
+        if (response?.token && response?.role) {
+          const userData = {
+            id: response.id || 1,
+            email: data.email,
+            role: String(response.role).toLowerCase(),
+            name: response.name || "User",
+            token: response.token,
+          };
+          localStorage.setItem("authToken", response.token);
+          localStorage.setItem("userData", JSON.stringify(userData));
+        }
+
+        if (String(response?.role).toLowerCase() === "accountant") {
           navigate("/AccountantDashboard");
+        } else {
+          setErrorMessage("Invalid role for accountant login");
         }
   
       } catch (error) {
@@ -56,27 +70,6 @@ const AccountantLogin = () => {
       }
     };
 
-
-  // const onSubmit = async (data) => {
-  //   setLoading(true);
-  //   setErrorMessage("");
-  //   console.log(data);
-  //   try {
-  //     const response = await axios.post("http://192.168.1.39:8001/user/login", data, {
-  //       headers: { "Content-Type": "application/json" },
-  //     });
-
-  //     console.log(response.data);
-  //     if (response.data.role === "ADMIN") {
-  //       navigate("/AdminDashboard");
-  //     }
-  //   } catch (error) {
-  //     console.error("Login Failed:", error);
-  //     setErrorMessage(error.response?.data?.message || "Login failed. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   return (
     <main className="flex justify-center items-center min-h-screen">

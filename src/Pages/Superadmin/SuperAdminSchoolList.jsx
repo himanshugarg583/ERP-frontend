@@ -9,9 +9,10 @@ const SuperAdminSchoolList = () => {
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [School, setSchool] = useState([]);
   const [schoolDataa,setSchoolData]= useState([]);
+  const superAdminBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
 
   useEffect(()=>{
-    axios.get("http://192.168.1.16:3000/superAdmin/getSchool").then((data)=>{
+    axios.get(`${superAdminBaseUrl}/superAdmin/getSchool`).then((data)=>{
         const schoolData = data?.data?.data?.school
         setSchool(schoolData)
     })

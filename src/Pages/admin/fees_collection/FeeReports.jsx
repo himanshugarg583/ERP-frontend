@@ -4,7 +4,8 @@ import Header from "../../../components/comman_components/Header";
 import Footer from "../../../components/comman_components/Footer";
 import PageHeader from "../../../components/comman_components/PageHeader";
 import ReusableTable from "../../../components/comman_components/ReusableTable";
-import { ClipboardList, Search } from "lucide-react";
+import ReportHeading from "../../../components/comman_components/ReportHeading";
+import { Search } from "lucide-react";
 import {
   getAllClassesDropdown,
   getClassWiseDues,
@@ -147,23 +148,15 @@ const FeeReportsComponent = () => {
             <div className="mb-6">
               <PageHeader pageheading="Fee Management" Subheading="Fee Reports" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <button
                 type="button"
                 onClick={() => setActiveTab("due-installment")}
-                className={`flex items-center gap-4 rounded-xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                  activeTab === "due-installment"
-                    ? "border-violet-300 bg-violet-50"
-                    : "border-violet-200 bg-white"
+                className={`text-left ${
+                  activeTab === "due-installment" ? "rounded-lg ring-2 ring-violet-300" : ""
                 }`}
               >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-violet-100 text-violet-700">
-                  <ClipboardList className="h-6 w-6" />
-                </span>
-                <span>
-                  <span className="block text-lg font-semibold text-gray-900">Due Installment</span>
-                  <span className="block text-sm text-gray-500">class section wise</span>
-                </span>
+                <ReportHeading mainheading="DUE INSTALLMENT" subhading="class section wise" />
               </button>
             </div>
             <div className="space-y-6">

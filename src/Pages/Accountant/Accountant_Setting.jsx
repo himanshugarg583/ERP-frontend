@@ -5,12 +5,13 @@ import Accountant_Navigation from './Accountant_Navigation';
 import Accountant_EditableInput from './Accountant_EditableInput';
 import Accountant_EditButtons from './Accountant_EditButtons';
 import { FaLock, FaMoneyBill, FaCalculator, FaChartBar, FaBell, FaHeadset, FaPlus, FaTrash } from 'react-icons/fa';
+import { DEMO_IP_PLACEHOLDER } from '../../utils/assetUrls';
 
 const Accountant_Setting = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeSection, setActiveSection] = useState('security');
     const [settingsData, setSettingsData] = useState({
-        security: { password: '', confirmPassword: '', email: 'priya.sharma@example.com', sessions: [{ device: 'Laptop', ip: '192.168.1.1' }] },
+        security: { password: '', confirmPassword: '', email: 'priya.sharma@example.com', sessions: [{ device: 'Laptop', ip: DEMO_IP_PLACEHOLDER }] },
         feePayment: { categories: ['Tuition', 'Transport'], lateFee: { amount: 500, days: 10 }, discounts: [{ name: 'Merit', percent: 20 }], gateways: ['UPI', 'Stripe'] },
         payroll: { structure: { basic: 50000, bonus: 5000, deductions: 2000 }, cycle: 'Monthly', tax: 10 },
         expense: { categories: ['Stationery', 'Transport'], approval: 'Manager', limit: 10000 },

@@ -4,6 +4,12 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import StaffSidebar from "../../Staff/StaffSidebar";
 import StaffHeader from "../StaffHeader";
+import { DEMO_IP_PLACEHOLDER } from "../../../utils/assetUrls";
+
+const ipPlaceholder = String(DEMO_IP_PLACEHOLDER || '').trim();
+const ipFormatMessage = ipPlaceholder
+    ? `Invalid IP Address format (e.g., ${ipPlaceholder})`
+    : "Invalid IP Address format";
 
 // Yup validation schema
 const schema = yup.object().shape({
@@ -13,7 +19,7 @@ const schema = yup.object().shape({
     deviceAffected: yup.string().required("Device Affected is required"),
     ipAddress: yup.string().matches(
         /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^$/i,
-        "Invalid IP Address format (e.g., 192.168.1.1)"
+        ipFormatMessage
     ), // Optional, but validated if provided
     macAddress: yup.string().matches(
         /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$|^$/i,

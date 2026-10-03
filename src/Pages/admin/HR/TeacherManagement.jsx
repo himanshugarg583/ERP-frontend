@@ -23,7 +23,6 @@ import CommonTable from "../../../components/tables/CommonTable";
 import {
   getAllTeachers,
   getTeacherById,
-  createTeacher,
   updateTeacher,
   deleteTeacher,
 } from "../../../helper/requests-method/apiMethods";
@@ -36,24 +35,7 @@ const TeacherManagement = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [teacherToDelete, setTeacherToDelete] = useState(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    qualification: "",
-    dob: "",
-    gender: "",
-    salary: "",
-    joining_date: "",
-    permenantaddress: "", // Note: API uses typo "permenantaddress"
-    mobile: "",
-    currentaddress: "",
-    image: null,
-    role: "teacher", // Default role
-  });
-  const [formErrors, setFormErrors] = useState({});
+  const [filters, setFilters] = useState({ role: "all", status: "all" });
   const itemsPerPage = 10;
   const navigate = useNavigate();
 
@@ -120,147 +102,32 @@ const TeacherManagement = () => {
     };
   }, [fetchTeachers]);
 
-  // Handle add teacher - open modal
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  // Handle add staff - open full page
   const handleAddTeacher = () => {
-    setIsAddModalOpen(true);
-    // Reset form when opening
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      qualification: "",
-      dob: "",
-      gender: "",
-      salary: "",
-      joining_date: "",
-      permenantaddress: "",
-      mobile: "",
-      currentaddress: "",
-      image: null,
-      role: "teacher",
-    });
-    setFormErrors({});
+    navigate("/admin/staff-directory/add");
   };
 
-  // Handle form input change
-  const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "image") {
-      setFormData((prev) => ({ ...prev, [name]: files[0] || null }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-    // Clear error for this field
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Validate form
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.name.trim()) errors.name = "Name is required";
-    if (!formData.email.trim()) errors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = "Invalid email format";
-    if (!formData.password.trim()) errors.password = "Password is required";
-    else if (formData.password.length < 6) errors.password = "Password must be at least 6 characters";
-    if (!formData.qualification.trim()) errors.qualification = "Qualification is required";
-    if (!formData.dob) errors.dob = "Date of birth is required";
-    if (!formData.gender) errors.gender = "Gender is required";
-    if (!formData.salary.trim()) errors.salary = "Salary is required";
-    if (!formData.joining_date) errors.joining_date = "Joining date is required";
-    if (!formData.permenantaddress.trim()) errors.permenantaddress = "Permanent address is required";
-    if (!formData.mobile.trim()) errors.mobile = "Mobile number is required";
-    else if (!/^[0-9]{10}$/.test(formData.mobile)) errors.mobile = "Mobile must be 10 digits";
-    if (!formData.currentaddress.trim()) errors.currentaddress = "Current address is required";
-    if (!formData.role) errors.role = "Role is required";
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const handleFilterReset = () => {
+    setFilters({ role: "all", status: "all" });
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      toast.error("Please fill all required fields correctly");
+  // Handle view teacher - navigate to full-page detail view
+  const handleViewTeacher = (teacher) => {
+    const id = teacher?.id || teacher?.teacher_id || teacher?._id;
+    if (!id) {
+      toast.error("Teacher id not available");
       return;
     }
-
-    try {
-      setIsSubmitting(true);
-      const payload = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
-        qualification: formData.qualification.trim(),
-        dob: formData.dob,
-        gender: formData.gender,
-        salary: formData.salary.trim(),
-        joining_date: formData.joining_date,
-        permenantaddress: formData.permenantaddress.trim(), // API uses typo "permenantaddress"
-        mobile: formData.mobile.trim(),
-        currentaddress: formData.currentaddress.trim(),
-        role: formData.role || "teacher",
-      };
-
-      const response = await createTeacher(payload, formData.image);
-      if (response.success) {
-        toast.success(response.message || "Teacher added successfully");
-        setIsAddModalOpen(false); // Hide form after successful submission
-        setFormData({
-          name: "",
-          email: "",
-          password: "",
-          qualification: "",
-          dob: "",
-          gender: "",
-          salary: "",
-          joining_date: "",
-          permenantaddress: "",
-          mobile: "",
-          currentaddress: "",
-          image: null,
-          role: "teacher",
-        });
-        setFormErrors({});
-        fetchTeachers(); // Refresh the list
-        // Dispatch event for other components
-        window.dispatchEvent(new Event('teacherAdded'));
-      } else {
-        toast.error(response.message || "Failed to add teacher");
-      }
-    } catch (error) {
-      console.error("Failed to add teacher:", error);
-      toast.error(error.response?.data?.message || "Failed to add teacher");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle view teacher - fetch full details
-  const handleViewTeacher = async (teacher) => {
-    try {
-      const response = await getTeacherById(teacher.id);
-      if (response.success && response.data) {
-        const fullTeacher = {
-          ...teacher,
-          ...response.data,
-          teacherDetails: response.data.teacherDetails || {},
-        };
-        setSelectedTeacher(fullTeacher);
-        setIsViewModalOpen(true);
-      } else {
-        setSelectedTeacher(teacher);
-        setIsViewModalOpen(true);
-      }
-    } catch (error) {
-      console.error("Failed to fetch teacher details:", error);
-      toast.error("Failed to fetch teacher details");
-      // Still show the modal with available data
-      setSelectedTeacher(teacher);
-      setIsViewModalOpen(true);
-    }
+    navigate(`/admin/teacher-details/${id}`);
   };
 
   // Handle close view modal
@@ -269,7 +136,7 @@ const TeacherManagement = () => {
     setSelectedTeacher(null);
   };
 
-  // Download teacher information as PDF
+  // Download staff directory as PDF
   const downloadTeacherPDF = (teacher) => {
     const doc = new jsPDF();
 
@@ -280,7 +147,7 @@ const TeacherManagement = () => {
 
     doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
-    doc.text("Teacher Information", 105, 35, { align: "center" });
+    doc.text("Staff Directory", 105, 35, { align: "center" });
 
     // Line separator
     doc.setLineWidth(0.5);
@@ -319,7 +186,7 @@ const TeacherManagement = () => {
     doc.save(`${teacher.name || "teacher"}_profile.pdf`);
   };
 
-  // Print teacher information
+  // Print staff directory
   const printTeacherInfo = (teacher) => {
     const printWindow = window.open("", "_blank");
     const printContent = `
@@ -390,7 +257,7 @@ const TeacherManagement = () => {
         <body>
           <div class="header">
             <div class="school-name">Gurukulsarthi School Management</div>
-            <div class="title">Teacher Information</div>
+            <div class="title">Staff Directory</div>
           </div>
           
           <div class="info-grid">
@@ -454,18 +321,23 @@ const TeacherManagement = () => {
       required: false,
     },
     {
-      key: "teacher_id",
-      header: "Teacher ID",
-      type: "text",
-      required: true,
-      placeholder: "e.g. TCH001",
-    },
-    {
       key: "name",
-      header: "Teacher Name",
+      header: "Name",
       type: "text",
       required: true,
       placeholder: "e.g. Rajesh Kumar",
+    },
+    {
+      key: "role",
+      header: "Role",
+      type: "text",
+      required: true,
+      placeholder: "e.g. Teacher",
+      render: (value) => {
+        if (!value) return "N/A";
+        const text = value.toString();
+        return text.charAt(0).toUpperCase() + text.slice(1);
+      },
     },
     {
       key: "email",
@@ -489,6 +361,14 @@ const TeacherManagement = () => {
       placeholder: "e.g. M.Sc, B.Ed",
     },
   ];
+
+  const filteredTeachers = teachers.filter((teacher) => {
+    const roleValue = (teacher.role || "").toString().toLowerCase();
+    const statusValue = (teacher.status || "").toString().toLowerCase();
+    const roleMatch = filters.role === "all" || roleValue === filters.role;
+    const statusMatch = filters.status === "all" || statusValue === filters.status;
+    return roleMatch && statusMatch;
+  });
 
 
   // Handle page change
@@ -568,366 +448,68 @@ const TeacherManagement = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-xl md:text-2xl font-semibold text-slate-800 mb-2">
-                    Teacher Management
+                    Staff Directory
                   </h1>
                   <p className="text-sm text-slate-600">
-                    Manage teacher information, view details, and track performance
+                    Manage staff information, view details, and track performance
                   </p>
                 </div>
-                {/* Add Teacher Button */}
+                {/* Add Staff Button */}
                 <button
                   onClick={handleAddTeacher}
                   className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm w-full sm:w-auto justify-center"
                 >
                   <Plus size={20} />
-                  <span>Add Teacher</span>
+                  <span>Add Staff</span>
                 </button>
               </div>
             </div>
 
-          {/* Add Teacher Modal */}
-          {isAddModalOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center"
-              style={{
-                backgroundColor: "rgba(0, 0, 0, 0.5)",
-                backdropFilter: "blur(4px)",
-              }}
-              onClick={(e) =>
-                e.target === e.currentTarget && !isSubmitting && setIsAddModalOpen(false)
-              }
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl mx-4"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Header */}
-                <div className="bg-violet-600 text-white p-6 rounded-t-lg sticky top-0 z-10">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold">Add New Teacher</h2>
-                      <p className="text-violet-100 mt-1">
-                        Fill in the details to add a new teacher
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => !isSubmitting && setIsAddModalOpen(false)}
-                      disabled={isSubmitting}
-                      className="text-white hover:text-gray-200 transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      <X size={24} />
-                    </button>
-                  </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    name="role"
+                    value={filters.role}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="staff">Staff</option>
+                    <option value="librarian">Librarian</option>
+                    <option value="accountant">Accountant</option>
+                  </select>
                 </div>
-
-                {/* Form */}
-
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.name ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter teacher name"
-                    />
-                    {formErrors.name && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.email ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter email address"
-                    />
-                    {formErrors.email && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
-                    )}
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Password <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.password ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter password (min 6 characters)"
-                    />
-                    {formErrors.password && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>
-                    )}
-                  </div>
-
-                  {/* Mobile */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mobile Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="mobile"
-                      value={formData.mobile}
-                      onChange={handleInputChange}
-                      maxLength={10}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.mobile ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter 10-digit mobile number"
-                    />
-                    {formErrors.mobile && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.mobile}</p>
-                    )}
-                  </div>
-
-                  {/* Qualification */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Qualification <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="qualification"
-                      value={formData.qualification}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.qualification ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="e.g. M.Sc, B.Ed"
-                    />
-                    {formErrors.qualification && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.qualification}</p>
-                    )}
-                  </div>
-
-                  {/* Date of Birth */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date of Birth <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="dob"
-                      value={formData.dob}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.dob ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                    {formErrors.dob && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.dob}</p>
-                    )}
-                  </div>
-
-                  {/* Gender */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Gender <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex items-center gap-6 mt-2">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="gender"
-                          value="Male"
-                          checked={formData.gender === "Male"}
-                          onChange={handleInputChange}
-                          className="h-4 w-4 text-violet-600 border-gray-300 focus:ring-violet-600"
-                        />
-                        <span className="ml-2 text-gray-700">Male</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="gender"
-                          value="Female"
-                          checked={formData.gender === "Female"}
-                          onChange={handleInputChange}
-                          className="h-4 w-4 text-violet-600 border-gray-300 focus:ring-violet-600"
-                        />
-                        <span className="ml-2 text-gray-700">Female</span>
-                      </label>
-                    </div>
-                    {formErrors.gender && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.gender}</p>
-                    )}
-                  </div>
-
-                  {/* Salary */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Salary <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="salary"
-                      value={formData.salary}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.salary ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter salary"
-                    />
-                    {formErrors.salary && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.salary}</p>
-                    )}
-                  </div>
-
-                  {/* Joining Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Joining Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="joining_date"
-                      value={formData.joining_date}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.joining_date ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                    {formErrors.joining_date && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.joining_date}</p>
-                    )}
-                  </div>
-
-                  {/* Permanent Address */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Permanent Address <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="permenantaddress"
-                      value={formData.permenantaddress}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.permenantaddress ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter permanent address"
-                    />
-                    {formErrors.permenantaddress && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.permenantaddress}</p>
-                    )}
-                  </div>
-
-                  {/* Current Address */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Current Address <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="currentaddress"
-                      value={formData.currentaddress}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.currentaddress ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter current address"
-                    />
-                    {formErrors.currentaddress && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.currentaddress}</p>
-                    )}
-                  </div>
-
-                  {/* Role */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Role <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${
-                        formErrors.role ? "border-red-500" : "border-gray-300"
-                      }`}
-                    >
-                      <option value="teacher">Teacher</option>
-                      <option value="staff">Staff</option>
-                      <option value="librarian">Librarian</option>
-                      <option value="accountant">Accountant</option>
-                    </select>
-                    {formErrors.role && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.role}</p>
-                    )}
-                  </div>
-
-                  {/* Image Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Profile Image
-                    </label>
-                    <input
-                      type="file"
-                      name="image"
-                      accept="image/*"
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                    />
-                    {formData.image && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Selected: {formData.image.name}
-                      </p>
-                    )}
-                  </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={filters.status}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
                 </div>
-
-                {/* Form Actions */}
-                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200 p-6">
+                <div className="flex items-end">
                   <button
                     type="button"
-                    onClick={() => setIsAddModalOpen(false)}
-                    disabled={isSubmitting}
-                    className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                    onClick={handleFilterReset}
+                    className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? "Adding..." : "Add Teacher"}
+                    Clear Filters
                   </button>
                 </div>
-              </form>
-              </motion.div>
-            </motion.div>
-          )}
+              </div>
+            </div>
 
             {/* Table Component */}
             {isLoading ? (
@@ -936,14 +518,14 @@ const TeacherManagement = () => {
               </div>
             ) : (
               <CommonTable
-                title="Teacher Information"
+                title="Staff Directory"
                 columns={teacherColumns}
-                data={teachers}
+                data={filteredTeachers}
                 createApi={null}
                 updateApi={handleUpdateTeacher}
                 deleteApi={null}
-                searchPlaceholder="Search teachers..."
-                addButtonText="Add Teacher"
+                searchPlaceholder="Search staff..."
+                addButtonText="Add Staff"
                 exportFileName="teachers"
                 itemsPerPage={itemsPerPage}
                 enableSearch={true}

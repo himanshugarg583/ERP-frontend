@@ -34,7 +34,8 @@ export const setupToastPolicy = () => {
 
     const wrap = (originalFn) => (content, options) => {
       const suppressUntil = Number(w[SUPPRESS_UNTIL_KEY] || 0);
-      if (Date.now() <= suppressUntil) {
+      const shouldBypass = Boolean(options && typeof options === "object" && options.skipGlobalSuppress);
+      if (!shouldBypass && Date.now() <= suppressUntil) {
         return null;
       }
 

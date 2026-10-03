@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import OnlineLearningHeader from './OnlineLearningHeader';
 import OnlineLearningSidebar from './OnlineLearningSidebar';
 import { MdVideocam, MdHistoryEdu, MdBiotech, MdCalculate, MdMenuBook } from 'react-icons/md';
+import { getDemoFileUrl, getRandomUserImage } from '../../utils/assetUrls';
 
 const OnlineLearningClass = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,24 +26,24 @@ const OnlineLearningClass = () => {
   const [newDiscussion, setNewDiscussion] = useState("");
   const [subjects, setSubjects] = useState([
     {
-      id: 1, category: "Language", name: "Hindi", teacher: "Ms. Anjali Verma", teacherImg: "https://randomuser.me/api/portraits/women/25.jpg",
+      id: 1, category: "Language", name: "Hindi", teacher: "Ms. Anjali Verma", teacherImg: getRandomUserImage('women/25.jpg'),
       nextSession: "Today, 9:00 AM", progress: 75, gradient: "from-blue-500 to-blue-700",
       videoLectures: [
-        { id: 1, title: "Hindi Vyakaran", url: "https://example.com/hindi-vyakaran.mp4", uploadDate: "2025-03-20" },
-        { id: 2, title: "Kahani Lekhan", url: "https://example.com/kahani-lekhan.mp4", uploadDate: "2025-03-21" },
+        { id: 1, title: "Hindi Vyakaran", url: getDemoFileUrl('hindi-vyakaran.mp4'), uploadDate: "2025-03-20" },
+        { id: 2, title: "Kahani Lekhan", url: getDemoFileUrl('kahani-lekhan.mp4'), uploadDate: "2025-03-21" },
       ],},
     {
-      id: 2, category: "Language", name: "English", teacher: "Mr. David Brown", teacherImg: "https://randomuser.me/api/portraits/men/30.jpg",
+      id: 2, category: "Language", name: "English", teacher: "Mr. David Brown", teacherImg: getRandomUserImage('men/30.jpg'),
       nextSession: "Today, 11:00 AM", progress: 60, gradient: "from-green-500 to-green-700",
       videoLectures: [
-        { id: 1, title: "Tenses Basics", url: "https://example.com/tenses-basics.mp4", uploadDate: "2025-03-22" },
+        { id: 1, title: "Tenses Basics", url: getDemoFileUrl('tenses-basics.mp4'), uploadDate: "2025-03-22" },
       ],},
     {
-      id: 3, category: "Mathematics", name: "Maths", teacher: "Mrs. Neha Gupta", teacherImg: "https://randomuser.me/api/portraits/women/40.jpg",
+      id: 3, category: "Mathematics", name: "Maths", teacher: "Mrs. Neha Gupta", teacherImg: getRandomUserImage('women/40.jpg'),
       nextSession: "Tomorrow, 10:00 AM", progress: 80, gradient: "from-purple-500 to-purple-700",
       videoLectures: [
-        { id: 1, title: "Algebra Basics", url: "https://example.com/algebra-basics.mp4", uploadDate: "2025-03-20" },
-        { id: 2, title: "Geometry Intro", url: "https://example.com/geometry-intro.mp4", uploadDate: "2025-03-21" },
+        { id: 1, title: "Algebra Basics", url: getDemoFileUrl('algebra-basics.mp4'), uploadDate: "2025-03-20" },
+        { id: 2, title: "Geometry Intro", url: getDemoFileUrl('geometry-intro.mp4'), uploadDate: "2025-03-21" },
       ],},
   ]);
   const [availableCourses] = useState([
@@ -104,7 +105,7 @@ const OnlineLearningClass = () => {
       category: formData?.category ?? '',
       name: formData?.courseInterest || "Custom Course",
       teacher: "TBD",
-      teacherImg: "https://randomuser.me/api/portraits/lego/1.jpg",
+      teacherImg: getRandomUserImage('lego/1.jpg'),
       nextSession: "TBD",
       progress: 0,
       gradient: "from-gray-500 to-gray-700",
@@ -118,7 +119,7 @@ const OnlineLearningClass = () => {
     setSelectedSubject({
       ...course,
       teacher: "TBD",
-      teacherImg: "https://randomuser.me/api/portraits/lego/1.jpg",
+      teacherImg: getRandomUserImage('lego/1.jpg'),
       nextSession: course?.status === "upcoming" ? "Coming Soon" : "Available Now",
       progress: 0,
       gradient: `from-${course?.gradient?.split('-')[1] ?? 'gray'}-500 to-${course?.gradient?.split('-')[1] ?? 'gray'}-700`,

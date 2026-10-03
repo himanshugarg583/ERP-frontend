@@ -71,24 +71,6 @@ const TeacherLogin = () => {
     };
 
 
-  // const onSubmit = async (data) => {
-  //   setLoading(true);
-  //   setErrorMessage("");
-  //   try {
-  //     const response = await axios.post("http://192.168.1.39:8001/user/login", data, {
-  //       headers: { "Content-Type": "application/json" },
-  //     });
-
-  //     if (response.data.role === "TEACHER") {
-  //       navigate("/TeacherPortal");
-  //     }
-  //   } catch (error) {
-  //     setErrorMessage(error.response?.data?.message || "Login failed. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   return (
     <main className="flex justify-center items-center min-h-screen">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 transform hover:scale-[1.02] transition-all">

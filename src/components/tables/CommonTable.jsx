@@ -44,6 +44,9 @@ const CommonTable = ({
   onDelete = null,
   onView = null,
   onPageChange = null,
+
+  // Header Actions
+  headerActions = null,
   
   // Loading State
   loading = false,
@@ -519,6 +522,12 @@ const CommonTable = ({
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {headerActions && (
+              <div className="flex items-center gap-3">
+                {headerActions}
               </div>
             )}
           </div>

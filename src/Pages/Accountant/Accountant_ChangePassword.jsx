@@ -98,14 +98,13 @@ const AccountantChangePassword = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <div className="flex w-full">
-                <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-                <main className="flex-1 overflow-y-auto lg:ml-64">
-                    <Header setIsSidebarOpen={setIsSidebarOpen} />
-                    <div className="p-4 md:p-6">
-                        <div className="max-w-2xl mx-auto">
-                            <div className="bg-white p-8 rounded-xl shadow-md">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
+            <Sidebar />
+            <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
+                <Header setIsSidebarOpen={setIsSidebarOpen} />
+                <div className="p-4 md:p-6">
+                    <div className="max-w-2xl mx-auto">
+                        <div className="bg-white p-8 rounded-xl shadow-md">
                                 <header className="mb-8">
                                     <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
                                         <FaLock className="text-blue-600" />
@@ -259,7 +258,6 @@ const AccountantChangePassword = () => {
                     </div>
                 </main>
             </div>
-        </div>
     );
 };
 

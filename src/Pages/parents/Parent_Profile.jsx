@@ -5,6 +5,7 @@ import { FaUser, FaSchool, FaExclamationTriangle, FaFileAlt, FaCamera, FaPhone, 
 import Parent_EditableInput from './Parent_EditableInput';
 import Parent_StudentCard from './Parent_StudentCard';
 import Parent_EditButtons from './Parent_EditButtons';
+import { ASSET_URLS } from '../../utils/assetUrls';
 
 const ParentProfile = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Added sidebar state
@@ -31,7 +32,7 @@ const ParentProfile = () => {
             idProofFileName: 'No file uploaded',
             verifiedStatus: 'Aadhaar Card - Verified',
         },
-        profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=774&q=80',
+        profileImage: ASSET_URLS.unsplashParentProfile,
     });
     const [tempData, setTempData] = useState(profileData);
     const [isEditing, setIsEditing] = useState({

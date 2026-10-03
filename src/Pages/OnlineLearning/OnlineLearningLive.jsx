@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import OnlineLearningHeader from './OnlineLearningHeader';
 import OnlineLearningSidebar from './OnlineLearningSidebar';
 import { MdVideocam, MdPlayArrow, MdSchedule, MdGroup, MdLanguage, MdDownload, MdNotifications, MdClose } from 'react-icons/md';
+import { ASSET_URLS, getRandomUserImage } from '../../utils/assetUrls';
 
 const OnlineLearningLive = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -16,7 +17,7 @@ const OnlineLearningLive = () => {
   const classes = [
     {
       subject: "Hindi",
-      instructor: { name: "Ms. Anjali Verma", title: "Associate Professor", image: "https://randomuser.me/api/portraits/women/25.jpg" },
+      instructor: { name: "Ms. Anjali Verma", title: "Associate Professor", image: getRandomUserImage('women/25.jpg') },
       startTime: "09:00 AM",
       endTime: "10:00 AM",
       topic: "Advanced Grammar",
@@ -30,7 +31,7 @@ const OnlineLearningLive = () => {
     },
     {
       subject: "English",
-      instructor: { name: "Mr. David Brown", title: "Associate Professor", image: "https://randomuser.me/api/portraits/men/30.jpg" },
+      instructor: { name: "Mr. David Brown", title: "Associate Professor", image: getRandomUserImage('men/30.jpg') },
       startTime: "11:00 AM",
       endTime: "12:00 PM",
       topic: "Shakespeare's Sonnets",
@@ -44,7 +45,7 @@ const OnlineLearningLive = () => {
     },
     {
       subject: "Physics",
-      instructor: { name: "Dr. Rajesh Kumar", title: "Senior Professor", image: "https://randomuser.me/api/portraits/men/55.jpg" },
+      instructor: { name: "Dr. Rajesh Kumar", title: "Senior Professor", image: getRandomUserImage('men/55.jpg') },
       startTime: "4:11 PM",
       endTime: "4:20 PM",
       topic: "Electromagnetic Induction",
@@ -101,7 +102,7 @@ const OnlineLearningLive = () => {
         <div className="w-full md:w-2/3 pr-0 md:pr-6">
           <div className="aspect-video bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden relative mb-4">
             <img 
-              src="https://images.unsplash.com/photo-1577896851231-70ef18881754?ixlib=rb-1.2.1&auto=format&fit=crop&w=1470&q=80"
+              src={ASSET_URLS.unsplashClassroom}
               alt="Live class preview" className="w-full h-full object-cover opacity-50"/>
             <div className="absolute inset-0 flex items-center justify-center">
               <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-4 rounded-full transition-all transform hover:scale-110">

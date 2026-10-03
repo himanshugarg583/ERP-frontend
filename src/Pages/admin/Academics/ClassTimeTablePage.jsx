@@ -453,8 +453,12 @@ const ClassTimeTablePage = () => {
         if (hasConflict) {
           return data.message || response?.message || "Teacher conflict detected";
         }
-      } catch {
-        // Conflict API can be non-blocking if backend does not support all keys.
+      } catch (conflictError) {
+        const message =
+          conflictError?.response?.data?.message ||
+          conflictError?.message ||
+          "Teacher conflict detected";
+        return message;
       }
     }
 

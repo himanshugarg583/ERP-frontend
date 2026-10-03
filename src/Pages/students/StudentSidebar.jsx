@@ -32,9 +32,9 @@ const SIDEBAR_ITEMS = [
     subItems: [{ name: "Attendance", href: "/student/attendance" }],
   },
   {
-    name: "Timetable",
+    name: "Class Timetable",
     icon: CalendarDays,
-    subItems: [{ name: "Timetable", href: "/student/timetable" }],
+    subItems: [{ name: "Class Timetable", href: "/student/timetable" }],
   },
   {
     name: "Subjects",
@@ -77,7 +77,6 @@ const SIDEBAR_ITEMS = [
     icon: Wallet,
     subItems: [
       { name: "Installment", href: "/student/fees/installment" },
-      { name: "Fee Assign", href: "/student/fees/assign" },
     ],
   },
   {
