@@ -140,9 +140,12 @@ const TeacherManagement = () => {
   const downloadTeacherPDF = (teacher) => {
     const doc = new jsPDF();
 
+
     // Header
     doc.setFontSize(20);
     doc.setTextColor(75, 0, 130); // Purple color
+    doc.text("Gurukulsarthi School Management", 105, 20, { align: "center" });
+
     doc.text("Gurukulsarthi School Management", 105, 20, { align: "center" });
 
     doc.setFontSize(16);
@@ -153,9 +156,11 @@ const TeacherManagement = () => {
     doc.setLineWidth(0.5);
     doc.line(20, 42, 190, 42);
 
+
     // Teacher details
     let yPosition = 60;
     doc.setFontSize(12);
+
 
     const details = [
       ["Teacher ID:", teacher.teacher_id || teacher.id?.toString() || "N/A"],
@@ -167,13 +172,17 @@ const TeacherManagement = () => {
       ["Experience:", teacher.experience || teacher.teacherDetails?.experience || "N/A"],
     ];
 
+
     details.forEach(([label, value]) => {
       doc.setFont("helvetica", "bold");
+      doc.setFont("helvetica", "bold");
       doc.text(label, 25, yPosition);
+      doc.setFont("helvetica", "normal");
       doc.setFont("helvetica", "normal");
       doc.text(value, 80, yPosition);
       yPosition += 15;
     });
+
 
     // Footer
     doc.setFontSize(10);
@@ -184,10 +193,16 @@ const TeacherManagement = () => {
     });
 
     doc.save(`${teacher.name || "teacher"}_profile.pdf`);
+    doc.text("Gurukulsarthi School Management System", 105, 270, {
+      align: "center",
+    });
+
+    doc.save(`${teacher.name || "teacher"}_profile.pdf`);
   };
 
   // Print staff directory
   const printTeacherInfo = (teacher) => {
+    const printWindow = window.open("", "_blank");
     const printWindow = window.open("", "_blank");
     const printContent = `
       <!DOCTYPE html>
@@ -268,9 +283,11 @@ const TeacherManagement = () => {
             <div class="info-item">
               <span class="label">Name:</span>
               <span class="value">${teacher.name || "N/A"}</span>
+              <span class="value">${teacher.name || "N/A"}</span>
             </div>
             <div class="info-item">
               <span class="label">Email:</span>
+              <span class="value">${teacher.email || "N/A"}</span>
               <span class="value">${teacher.email || "N/A"}</span>
             </div>
             <div class="info-item">
@@ -299,6 +316,7 @@ const TeacherManagement = () => {
       </html>
     `;
 
+
     printWindow.document.write(printContent);
     printWindow.document.close();
     printWindow.focus();
@@ -314,10 +332,14 @@ const TeacherManagement = () => {
       key: "count",
       header: "S.No",
       type: "text",
+      key: "count",
+      header: "S.No",
+      type: "text",
       render: (value, item, index) => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         return startIndex + index + 1;
       },
+      required: false,
       required: false,
     },
     {
@@ -427,7 +449,19 @@ const TeacherManagement = () => {
 
   return (
     <div className="bg-slate-200 flex TeacherManagement">
+    <div className="bg-slate-200 flex TeacherManagement">
       <Sidebar />
+
+      <div
+        className="overflow-auto relative z-1 flex-col"
+        style={{
+          height: "95vh",
+          width: "100vw",
+          gap: "10px",
+          display: "flex",
+          transition: "margin-left 0.3s ease",
+        }}
+      >
 
       <div
         className="overflow-auto relative z-1 flex-col"
@@ -602,7 +636,12 @@ const TeacherManagement = () => {
               style={{
                 backgroundColor: "rgba(0, 0, 0, 0.5)",
                 backdropFilter: "blur(4px)",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                backdropFilter: "blur(4px)",
               }}
+              onClick={(e) =>
+                e.target === e.currentTarget && handleCloseViewModal()
+              }
               onClick={(e) =>
                 e.target === e.currentTarget && handleCloseViewModal()
               }
@@ -616,8 +655,15 @@ const TeacherManagement = () => {
               >
                 {/* Header */}
                 <div className="bg-violet-600 text-white p-6 rounded-t-lg">
+                <div className="bg-violet-600 text-white p-6 rounded-t-lg">
                   <div className="flex items-center justify-between">
                     <div>
+                      <h2 className="text-2xl font-bold">
+                        Gurukulsarthi School Management
+                      </h2>
+                      <p className="text-violet-100 mt-1">
+                        Teacher Profile Details
+                      </p>
                       <h2 className="text-2xl font-bold">
                         Gurukulsarthi School Management
                       </h2>
@@ -639,7 +685,12 @@ const TeacherManagement = () => {
                   {/* Teacher Info Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
+                        <User className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Teacher ID
+                        </span>
                         <User className="w-5 h-5 text-violet-600" />
                         <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
                           Teacher ID
@@ -647,11 +698,18 @@ const TeacherManagement = () => {
                       </div>
                       <span className="text-lg font-semibold text-violet-900">
                         {selectedTeacher.teacher_id || "N/A"}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.teacher_id || "N/A"}
                       </span>
                     </div>
 
                     <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
+                        <User className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Full Name
+                        </span>
                         <User className="w-5 h-5 text-violet-600" />
                         <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
                           Full Name
@@ -659,11 +717,18 @@ const TeacherManagement = () => {
                       </div>
                       <span className="text-lg font-semibold text-violet-900">
                         {selectedTeacher.name || "N/A"}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.name || "N/A"}
                       </span>
                     </div>
 
                     <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
+                        <Mail className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Email
+                        </span>
                         <Mail className="w-5 h-5 text-violet-600" />
                         <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
                           Email
@@ -671,11 +736,18 @@ const TeacherManagement = () => {
                       </div>
                       <span className="text-lg font-semibold text-violet-900">
                         {selectedTeacher.email || "N/A"}
+                      <span className="text-lg font-semibold text-violet-900">
+                        {selectedTeacher.email || "N/A"}
                       </span>
                     </div>
 
                     <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
+                        <Phone className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Phone
+                        </span>
                         <Phone className="w-5 h-5 text-violet-600" />
                         <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
                           Phone
@@ -687,7 +759,12 @@ const TeacherManagement = () => {
                     </div>
 
                     <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
+                        <BookOpen className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Subject
+                        </span>
                         <BookOpen className="w-5 h-5 text-violet-600" />
                         <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
                           Subject
@@ -699,7 +776,12 @@ const TeacherManagement = () => {
                     </div>
 
                     <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
+                    <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
+                        <GraduationCap className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Qualification
+                        </span>
                         <GraduationCap className="w-5 h-5 text-violet-600" />
                         <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
                           Qualification
@@ -712,6 +794,10 @@ const TeacherManagement = () => {
 
                     <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
                       <div className="flex items-center gap-3 mb-2">
+                        <Award className="w-5 h-5 text-violet-600" />
+                        <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
+                          Experience
+                        </span>
                         <Award className="w-5 h-5 text-violet-600" />
                         <span className="text-sm font-medium text-violet-800 uppercase tracking-wide">
                           Experience
@@ -792,6 +878,7 @@ const TeacherManagement = () => {
                       <button
                         onClick={() => downloadTeacherPDF(selectedTeacher)}
                         className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
                       >
                         <Download size={18} />
                         Download PDF
@@ -799,12 +886,14 @@ const TeacherManagement = () => {
                       <button
                         onClick={() => printTeacherInfo(selectedTeacher)}
                         className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors cursor-pointer"
                       >
                         <Printer size={18} />
                         Print
                       </button>
                       <button
                         onClick={handleCloseViewModal}
+                        className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                         className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                       >
                         Close

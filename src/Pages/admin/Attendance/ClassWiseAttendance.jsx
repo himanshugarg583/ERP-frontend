@@ -521,5 +521,8 @@ const ClassWiseAttendance = () => {
     </div>
   );
 };
+  );
+};
 
+export default ClassWiseAttendance;
 export default ClassWiseAttendance;

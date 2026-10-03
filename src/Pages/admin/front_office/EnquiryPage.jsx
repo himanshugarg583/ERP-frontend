@@ -376,6 +376,7 @@ const EnquiryPage = () => {
 
     return (
         <div className="bg-slate-200 flex h-screen overflow-hidden">
+        <div className="bg-slate-200 flex h-screen overflow-hidden">
             <Sidebar />
 
             <div

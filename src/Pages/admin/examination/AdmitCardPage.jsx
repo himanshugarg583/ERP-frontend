@@ -36,3 +36,4 @@ const AdmitCardPage = () => {
 };
 
 export default AdmitCardPage;
+

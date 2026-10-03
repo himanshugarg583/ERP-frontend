@@ -120,12 +120,18 @@ const LineChart = () => {
       borderRadius: 2,
       backgroundColor: '#FFFFFF',
       border: '1px solid #e5e7eb',
+      width: '100%',
+      boxShadow: 2,
+      borderRadius: 2,
+      backgroundColor: '#FFFFFF',
+      border: '1px solid #e5e7eb',
     }}
   >
     <CardContent>
       <Typography
         variant="h5"
         gutterBottom
+        sx={{ fontFamily: 'Roboto', fontWeight: 600, color: '#7C3AED' }}
         sx={{ fontFamily: 'Roboto', fontWeight: 600, color: '#7C3AED' }}
       >
         Monthly Fee Collection - 2024-25

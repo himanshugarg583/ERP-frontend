@@ -4,6 +4,7 @@ import { CheQueForm } from "../../../components/fees/DiscountForm";
 import { Cheque_Data } from "../../../data";
 import Sidebar from "../Sidebar";
 import Header from "../../../components/comman_components/Header";
+import Header from "../../../components/comman_components/Header";
 // import { Cheque_Data } from "../../../components/data";
 const ChequePage=()=>{
     console.log("uytre")

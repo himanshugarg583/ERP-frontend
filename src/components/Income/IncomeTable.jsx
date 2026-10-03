@@ -275,6 +275,7 @@ const IncomeTable = () => {
     return (
         <motion.div
             className='bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-6 relative z-1'
+            className='bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-6 relative z-1'
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: 0.2 }}
@@ -546,6 +547,7 @@ const IncomeTable = () => {
                             </button>
                             <button
                                 onClick={handleSave}
+                                className='bg-violet-600 hover:bg-violet-700 text-white text-md px-4 py-2 rounded-md w-24'
                                 className='bg-violet-600 hover:bg-violet-700 text-white text-md px-4 py-2 rounded-md w-24'
                             >
                                 Save

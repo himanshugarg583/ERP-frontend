@@ -182,6 +182,7 @@ const CreateClass = ({ onClassAdded }) => {
                 value={newClass.section_name}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all duration-200"
+                placeholder="e.g. A"
                 required
               >
                 <option value="">Select Section</option>

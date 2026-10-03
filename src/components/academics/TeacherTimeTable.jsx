@@ -62,8 +62,8 @@ const TeacherTimeTable = ({
   const periodSlots = buildPeriodSlots(timetable);
 
   return (
-    <div className="w-full mx-auto p-6">
-      <h2 className="text-2xl font-semibold text-violet-700 mb-4">Teacher Timetable</h2>
+<div className="w-full mx-auto p-8">
+      <h2 className="text-3xl font-bold text-violet-700 mb-6 text-center">Teacher Timetable</h2>
 
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-col md:flex-row md:items-end gap-4">
