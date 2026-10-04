@@ -216,8 +216,7 @@ const Sidebar = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [tooltip, setTooltip] = useState({ visible: false, text: '', top: 0, left: 0 });
   const navRef = useRef(null);
-  const [tooltip, setTooltip] = useState({ visible: false, text: '', top: 0, left: 0 });
-  const navRef = useRef(null);
+
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);

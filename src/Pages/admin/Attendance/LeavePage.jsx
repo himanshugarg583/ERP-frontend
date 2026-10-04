@@ -918,7 +918,5 @@ const LeavePage = () => {
     </div>
   );
 };
-  );
-};
 
 export default LeavePage;

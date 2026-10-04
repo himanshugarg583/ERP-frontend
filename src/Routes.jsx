@@ -104,7 +104,6 @@ import IncomeHead from "./Pages/admin/Income/IncomeHead";
 import StudentsDetails from "./Pages/admin/Student_info/StudentsDetails";
 import AddExpensePage from "./Pages/admin/Expense/AddExpensePage";
 import ExpenseHead from "./Pages/admin/Expense/ExpenseHead";
-import ExpenseHead from "./Pages/admin/Expense/ExpenseHead";
 import ClassWiseAttendance from "./Pages/admin/Attendance/ClassWiseAttendance";
 import Leave from "./Pages/admin/Attendance/LeavePage";
 import AttendanceReport from "./Pages/admin/Attendance/AttendanceReport";

@@ -13,6 +13,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
+.env
+.env.*
 
 # IDE and editor specific files
 .idea/
@@ -48,3 +50,4 @@ temp/
 *.sqlite
 *.db
 config.bat
+

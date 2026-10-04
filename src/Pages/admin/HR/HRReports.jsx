@@ -53,77 +53,100 @@ const HRReports = () => {
         transition: 'margin-left 0.3s ease'
       }}>
         <Header />
-
-        <div className="bg-white shadow-md rounded-lg w-full max-w-7xl p-6 flex-1 overflow-auto relative z-1 m-auto text-black">
-          <ToastContainer />
-
-          {/* Page Header */}
-          <motion.div
-            className="mb-6"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">HR Reports</h1>
-            <p className="text-gray-600">Generate and view various teacher and HR reports</p>
-          </motion.div>
-
-          {/* Report Headings Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <div onClick={() => handleReportClick('teacher-credentials')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Credentials" subheading="login and access report" />
-            </div>
-            <div onClick={() => handleReportClick('teacher-attendance')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Attendance" subheading="monthly attendance report" />
-            </div>
-            <div onClick={() => handleReportClick('teacher-performance')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Performance" subheading="evaluation and rating" />
-            </div>
-            <div onClick={() => handleReportClick('teacher-qualification')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Qualification" subheading="certification and training" />
-            </div>
-            <div onClick={() => handleReportClick('teacher-salary')} className="cursor-pointer">
-              <ReportHeading mainheading="Teacher Salary" subheading="payroll and compensation" />
+        <main className="w-full py-4 md:py-6 px-4 md:px-6 hr-report-page">
+          <div className="space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 hr-report-grid">
+              {reportCards.map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => handleReportClick(card.route)}
+                  className="text-left hr-report-card"
+                >
+                  <ReportHeading mainheading={card.title} subhading={card.subtitle} />
+                </button>
+              ))}
             </div>
           </div>
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 
-          {/* Filter Component */}
-          {selectedReport && (
-            <ReportFilter
-              filterFields={reportConfigs[selectedReport].filterFields}
-              onFilterChange={handleFilterChange}
-              onClearFilters={handleClearFilters}
-              title={`${reportConfigs[selectedReport].title} Filters`}
-            />
-          )}
+            .hr-report-page {
+              font-family: 'Sora', 'Segoe UI', sans-serif;
+              background: radial-gradient(circle at 10% 10%, #fff7ed 0%, #f8fafc 35%),
+                linear-gradient(120deg, #f8fafc 0%, #eef2ff 100%);
+              border-radius: 24px;
+              padding: 24px;
+            }
 
-          {/* Table Component */}
-          {selectedReport && (
-            <CommonTable
-              title={reportConfigs[selectedReport].title}
-              columns={reportConfigs[selectedReport].columns}
-              data={filteredData}
-              createApi={null}
-              updateApi={null}
-              deleteApi={null}
-              searchPlaceholder={`Search ${reportConfigs[selectedReport].title.toLowerCase()}...`}
-              addButtonText={`Add ${reportConfigs[selectedReport].title.split(' ')[0]}`}
-              exportFileName={selectedReport.replace('-', '_')}
-              itemsPerPage={itemsPerPage}
-              loading={loading}
-              enableSearch={true}
-              enablePagination={true}
-              enableAdd={false}
-              enableEdit={false}
-              enableDelete={false}
-              enableView={true}
-              onPageChange={handlePageChange}
-              statusConfig={{
-                enable: false
-              }}
-            />
-          )}
-        </div>
+            .hr-report-grid {
+              gap: 24px;
+            }
+
+            .hr-report-card {
+              animation: hrCardIn 420ms ease both;
+            }
+
+            .hr-report-card:nth-child(1) { animation-delay: 40ms; }
+            .hr-report-card:nth-child(2) { animation-delay: 80ms; }
+            .hr-report-card:nth-child(3) { animation-delay: 120ms; }
+            .hr-report-card:nth-child(4) { animation-delay: 160ms; }
+            .hr-report-card:nth-child(5) { animation-delay: 200ms; }
+            .hr-report-card:nth-child(6) { animation-delay: 240ms; }
+
+            .hr-report-card > div {
+              border-radius: 18px;
+              border: 1px solid #f3d6b3;
+              background: linear-gradient(135deg, #fff7ed 0%, #ffffff 55%);
+              box-shadow: 0 10px 24px rgba(148, 163, 184, 0.2);
+              padding: 18px 20px;
+              transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+              position: relative;
+              overflow: hidden;
+              min-height: 120px;
+            }
+
+            .hr-report-card > div::after {
+              content: '';
+              position: absolute;
+              inset: 0;
+              background: radial-gradient(circle at 80% 0%, rgba(251, 146, 60, 0.16), transparent 55%);
+              pointer-events: none;
+            }
+
+            .hr-report-card:hover > div {
+              transform: translateY(-4px);
+              box-shadow: 0 16px 30px rgba(148, 163, 184, 0.28);
+              border-color: #f59e0b;
+            }
+
+            .hr-report-card > div img {
+              border-radius: 9999px;
+              background: #fde68a;
+              padding: 6px;
+              box-shadow: 0 6px 12px rgba(251, 191, 36, 0.25);
+            }
+
+            .hr-report-card > div h3 {
+              color: #b45309 !important;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+              font-size: 0.9rem !important;
+              min-height: 22px;
+            }
+
+            .hr-report-card > div p {
+              color: #475569 !important;
+              font-size: 0.95rem !important;
+              min-height: 44px;
+            }
+
+            @keyframes hrCardIn {
+              from { opacity: 0; transform: translateY(12px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+        </main>
       </div>
     </div>
   );

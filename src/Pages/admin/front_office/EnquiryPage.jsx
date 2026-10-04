@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { UserCheck, UserIcon, UserX, UserPlus, Filter, X } from 'lucide-react'
-import { UserCheck, UserIcon, UserX, UserPlus, Filter, X } from 'lucide-react'
 import StandardStatCard from '../../../components/comman_components/StandardStatCard'
 import ReusableTable from '../../../components/comman_components/ReusableTable'
 import Header from '../../../components/comman_components/Header'
 import Sidebar from '../Sidebar'
-import {
-    fetchEnquiryCount,
-    fetchAllEnquiries,
-    createEnquiry,
-    updateEnquiry,
-    deleteEnquiry
 import {
     fetchEnquiryCount,
     fetchAllEnquiries,
@@ -49,16 +42,10 @@ const EnquiryPage = () => {
         {
             key: 'name',
             header: 'Student Name',
-        {
-            key: 'name',
-            header: 'Student Name',
             required: true,
             type: 'text',
             placeholder: 'Enter student name'
         },
-        {
-            key: 'phone',
-            header: 'Phone Number',
         {
             key: 'phone',
             header: 'Phone Number',
@@ -69,17 +56,11 @@ const EnquiryPage = () => {
         {
             key: 'email',
             header: 'Email',
-        {
-            key: 'email',
-            header: 'Email',
             required: false,
             type: 'email',
             placeholder: 'Enter email address',
-            hideInTable: true // Hide in table display but show in forms
+            hideInTable: true
         },
-        {
-            key: 'parentName',
-            header: 'Parent Name',
         {
             key: 'parentName',
             header: 'Parent Name',
@@ -87,9 +68,6 @@ const EnquiryPage = () => {
             type: 'text',
             placeholder: 'Enter parent name'
         },
-        {
-            key: 'className',
-            header: 'Class',
         {
             key: 'className',
             header: 'Class',
@@ -116,14 +94,12 @@ const EnquiryPage = () => {
         {
             key: 'oldSchool',
             header: 'Previous School',
-        {
-            key: 'oldSchool',
-            header: 'Previous School',
             required: false,
             type: 'text',
             placeholder: 'Enter previous school name',
-            hideInTable: true // Hide in table display but show in forms
+            hideInTable: true
         },
+
         {
             key: 'source',
             header: 'Source',
@@ -174,18 +150,13 @@ const EnquiryPage = () => {
         },
         {
             key: 'status',
-        {
-            key: 'status',
             header: 'Status',
             required: true,
             type: 'select',
             options: [
                 { value: 'active', label: 'Active' },
                 { value: 'admitted', label: 'Admitted' },
-                { value: 'admitted', label: 'Admitted' },
                 { value: 'inactive', label: 'Inactive' },
-                { value: 'emailenquiry', label: 'Email Enquiry' },
-                { value: 'counsling_schedule', label: 'Counsling Schedule' }
                 { value: 'emailenquiry', label: 'Email Enquiry' },
                 { value: 'counsling_schedule', label: 'Counsling Schedule' }
             ],
@@ -196,11 +167,7 @@ const EnquiryPage = () => {
                     admitted: { text: 'Admitted', color: 'bg-violet-100 text-violet-700' },
                     emailenquiry: { text: 'Email Enquiry', color: 'bg-blue-100 text-blue-800' },
                     counsling_schedule: { text: 'Counsling Schedule', color: 'bg-orange-100 text-orange-800' }
-                    admitted: { text: 'Admitted', color: 'bg-violet-100 text-violet-700' },
-                    emailenquiry: { text: 'Email Enquiry', color: 'bg-blue-100 text-blue-800' },
-                    counsling_schedule: { text: 'Counsling Schedule', color: 'bg-orange-100 text-orange-800' }
                 };
-                const status = statusMap[value] || { text: value || 'N/A', color: 'bg-gray-100 text-gray-800' };
                 const status = statusMap[value] || { text: value || 'N/A', color: 'bg-gray-100 text-gray-800' };
                 return (
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
@@ -212,26 +179,21 @@ const EnquiryPage = () => {
         {
             key: 'address',
             header: 'Address',
-        {
-            key: 'address',
-            header: 'Address',
             required: false,
             type: 'textarea',
             placeholder: 'Enter complete address',
-            hideInTable: true // Hide in table display but show in forms
+            hideInTable: true
         },
-        {
-            key: 'description',
-            header: 'Description/Remarks',
         {
             key: 'description',
             header: 'Description/Remarks',
             required: false,
             type: 'textarea',
             placeholder: 'Enter any additional information',
-            hideInTable: true // Hide in table display but show in forms
+            hideInTable: true
         }
     ];
+
 
     // Filter columns for table display (exclude hideInTable columns)
     const displayColumns = enquiryColumns.filter(col => !col.hideInTable);
@@ -242,10 +204,7 @@ const EnquiryPage = () => {
             setLoading(true);
             const response = await createEnquiry(buildEnquiryPayload(enquiryData));
             if (response.success) {
-                // Refresh the enquiry list after successful creation
                 await fetchEnquiries();
-                return {
-                    success: true,
                 return {
                     success: true,
                     message: response.message || 'Enquiry added successfully!'
@@ -254,16 +213,10 @@ const EnquiryPage = () => {
                 return {
                     success: false,
                     message: response.message || 'Failed to create enquiry'
-                return {
-                    success: false,
-                    message: response.message || 'Failed to create enquiry'
                 };
             }
         } catch (error) {
             console.error('Error creating enquiry:', error);
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Failed to create enquiry'
             return {
                 success: false,
                 message: error.response?.data?.message || 'Failed to create enquiry'
@@ -278,10 +231,7 @@ const EnquiryPage = () => {
             setLoading(true);
             const response = await updateEnquiry(id, buildEnquiryPayload(enquiryData));
             if (response.success) {
-                // Refresh the enquiry list after successful update
                 await fetchEnquiries();
-                return {
-                    success: true,
                 return {
                     success: true,
                     message: response.message || 'Enquiry updated successfully!'
@@ -290,16 +240,10 @@ const EnquiryPage = () => {
                 return {
                     success: false,
                     message: response.message || 'Failed to update enquiry'
-                return {
-                    success: false,
-                    message: response.message || 'Failed to update enquiry'
                 };
             }
         } catch (error) {
             console.error('Error updating enquiry:', error);
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Failed to update enquiry'
             return {
                 success: false,
                 message: error.response?.data?.message || 'Failed to update enquiry'
@@ -314,18 +258,12 @@ const EnquiryPage = () => {
             setLoading(true);
             const response = await deleteEnquiry(id);
             if (response.success) {
-                // Refresh the enquiry list after successful deletion
                 await fetchEnquiries();
-                return {
-                    success: true,
                 return {
                     success: true,
                     message: response.message || 'Enquiry deleted successfully!'
                 };
             } else {
-                return {
-                    success: false,
-                    message: response.message || 'Failed to delete enquiry'
                 return {
                     success: false,
                     message: response.message || 'Failed to delete enquiry'
@@ -336,14 +274,12 @@ const EnquiryPage = () => {
             return {
                 success: false,
                 message: error.response?.data?.message || 'Failed to delete enquiry'
-            return {
-                success: false,
-                message: error.response?.data?.message || 'Failed to delete enquiry'
             };
         } finally {
             setLoading(false);
         }
     };
+
 
     // Fetch all enquiries from API
     const fetchEnquiries = async () => {
@@ -442,7 +378,6 @@ const EnquiryPage = () => {
 
     return (
         <div className="bg-slate-200 flex h-screen overflow-hidden">
-        <div className="bg-slate-200 flex h-screen overflow-hidden">
             <Sidebar />
 
 
@@ -462,7 +397,6 @@ const EnquiryPage = () => {
                 <main className="max-w-full py-4 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <StandardStatCard name="Total Enquiry" icon={UserIcon} value={stats.totalEnquiries.toLocaleString()} color="#7c3aed" />
                         <StandardStatCard name="Total Enquiry" icon={UserIcon} value={stats.totalEnquiries.toLocaleString()} color="#7c3aed" />
                         <StandardStatCard name="Active Enquiry" icon={UserCheck} value={stats.activeEnquiries.toLocaleString()} color="#f59e0b" />
                         <StandardStatCard name="InActive Enquiry" icon={UserX} value={stats.inactiveEnquiries.toLocaleString()} color="#ef4444" />
@@ -564,7 +498,6 @@ const EnquiryPage = () => {
 
                     <ReusableTable
                         title="Admission Enquiry"
-                        initialData={filteredEnquiryData}
                         initialData={filteredEnquiryData}
                         columns={enquiryColumns}
                         displayColumns={displayColumns}

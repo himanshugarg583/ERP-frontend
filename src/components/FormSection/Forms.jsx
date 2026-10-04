@@ -17,7 +17,6 @@ const CombinedForm = () => {
     admission_date: "",
     class_section_id: "",
     admission_no: "",
-    admission_no: "",
     phone_no: "",
     previous_school_name: "",
     father_name: "",

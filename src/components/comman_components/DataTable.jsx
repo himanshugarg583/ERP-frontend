@@ -240,7 +240,6 @@ const DataTable = ({
       startY: 40,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [124, 58, 237] },
-      headStyles: { fillColor: [124, 58, 237] },
       alternateRowStyles: { fillColor: [245, 245, 245] },
     });
 
