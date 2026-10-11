@@ -13,12 +13,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
-.env
-.env.*
 
 # IDE and editor specific files
 .idea/
-.vscode/
 *.sublime-project
 *.sublime-workspace
 

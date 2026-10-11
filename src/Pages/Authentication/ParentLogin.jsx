@@ -13,12 +13,14 @@ const schema = yup.object({
   password: yup.string().required("Password is required").min(6, "Password must be at least 6 characters"),
 });
 
+import BACKEND_URL from "../../utils/apiConfig";
+
 const ParentLogin = () => {
   const navigate = useNavigate();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const authBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
+  const authBaseUrl = BACKEND_URL;
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
