@@ -15,12 +15,13 @@ import {
 } from '@mui/material';
 import { Announcement as AnnouncementIcon, AttachFile } from '@mui/icons-material';
 import { getNotices } from '../../helper/requests-method/apiMethods';
+import BACKEND_URL from '../../utils/apiConfig';
 
 const AnnouncementList = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const attachmentBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
+  const attachmentBaseUrl = BACKEND_URL;
 
   useEffect(() => {
     const fetchNotices = async () => {

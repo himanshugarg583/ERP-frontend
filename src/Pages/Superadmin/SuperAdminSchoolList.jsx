@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
 import SuperAdminHeader from './SuperAdminHeader';
 import axios from 'axios';
+import BACKEND_URL from '../../utils/apiConfig';
 
 const SuperAdminSchoolList = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [School, setSchool] = useState([]);
   const [schoolDataa,setSchoolData]= useState([]);
-  const superAdminBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
+  const superAdminBaseUrl = BACKEND_URL;
 
   useEffect(()=>{
     axios.get(`${superAdminBaseUrl}/superAdmin/getSchool`).then((data)=>{
