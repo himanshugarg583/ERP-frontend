@@ -1,6 +1,7 @@
 import axios from 'axios';
+import BACKEND_URL from '../../utils/apiConfig';
 
-const API_BASE_URL = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
+const API_BASE_URL = BACKEND_URL;
 
 const getToken = () => localStorage.getItem('authToken') || localStorage.getItem('token') || '';
 
