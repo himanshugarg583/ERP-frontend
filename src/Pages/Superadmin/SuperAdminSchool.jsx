@@ -4,10 +4,11 @@ import { FaSave } from 'react-icons/fa';
 import SuperAdminHeader from './SuperAdminHeader';
 import SuperAdminSidebar from './SuperAdminSidebar';
 import axios from 'axios';
+import BACKEND_URL from '../../utils/apiConfig';
 
 const SuperAdminSchool = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const superAdminBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
+  const superAdminBaseUrl = BACKEND_URL;
   const {
     register,
     handleSubmit,

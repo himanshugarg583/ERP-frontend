@@ -8,9 +8,10 @@ import {
   fetchClassDropdown,
   getClassAdmitCards
 } from '../../helper/requests-method/apiMethods';
+import BACKEND_URL from '../../utils/apiConfig';
 
 const ViewClassAdmitCards = () => {
-  const backendBaseUrl = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
+  const backendBaseUrl = BACKEND_URL;
   // State for dropdowns
   const [terms, setTerms] = useState([]);
   const [exams, setExams] = useState([]);

@@ -11,9 +11,10 @@ import {
   fetchAllClassesForAttendance,
   getAllStudentsByClass,
 } from '../../helper/requests-method/apiMethods';
+import BACKEND_URL from '../../utils/apiConfig';
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
-const API_BASE_URL = String(import.meta.env.SCHOOL_ERP_BACKEND_URL || '').replace(/\/$/, '');
+const API_BASE_URL = BACKEND_URL;
 
 const getAuthToken = () => localStorage.getItem('authToken') || localStorage.getItem('token') || '';
 
